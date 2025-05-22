@@ -7,27 +7,34 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted
+    runs-on: self-hosted  # Your self-hosted runner with Docker & kubectl configured
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: 🐳 Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Build Docker image
-      run: |
-        docker build -t sachinfe/smartops-app:main-${{ github.run_number }} .
+      - name: 🔧 Set IMAGE_TAG env var
+        run: echo "IMAGE_TAG=main-${{ github.run_number }}" >> $GITHUB_ENV
 
-    - name: Push image to Docker Hub
-      run: |
-        docker push sachinfe/smartops-app:main-${{ github.run_number }}
+      - name: 🏗️ Build Docker image
+        run: docker build -t sachinfe/smartops-app:$IMAGE_TAG .
 
-    - name: Update image tag in k8s deployment YAML
-      run: |
-        sed -i 's|image: .*|image: sachinfe/smartops-app:main-${{ github.run_number }}|' k8s-deployment.yaml
+      - name: 🚀 Push Docker image to Docker Hub
+        run: docker push sachinfe/smartops-app:$IMAGE_TAG
 
-    - name: Deploy to Minikube
-      run: |
-        kubectl apply -f k8s-deployment.yaml
+      - name: 🔁 Update image tag in deployment.yaml
+        run: |
+          sed -i "s|image: .*|image: sachinfe/smartops-app:$IMAGE_TAG|" k8s/deployment.yaml
+
+      - name: 🚢 Deploy to Minikube
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+
+      - name: ✅ Verify deployed resources
+        run: |
+          kubectl get pods -n default
+          kubectl get svc -n default
