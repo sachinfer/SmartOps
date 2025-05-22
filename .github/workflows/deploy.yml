@@ -7,7 +7,8 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted  # Your self-hosted runner with Docker & kubectl configured
+    runs-on: self-hosted
+    environment: dev   # <<< added environment here
 
     steps:
       - name: 📥 Checkout repo
