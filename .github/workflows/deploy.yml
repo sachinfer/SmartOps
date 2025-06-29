@@ -2,19 +2,19 @@ name: Build and Push Docker Image
 
 on:
   workflow_run:
-    workflows: ["SmartOps Pipeline"]  # Triggers after this workflow completes
+    workflows: ["SmartOps Pipeline"]
     types:
       - completed
   push:
     branches:
       - main
       - docker
-  workflow_dispatch:  # Manual trigger support
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     environment: dev
 
     steps:
