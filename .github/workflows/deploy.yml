@@ -60,6 +60,14 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 --decode > ~/.kube/config
 
-      - name: Deploy to Kubernetes
+      - name: Apply Kubernetes Deployment and Service
         run: |
-          kubectl apply -f k8s/deployment.yaml
+          kubectl get namespace smartops || kubectl create namespace smartops
+          kubectl apply -f k8s/deployment.yaml -n smartops
+          kubectl apply -f k8s/service.yaml -n smartops
+
+      - name: Deploy Updated Image to Kubernetes
+        run: |
+          IMAGE_TAG=sachinfe/smartops-app:${{ github.ref_name }}-${{ env.DATE_TIME }}-${{ env.TIME }}
+          echo "Deploying image: $IMAGE_TAG"
+          kubectl set image deployment/smartops-app smartops-app=$IMAGE_TAG -n smartops
