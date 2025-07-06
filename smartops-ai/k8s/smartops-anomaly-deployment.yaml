@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartops-anomaly-deployment
+  namespace: smartops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartops-anomaly
+  template:
+    metadata:
+      labels:
+        app: smartops-anomaly
+    spec:
+      containers:
+      - name: smartops-anomaly
+        image: smartops-anomaly-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
