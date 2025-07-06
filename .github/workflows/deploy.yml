@@ -16,30 +16,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ✅ Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # ✅ Set up gcloud SDK
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: gke-gcloud-auth-plugin
 
-      # ✅ Authenticate Docker to Artifact Registry
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker us-docker.pkg.dev
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin --quiet
 
-      # ✅ Generate Docker image tag
+      - name: Authenticate Docker to Artifact Registry
+        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+
       - name: Generate Image Tag
         run: |
           echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-      # ✅ Build and Push Docker Image
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -49,25 +47,17 @@ jobs:
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
             ${{ env.TAG }}
 
-      # ✅ Set up kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.28.0'
 
-      # ✅ Install GKE Auth Plugin
-      - name: Install gke-gcloud-auth-plugin
-        run: |
-          gcloud components install gke-gcloud-auth-plugin --quiet
-
-      # ✅ Configure kubeconfig from secret
       - name: Configure kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 --decode > ~/.kube/config
 
-      # ✅ Deploy to GKE
-      - name: Deploy App to GKE
+      - name: Deploy to GKE
         run: |
           kubectl get ns smartops || kubectl create ns smartops
           kubectl apply -f k8s/deployment.yaml -n smartops
