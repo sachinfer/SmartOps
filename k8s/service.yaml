@@ -4,10 +4,10 @@ metadata:
   name: smartops-service
   namespace: smartops
 spec:
+  type: LoadBalancer
   selector:
     app: smartops-app
-  type: LoadBalancer
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8000  # or whatever port your app listens on
+      port: 80         # Port exposed to the outside
+      targetPort: 80   # Must match the port Uvicorn runs on
