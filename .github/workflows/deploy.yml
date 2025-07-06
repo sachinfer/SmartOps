@@ -10,16 +10,21 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: dev  # 👈 Here is the environment tag
+    environment: dev
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # ✅ Auth to Google Cloud using service account secret
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # ✅ (Optional) Debug Step: Confirm secret is injected
+      - name: Check if GCP_SA_KEY is injected
+        run: echo "${{ secrets.GCP_SA_KEY }}" | jq . || echo "Secret not injected or malformed"
 
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@v1
