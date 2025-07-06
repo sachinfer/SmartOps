@@ -16,49 +16,51 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # ✅ Authenticate to Google Cloud using the service account JSON
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Verify Secret Loaded
-        run: |
-          echo "${{ secrets.GCP_SA_KEY }}" | jq . > /dev/null || echo "Warning: GCP_SA_KEY not valid JSON"
 
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      # ✅ Enable Artifact Registry auth for Docker
       - name: Authenticate Docker to Artifact Registry
-        run: |
-          gcloud auth configure-docker us-docker.pkg.dev,gcr.io
+        run: gcloud auth configure-docker us-docker.pkg.dev
 
+      # ✅ Generate Image Tags
       - name: Generate Image Tag
         run: |
           echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "TAG=gcr.io/${{ secrets.GCP_PROJECT_ID }}/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-      - name: Build and Push Docker Image to Artifact Registry
+      # ✅ Build and Push Docker Image to Artifact Registry
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            gcr.io/${{ secrets.GCP_PROJECT_ID }}/smartops-app:latest
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
             ${{ env.TAG }}
 
+      # ✅ Set up kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.28.0'
 
+      # ✅ Load kubeconfig from secret
       - name: Configure kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 --decode > ~/.kube/config
 
-      - name: Deploy to GKE
+      # ✅ Deploy to GKE
+      - name: Deploy App to GKE
         run: |
           kubectl get ns smartops || kubectl create ns smartops
           kubectl apply -f k8s/deployment.yaml -n smartops
