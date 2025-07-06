@@ -16,28 +16,30 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ✅ Authenticate to Google Cloud using the service account JSON
+      # ✅ Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
+      # ✅ Set up gcloud SDK
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: gke-gcloud-auth-plugin
 
-      # ✅ Enable Artifact Registry auth for Docker
-      - name: Authenticate Docker to Artifact Registry
+      # ✅ Authenticate Docker to Artifact Registry
+      - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker us-docker.pkg.dev
 
-      # ✅ Generate Image Tags
+      # ✅ Generate Docker image tag
       - name: Generate Image Tag
         run: |
           echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-      # ✅ Build and Push Docker Image to Artifact Registry
+      # ✅ Build and Push Docker Image
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -53,7 +55,13 @@ jobs:
         with:
           version: 'v1.28.0'
 
-      # ✅ Load kubeconfig from secret
+      # ✅ Install GKE Auth Plugin
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+
+      # ✅ Configure kubeconfig from secret
       - name: Configure kubeconfig
         run: |
           mkdir -p ~/.kube
