@@ -1,4 +1,4 @@
-name: Build and Deploy SmartOps App
+name: Build and Deploy SmartOps App & Anomaly Service
 
 on:
   push:
@@ -31,19 +31,29 @@ jobs:
         run: |
           gcloud auth configure-docker us-docker.pkg.dev
 
-      - name: Generate App Image Tag
+      - name: Generate Image Tags
         run: |
           echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-      - name: Build and Push Docker Image to Artifact Registry
+      - name: Build & Push App Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
-            ${{ env.TAG }}
+            ${{ env.APP_TAG }}
+
+      - name: Build & Push Anomaly Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./smartops-ai
+          push: true
+          tags: |
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
+            ${{ env.ANOMALY_TAG }}
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
@@ -59,6 +69,13 @@ jobs:
       - name: Deploy App to GKE
         run: |
           kubectl get ns smartops || kubectl create ns smartops
+
+          # Deploy Main App
           kubectl apply -f k8s/deployment.yaml -n smartops
           kubectl apply -f k8s/service.yaml -n smartops
-          kubectl set image deployment/smartops-app smartops-app=${{ env.TAG }} -n smartops
+          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops
+
+          # Deploy Anomaly Service
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops
+          kubectl set image deployment/smartops-anomaly smartops-anomaly=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${{ env.SHORT_SHA }} -n smartops
