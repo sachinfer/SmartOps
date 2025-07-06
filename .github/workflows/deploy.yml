@@ -7,46 +7,47 @@ on:
       - gcp
   workflow_dispatch:
 
+env:
+  REGION: us
+  REPOSITORY: smartops-repo
+  IMAGE_NAME: smartops-app
+  ENVIRONMENT: dev
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: dev
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ✅ Auth to Google Cloud using service account secret
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      # ✅ (Optional) Debug Step: Confirm secret is injected
-      - name: Check if GCP_SA_KEY is injected
-        run: echo "${{ secrets.GCP_SA_KEY }}" | jq . || echo "Secret not injected or malformed"
 
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Authenticate Docker to GCR
-        run: gcloud auth configure-docker
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-docker.pkg.dev
 
-      - name: Generate App Image Tag
+      - name: Set image tag
         run: |
-          echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "TAG=gcr.io/${{ secrets.GCP_PROJECT_ID }}/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          SHORT_SHA=${GITHUB_SHA::8}
+          echo "TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:$SHORT_SHA" >> $GITHUB_ENV
+          echo "LATEST_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_ENV
 
-      - name: Build and Push Docker Image to GCR
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            gcr.io/${{ secrets.GCP_PROJECT_ID }}/smartops-app:latest
             ${{ env.TAG }}
+            ${{ env.LATEST_TAG }}
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
