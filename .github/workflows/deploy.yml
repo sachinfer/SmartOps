@@ -25,20 +25,18 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Install gke-gcloud-auth-plugin
-        run: |
-          gcloud components install gke-gcloud-auth-plugin --quiet
+          install_components: "gke-gcloud-auth-plugin"
 
       - name: Authenticate Docker to Artifact Registry
-        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+        run: |
+          gcloud auth configure-docker us-docker.pkg.dev
 
-      - name: Generate Image Tag
+      - name: Generate App Image Tag
         run: |
           echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image to Artifact Registry
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -52,12 +50,13 @@ jobs:
         with:
           version: 'v1.28.0'
 
-      - name: Configure kubeconfig
+      - name: Configure Kubeconfig
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > ~/.kube/config
+          gcloud container clusters get-credentials smartops-cluster \
+            --zone us-central1-a \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Deploy to GKE
+      - name: Deploy App to GKE
         run: |
           kubectl get ns smartops || kubectl create ns smartops
           kubectl apply -f k8s/deployment.yaml -n smartops
