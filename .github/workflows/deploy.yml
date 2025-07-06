@@ -78,4 +78,10 @@ jobs:
           # Deploy Anomaly Service
           kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops
           kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops
-          kubectl set image deployment/smartops-anomaly smartops-anomaly=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${{ env.SHORT_SHA }} -n smartops
+
+          # Safely update anomaly service image if deployment exists
+          if kubectl get deployment smartops-anomaly-deployment -n smartops >/dev/null 2>&1; then
+            kubectl set image deployment/smartops-anomaly-deployment smartops-anomaly-service=${{ env.ANOMALY_TAG }} -n smartops
+          else
+            echo "Deployment smartops-anomaly-deployment not found. Skipping image update."
+          fi
