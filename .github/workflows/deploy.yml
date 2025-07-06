@@ -10,6 +10,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: dev  # 👈 Here is the environment tag
 
     steps:
       - name: Checkout Code
