@@ -96,9 +96,8 @@ jobs:
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops
           kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops
 
-          # Force Restart Anomaly Deployment (Hotfix)
-          - name: Force Restart Anomaly Deployment (Hotfix)
-            run: |
-              kubectl rollout restart deployment smartops-anomaly-deployment -n smartops
-              kubectl rollout status deployment smartops-anomaly-deployment -n smartops
-              kubectl get pods -n smartops -l app=smartops-anomaly
+      - name: Force Restart Anomaly Deployment (Hotfix)
+        run: |
+          kubectl rollout restart deployment smartops-anomaly-deployment -n smartops
+          kubectl rollout status deployment smartops-anomaly-deployment -n smartops
+          kubectl get pods -n smartops -l app=smartops-anomaly
