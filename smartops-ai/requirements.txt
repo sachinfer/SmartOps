@@ -1,12 +1,2 @@
 fastapi
-uvicorn
-scikit-learn
-joblib
-numpy
-kubernetes
-requests
-streamlit
-pandas
-matplotlib
-seaborn
-pymongo
+uvicorn[standard]
