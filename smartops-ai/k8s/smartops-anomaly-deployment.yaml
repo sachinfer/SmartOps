@@ -13,6 +13,7 @@ spec:
       labels:
         app: smartops-anomaly
     spec:
+      serviceAccountName: smartops-anomaly-sa
       containers:
       - name: smartops-anomaly
         image: smartops-anomaly-service:latest
