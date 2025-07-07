@@ -79,3 +79,10 @@ jobs:
           kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops
           kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops
           kubectl set image deployment/smartops-anomaly-deployment smartops-anomaly=${{ env.ANOMALY_TAG }} -n smartops
+
+          # Force Restart Anomaly Deployment (Hotfix)
+          - name: Force Restart Anomaly Deployment (Hotfix)
+            run: |
+              kubectl rollout restart deployment smartops-anomaly-deployment -n smartops
+              kubectl rollout status deployment smartops-anomaly-deployment -n smartops
+              kubectl get pods -n smartops -l app=smartops-anomaly
