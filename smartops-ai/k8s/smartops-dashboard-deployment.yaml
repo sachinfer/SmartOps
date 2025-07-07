@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartops-dashboard
+  namespace: smartops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartops-dashboard
+  template:
+    metadata:
+      labels:
+        app: smartops-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: smartops-dashboard:latest
+        ports:
+        - containerPort: 8501
+        env:
+        - name: MONGO_URI
+          value: "mongodb+srv://nsachinfe:pKfE9I4V9SmzLQ2t@smartops.c2fnfp6.mongodb.net/?retryWrites=true&w=majority&appName=smartops" 
