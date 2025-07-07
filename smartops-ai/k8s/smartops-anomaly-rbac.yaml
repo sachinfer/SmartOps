@@ -1,32 +1,29 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: smartops-anomaly-sa
+  name: anomaly-metrics-reader
   namespace: smartops
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: smartops-anomaly-role
+  name: read-pod-metrics
   namespace: smartops
 rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list"]
-- apiGroups: ["metrics.k8s.io"]
-  resources: ["pods"]
-  verbs: ["get", "list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: smartops-anomaly-rb
+  name: anomaly-reader-binding
   namespace: smartops
 subjects:
-- kind: ServiceAccount
-  name: smartops-anomaly-sa
-  namespace: smartops
+  - kind: ServiceAccount
+    name: anomaly-metrics-reader
+    namespace: smartops
 roleRef:
   kind: Role
-  name: smartops-anomaly-role
-  apiGroup: rbac.authorization.k8s.io 
+  name: read-pod-metrics
+  apiGroup: rbac.authorization.k8s.io

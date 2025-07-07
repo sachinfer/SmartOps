@@ -3,10 +3,14 @@ kind: Service
 metadata:
   name: smartops-anomaly-service
   namespace: smartops
+labels:
+  app: smartops-anomaly
 spec:
   type: LoadBalancer
   selector:
     app: smartops-anomaly
   ports:
-  - port: 80
-    targetPort: 8000
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000
