@@ -5,3 +5,8 @@ joblib
 numpy
 kubernetes
 requests
+streamlit
+pandas
+matplotlib
+seaborn
+pymongo
