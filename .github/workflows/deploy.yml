@@ -75,6 +75,9 @@ jobs:
           kubectl apply -f k8s/service.yaml -n smartops
           kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops
 
+          # Deploy Anomaly Service RBAC
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-rbac.yaml -n smartops
+
           # Deploy Anomaly Service
           kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops
           kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops
