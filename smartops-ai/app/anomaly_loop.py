@@ -3,6 +3,8 @@ import requests
 import logging
 from kubernetes import client, config
 import os
+import sqlite3
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -57,6 +59,26 @@ def get_pod_metrics():
         logging.error(f"Error fetching pod metrics: {e}")
     return None
 
+def log_prediction(cpu, memory, result):
+    try:
+        conn = sqlite3.connect("/app/dashboard/data/data.db")
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS anomalies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                cpu REAL,
+                memory REAL,
+                prediction TEXT
+            )
+        ''')
+        cursor.execute("INSERT INTO anomalies (timestamp, cpu, memory, prediction) VALUES (?, ?, ?, ?)",
+                       (datetime.utcnow().isoformat(), cpu, memory, result))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Failed to log prediction: {e}")
+
 def main_loop():
     while True:
         metrics = get_pod_metrics()
@@ -64,6 +86,7 @@ def main_loop():
             try:
                 res = requests.post(PREDICT_URL, json=metrics, timeout=5)
                 logging.info(f"Prediction Result: {res.status_code}, {res.text}")
+                log_prediction(metrics["cpu"], metrics["memory"], res.text)
             except Exception as e:
                 logging.error(f"Prediction request failed: {e}")
         time.sleep(FETCH_INTERVAL_SECONDS)
