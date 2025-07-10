@@ -9,6 +9,17 @@ st.title("🔍 SmartOps Anomaly Detection Dashboard")
 
 # Connect to DB
 conn = sqlite3.connect("/app/dashboard/data/data.db")
+# Ensure the table exists
+conn.execute("""
+    CREATE TABLE IF NOT EXISTS anomalies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        cpu TEXT,
+        memory TEXT,
+        prediction TEXT
+    )
+""")
+conn.commit()
 df = pd.read_sql_query("SELECT * FROM anomalies", conn)
 conn.close()
 
