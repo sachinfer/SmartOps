@@ -45,6 +45,27 @@ The anomaly detection service is deployed as a multi-container pod:
 
 ---
 
+## 📢 Telegram Alerting & Bot Commands
+
+SmartOps integrates with Telegram for real-time anomaly alerts and basic cluster status commands:
+
+- **Anomaly Alerts:**
+  - When an anomaly is detected, a detailed alert is sent to your configured Telegram chat or group (with CPU, memory, details, and a dashboard link).
+  - Alerts use Markdown formatting for clarity.
+- **Bot Commands:**
+  - In your Telegram group, type `kubectl get nodes` or `kubectl get pods -n smartops`.
+  - The bot will reply with the output, allowing you to check cluster and pod status from Telegram.
+
+### Setup Steps
+1. Create a Telegram bot with @BotFather and get the token.
+2. Add the bot to your group and get the group chat ID (negative number).
+3. Configure the bot token and chat ID in `anomaly_loop.py`.
+4. Redeploy the anomaly service.
+
+You will now receive both anomaly alerts and be able to query your cluster from Telegram!
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
