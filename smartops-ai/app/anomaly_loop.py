@@ -13,6 +13,9 @@ TARGET_POD_LABEL = "app=smartops-app"
 PREDICT_URL = "http://localhost:8000/predict"
 FETCH_INTERVAL_SECONDS = 60  # 1 min
 
+TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
+TELEGRAM_CHAT_ID = "5520324585"  # Replace with your group chat ID if using a group
+
 def parse_cpu(cpu_str):
     # Convert Kubernetes CPU string (e.g., '123456n', '5m') to float (cores)
     if cpu_str.endswith('n'):
@@ -79,6 +82,19 @@ def log_prediction(cpu, memory, result):
     except Exception as e:
         print(f"Failed to log prediction: {e}")
 
+def send_telegram_alert(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message
+    }
+    try:
+        resp = requests.post(url, data=payload, timeout=5)
+        if resp.status_code != 200:
+            print(f"Failed to send Telegram alert: {resp.text}")
+    except Exception as e:
+        print(f"Telegram alert error: {e}")
+
 def main_loop():
     while True:
         metrics = get_pod_metrics()
@@ -87,6 +103,8 @@ def main_loop():
                 res = requests.post(PREDICT_URL, json=metrics, timeout=5)
                 logging.info(f"Prediction Result: {res.status_code}, {res.text}")
                 log_prediction(metrics["cpu"], metrics["memory"], res.text)
+                if '"anomaly":true' in res.text:
+                    send_telegram_alert(f"🚨 Anomaly detected!\nCPU: {metrics['cpu']}\nMemory: {metrics['memory']}\nDetails: {res.text}")
             except Exception as e:
                 logging.error(f"Prediction request failed: {e}")
         time.sleep(FETCH_INTERVAL_SECONDS)
