@@ -20,7 +20,7 @@ custom_api = client.CustomObjectsApi()
 # Settings
 NAMESPACE = "smartops"
 TARGET_POD_LABEL = "app=smartops-app"
-PREDICT_URL = "http://smartops-anomaly-service.smartops.svc.cluster.local/predict"
+PREDICT_URL = "http://localhost:8000/predict"
 FETCH_INTERVAL_SECONDS = 60  # 1 min
 MONGO_URI = "mongodb+srv://nsachinfe:pKfE9I4V9SmzLQ2t@smartops.c2fnfp6.mongodb.net/?retryWrites=true&w=majority&appName=smartops"
 
