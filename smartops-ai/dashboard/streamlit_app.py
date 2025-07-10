@@ -8,7 +8,7 @@ from datetime import datetime
 st.title("🔍 SmartOps Anomaly Detection Dashboard")
 
 # Connect to DB
-conn = sqlite3.connect("/app/dashboard/data.db")
+conn = sqlite3.connect("/app/dashboard/data/data.db")
 df = pd.read_sql_query("SELECT * FROM anomalies", conn)
 conn.close()
 

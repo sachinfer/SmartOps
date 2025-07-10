@@ -20,7 +20,7 @@ spec:
         - containerPort: 8501
         volumeMounts:
         - name: dashboard-sqlite-storage
-          mountPath: /app/dashboard
+          mountPath: /app/dashboard/data
       volumes:
       - name: dashboard-sqlite-storage
         persistentVolumeClaim:
