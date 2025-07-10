@@ -95,6 +95,7 @@ jobs:
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n smartops
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops
           kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops
 
       # - name: Force Restart Anomaly Deployment (Hotfix)
       #   run: |
