@@ -7,6 +7,7 @@ import sqlite3
 from datetime import datetime
 import subprocess
 import threading
+import json
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -85,8 +86,10 @@ def log_prediction(cpu, memory, result):
     except Exception as e:
         print(f"Failed to log prediction: {e}")
 
-def send_telegram_alert(message, cpu=None, memory=None, details=None):
+def send_telegram_alert(message, cpu=None, memory=None, details=None, namespace=None):
     alert = "🚨 *SmartOps Anomaly Detected!*\n"
+    if namespace:
+        alert += f"• *Namespace*: `{namespace}`\n"
     if cpu is not None and memory is not None:
         alert += f"• *CPU*: `{cpu}`\n• *Memory*: `{memory}`\n"
     if details:
@@ -136,12 +139,44 @@ def poll_telegram():
                 message = result.get("message", {})
                 text = message.get("text", "")
                 chat_id = message.get("chat", {}).get("id")
-                if text.startswith("kubectl") and str(chat_id) == TELEGRAM_CHAT_ID:
-                    reply = handle_telegram_command(text)
+                if text.startswith("/cmd "):
+                    cmd = text[5:].strip()
+                    reply = handle_telegram_command(cmd)
                     send_telegram_alert(reply)
         except Exception as e:
             print(f"Telegram polling error: {e}")
         time.sleep(5)
+
+def get_pods_status():
+    try:
+        output = subprocess.check_output(["kubectl", "get", "pods", "-n", "smartops", "-o", "json"], text=True)
+        pods = json.loads(output)["items"]
+        status_dict = {}
+        for pod in pods:
+            name = pod["metadata"]["name"]
+            phase = pod["status"]["phase"]
+            status_dict[name] = phase
+        return status_dict
+    except Exception as e:
+        print(f"Error getting pod status: {e}")
+        return {}
+
+def monitor_pods_status():
+    last_status = {}
+    while True:
+        current_status = get_pods_status()
+        if not current_status:
+            continue  # No sleep, check again immediately
+        # Check if all pods are running
+        all_running = all(status == "Running" for status in current_status.values())
+        if all_running and (not last_status or not all(status == "Running" for status in last_status.values())):
+            send_telegram_alert("✅ All pods in 'smartops' namespace are RUNNING.")
+        # Check for any status change
+        for pod, status in current_status.items():
+            if pod not in last_status or last_status[pod] != status:
+                send_telegram_alert(f"🔄 Pod '{pod}' status changed to: {status}")
+        last_status = current_status
+        # No sleep for real-time monitoring
 
 def main_loop():
     while True:
@@ -156,15 +191,15 @@ def main_loop():
                         "Anomaly detected!",
                         cpu=metrics["cpu"],
                         memory=metrics["memory"],
-                        details=res.text
+                        details=res.text,
+                        namespace=NAMESPACE
                     )
             except Exception as e:
                 logging.error(f"Prediction request failed: {e}")
         time.sleep(FETCH_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
-    # Send a test alert on startup
     send_telegram_alert("🚨 Test alert from SmartOps! If you see this, your bot is working.")
-    # Start Telegram polling in a background thread
     threading.Thread(target=poll_telegram, daemon=True).start()
+    threading.Thread(target=monitor_pods_status, daemon=True).start()
     main_loop() 
