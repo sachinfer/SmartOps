@@ -18,6 +18,10 @@ spec:
         image: smartops-dashboard:latest
         ports:
         - containerPort: 8501
-        env:
-        - name: MONGO_URI
-          value: "mongodb+srv://nsachinfe:pKfE9I4V9SmzLQ2t@smartops.c2fnfp6.mongodb.net/?retryWrites=true&w=majority&appName=smartops" 
+        volumeMounts:
+        - name: dashboard-sqlite-storage
+          mountPath: /app/dashboard
+      volumes:
+      - name: dashboard-sqlite-storage
+        persistentVolumeClaim:
+          claimName: dashboard-sqlite-pvc 
