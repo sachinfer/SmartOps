@@ -81,6 +81,9 @@ jobs:
         run: |
           kubectl get ns smartops || kubectl create ns smartops
 
+          # Deploy ServiceAccount and RBAC for Anomaly Service
+          kubectl apply -f smartops-ai/k8s/anomaly-metrics-reader.yaml -n smartops
+
           # Deploy Main App
           kubectl apply -f k8s/deployment.yaml -n smartops
           kubectl apply -f k8s/service.yaml -n smartops
