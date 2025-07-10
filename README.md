@@ -16,10 +16,19 @@
 ### Key Components
 
 1. **Main Application (`smartops-app`)**: The core workload being monitored.
-2. **Anomaly Detection Service (`smartops-anomaly`)**: Fetches pod metrics, predicts anomalies, logs to SQLite and MongoDB.
-3. **Dashboard (`smartops-dashboard`)**: Streamlit UI for real-time and historical analytics, connects to MongoDB Atlas.
+2. **Anomaly Detection Service (`smartops-anomaly`)**: Uses the sidecar pattern—one container runs the FastAPI prediction API, and a second container runs the anomaly loop, calling the API via localhost.
+3. **Dashboard (`smartops-dashboard`)**: Streamlit UI for real-time and historical analytics, connects to SQLite in test/dev.
 4. **CI/CD Pipeline**: GitHub Actions for automated build, push, and deploy to GKE.
 5. **Kubernetes Manifests**: YAMLs for all deployments/services, using LoadBalancer for external access.
+
+---
+
+#### 🧩 Sidecar Pattern for Anomaly Detection
+
+The anomaly detection service is deployed as a multi-container pod:
+- **Container 1:** Runs the FastAPI app (serving `/predict`)
+- **Container 2:** Runs the anomaly loop script, which fetches metrics and calls the FastAPI endpoint via `localhost:8000/predict`
+- This pattern ensures clean separation of API and background logic, and is robust for cloud-native deployments.
 
 ---
 
