@@ -48,11 +48,28 @@ def get_status_and_advice(latest_pred: str, cpu: float, memory: float) -> Tuple[
             action
         )
 
-if df.empty:
-    st.warning("No data available.")
+# Check if 'namespace' column exists in the anomalies table
+def has_namespace_column(df):
+    return 'namespace' in df.columns
+
+# Namespace selection UI
+namespace_options = ['all']
+if has_namespace_column(df):
+    ns_list = df['namespace'].dropna().unique().tolist()
+    namespace_options += sorted(ns_list)
+selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
+
+# Filter dataframe by namespace if applicable
+if has_namespace_column(df) and selected_ns != 'all':
+    filtered_df = df[df['namespace'] == selected_ns].copy()
 else:
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    latest = df.iloc[-1]
+    filtered_df = df.copy()
+
+if filtered_df.empty:
+    st.warning("No data available for the selected namespace.")
+else:
+    filtered_df['timestamp'] = pd.to_datetime(filtered_df['timestamp'])
+    latest = filtered_df.iloc[-1]
     # Try to parse CPU/memory as float, fallback to 0
     try:
         cpu_val = float(latest['cpu'])
@@ -67,7 +84,7 @@ else:
 
     # Table of recent predictions
     st.subheader("🕒 Recent Predictions")
-    show_df = df[['timestamp', 'cpu', 'memory', 'prediction']].copy()
+    show_df = filtered_df[['timestamp', 'cpu', 'memory', 'prediction']].copy()
     show_df = show_df.sort_values('timestamp', ascending=False).head(20)
     def rec_action(row):
         pred = row['prediction']
@@ -98,8 +115,8 @@ else:
 
     # Plain English summary
     st.subheader("📢 System Summary")
-    anomaly_count = (df['prediction'].str.lower() != 'normal').sum()
-    total = len(df)
+    anomaly_count = (filtered_df['prediction'].str.lower() != 'normal').sum()
+    total = len(filtered_df)
     st.info(f"Out of {total} recent checks, {anomaly_count} anomalies were detected.")
     if anomaly_count == 0:
         st.success("Everything looks good! No anomalies detected in the recent data.")

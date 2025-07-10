@@ -166,7 +166,9 @@ def monitor_pods_status():
     while True:
         current_status = get_pods_status()
         if not current_status:
-            continue  # No sleep, check again immediately
+            logging.warning("Pod status fetch failed or returned empty. Retrying in 5 seconds.")
+            time.sleep(5)
+            continue  # Sleep and retry
         # Check if all pods are running
         all_running = all(status == "Running" for status in current_status.values())
         if all_running and (not last_status or not all(status == "Running" for status in last_status.values())):
@@ -174,9 +176,10 @@ def monitor_pods_status():
         # Check for any status change
         for pod, status in current_status.items():
             if pod not in last_status or last_status[pod] != status:
+                logging.info(f"Pod '{pod}' status changed: {last_status.get(pod)} -> {status}")
                 send_telegram_alert(f"🔄 Pod '{pod}' status changed to: {status}")
         last_status = current_status
-        # No sleep for real-time monitoring
+        time.sleep(5)  # Prevent tight loop
 
 def main_loop():
     while True:
