@@ -86,15 +86,18 @@ def log_prediction(cpu, memory, result):
     except Exception as e:
         print(f"Failed to log prediction: {e}")
 
-def send_telegram_alert(message, cpu=None, memory=None, details=None, namespace=None):
-    alert = "🚨 *SmartOps Anomaly Detected!*\n"
-    if namespace:
-        alert += f"• *Namespace*: `{namespace}`\n"
-    if cpu is not None and memory is not None:
-        alert += f"• *CPU*: `{cpu}`\n• *Memory*: `{memory}`\n"
-    if details:
-        alert += f"• *Details*: `{details}`\n"
-    alert += f"\n[Open Dashboard]({DASHBOARD_URL})"
+def send_telegram_alert(message, cpu=None, memory=None, details=None, namespace=None, raw=False):
+    if raw:
+        alert = message
+    else:
+        alert = "🚨 *SmartOps Anomaly Detected!*\n"
+        if namespace:
+            alert += f"• *Namespace*: `{namespace}`\n"
+        if cpu is not None and memory is not None:
+            alert += f"• *CPU*: `{cpu}`\n• *Memory*: `{memory}`\n"
+        if details:
+            alert += f"• *Details*: `{details}`\n"
+        alert += f"\n[Open Dashboard]({DASHBOARD_URL})"
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -172,14 +175,14 @@ def monitor_pods_status():
         # Check if all pods are running
         all_running = all(status == "Running" for status in current_status.values())
         if all_running and (not last_status or not all(status == "Running" for status in last_status.values())):
-            send_telegram_alert(f"✅ All pods in '{NAMESPACE}' are RUNNING. All services are healthy.")
+            send_telegram_alert(f"✅ All pods in '{NAMESPACE}' are RUNNING. All services are healthy.", raw=True)
         # Check for any status change
         for pod, status in current_status.items():
             if pod not in last_status or last_status[pod] != status:
                 old_status = last_status.get(pod, 'Unknown')
                 msg = f"Pod '{pod}' status changed: {old_status} → {status} in namespace '{NAMESPACE}'."
                 logging.info(msg)
-                send_telegram_alert(msg)
+                send_telegram_alert(msg, raw=True)
         last_status = current_status
         time.sleep(5)  # Prevent tight loop
 
