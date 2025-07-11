@@ -1,7 +1,7 @@
 import time
 import requests
 import logging
-from kubernetes import client, config
+from kubernetes import client, config, watch
 import os
 import sqlite3
 from datetime import datetime
@@ -187,50 +187,39 @@ def monitor_pods_status():
         last_status = current_status
         time.sleep(5)  # Prevent tight loop
 
-def monitor_logs_for_non_200(log_file_path, send_alert_func):
+def monitor_k8s_logs(send_alert_func):
+    namespace = os.environ.get("MY_POD_NAMESPACE", "default")
+    pod_name = os.environ.get("MY_POD_NAME")
+    container_name = os.environ.get("MY_CONTAINER_NAME", "app")
+    if not pod_name:
+        print("Environment variable MY_POD_NAME not set. Skipping K8s log monitoring.")
+        return
+    config.load_incluster_config()
+    v1 = client.CoreV1Api()
+    w = watch.Watch()
     status_pattern = re.compile(r'\s(\d{3})\s')
-    with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
-        f.seek(0, 2)  # Go to end of file
-        while True:
-            line = f.readline()
-            if not line:
-                time.sleep(1)
-                continue
-            match = status_pattern.search(line)
-            if match:
-                status = match.group(1)
-                if status != '200':
-                    advice = (
-                        'Check user input or resource (4xx).' if status.startswith('4')
-                        else 'Check backend/service health (5xx or other).'
-                    )
-                    alert_msg = (
-                        f"🚨 Non-200 log detected!\n"
-                        f"Status: {status}\n"
-                        f"Log: {line.strip()}\n"
-                        f"Advice: {advice}"
-                    )
-                    send_alert_func(alert_msg)
-
-def main_loop():
-    while True:
-        metrics = get_pod_metrics()
-        if metrics:
-            try:
-                res = requests.post(PREDICT_URL, json=metrics, timeout=5)
-                logging.info(f"Prediction Result: {res.status_code}, {res.text}")
-                log_prediction(metrics["cpu"], metrics["memory"], res.text)
-                if '"anomaly":true' in res.text:
-                    send_telegram_alert(
-                        "Anomaly detected!",
-                        cpu=metrics["cpu"],
-                        memory=metrics["memory"],
-                        details=res.text,
-                        namespace=NAMESPACE
-                    )
-            except Exception as e:
-                logging.error(f"Prediction request failed: {e}")
-        time.sleep(FETCH_INTERVAL_SECONDS)
+    for line in w.stream(v1.read_namespaced_pod_log,
+                         name=pod_name,
+                         namespace=namespace,
+                         container=container_name,
+                         follow=True,
+                         _preload_content=False):
+        line = line.decode('utf-8')
+        match = status_pattern.search(line)
+        if match:
+            status = match.group(1)
+            if status != '200':
+                advice = (
+                    'Check user input or resource (4xx).' if status.startswith('4')
+                    else 'Check backend/service health (5xx or other).'
+                )
+                alert_msg = (
+                    f"🚨 Non-200 log detected!\n"
+                    f"Status: {status}\n"
+                    f"Log: {line.strip()}\n"
+                    f"Advice: {advice}"
+                )
+                send_alert_func(alert_msg)
 
 def detect_anomaly(model, metrics):
     return model.predict([metrics])[0] == -1
