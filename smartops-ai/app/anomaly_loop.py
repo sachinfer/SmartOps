@@ -8,6 +8,7 @@ from datetime import datetime
 import subprocess
 import threading
 import json
+import re
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -185,6 +186,31 @@ def monitor_pods_status():
                 send_telegram_alert(msg, raw=True)
         last_status = current_status
         time.sleep(5)  # Prevent tight loop
+
+def monitor_logs_for_non_200(log_file_path, send_alert_func):
+    status_pattern = re.compile(r'\s(\d{3})\s')
+    with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        f.seek(0, 2)  # Go to end of file
+        while True:
+            line = f.readline()
+            if not line:
+                time.sleep(1)
+                continue
+            match = status_pattern.search(line)
+            if match:
+                status = match.group(1)
+                if status != '200':
+                    advice = (
+                        'Check user input or resource (4xx).' if status.startswith('4')
+                        else 'Check backend/service health (5xx or other).'
+                    )
+                    alert_msg = (
+                        f"🚨 Non-200 log detected!\n"
+                        f"Status: {status}\n"
+                        f"Log: {line.strip()}\n"
+                        f"Advice: {advice}"
+                    )
+                    send_alert_func(alert_msg)
 
 def main_loop():
     while True:
