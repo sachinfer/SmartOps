@@ -87,12 +87,12 @@ jobs:
             --zone us-central1-a \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Notify Telegram - Deployment Started
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="🚀 *Production deployment started in namespace `smartops`!*" \
-            -d parse_mode=Markdown
+      # - name: Notify Telegram - Deployment Started
+      #   run: |
+      #     curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+      #       -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+      #       -d text="🚀 *Production deployment started in namespace `smartops`!*" \
+      #       -d parse_mode=Markdown
 
       - name: Deploy to GKE
         run: |

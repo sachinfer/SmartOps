@@ -238,9 +238,10 @@ def detect_anomaly(model, metrics):
 # Unit test for anomaly detection
 if __name__ == "__main__":
     import joblib
-    # Update model loading path for Docker
     model = joblib.load("app/model/isolation_forest.pkl")
-    assert detect_anomaly(model, [0.1, 0.2, 0.3, 0.4]) in [True, False]
+    # Dynamically create a test vector with the correct number of features
+    test_vector = [0.1] * model.n_features_in_
+    assert detect_anomaly(model, test_vector) in [True, False]
 
 if __name__ == "__main__":
     send_telegram_alert("🚨 Test alert from SmartOps! If you see this, your bot is working.")
