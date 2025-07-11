@@ -239,4 +239,5 @@ if __name__ == "__main__":
     threading.Thread(target=monitor_pods_status, daemon=True).start()
     # Start K8s log monitoring in a background thread
     Thread(target=monitor_k8s_logs, args=(send_telegram_alert,)).start()
-    main_loop() 
+    # Remove or comment out the call to main_loop() as it is not defined
+    # main_loop() 
