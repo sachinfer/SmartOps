@@ -205,7 +205,9 @@ def monitor_k8s_logs(send_alert_func):
                          container=container_name,
                          follow=True,
                          _preload_content=False):
-        line = line.decode('utf-8')
+        if isinstance(line, bytes):
+            line = line.decode('utf-8')
+        # Now line is always a string
         match = status_pattern.search(line)
         if match:
             status = match.group(1)
