@@ -18,6 +18,11 @@
 1. **Main Application (`smartops-app`)**: The core workload being monitored.
 2. **Anomaly Detection Service (`smartops-anomaly`)**: Uses the sidecar pattern—one container runs the FastAPI prediction API, and a second container runs the anomaly loop, calling the API via localhost.
 3. **Dashboard (`smartops-dashboard`)**: Streamlit UI for real-time and historical analytics, connects to SQLite in test/dev.
+    - **User-friendly interface:** Color-coded banners, plain English advice, and actionable recommendations.
+    - **Namespace selection:** Dropdown to filter predictions and analytics by namespace (e.g., all, smartops, test).
+    - **ML-based actions:** Recommended actions are generated based on actual resource usage and anomaly type.
+    - **Recent predictions table:** Shows the latest predictions and recommended actions for each event.
+    - **System summary:** Plain English summary of recent anomaly counts and system health.
 4. **CI/CD Pipeline**: GitHub Actions for automated build, push, and deploy to GKE.
 5. **Kubernetes Manifests**: YAMLs for all deployments/services, using LoadBalancer for external access.
 
@@ -38,7 +43,8 @@ The anomaly detection service is deployed as a multi-container pod:
 - Dashboard is deployed and exposed via LoadBalancer.
 - All services are built and deployed automatically via GitHub Actions.
 - Anomaly detection is live, logging to both SQLite and MongoDB Atlas.
-- Dashboard visualizes live and historical anomaly data from MongoDB.
+- Dashboard visualizes live and historical anomaly data from SQLite (and MongoDB if configured).
+- Dashboard now supports namespace selection and user-friendly, actionable advice for non-technical users.
 - RBAC and service accounts are configured for secure metrics access.
 - All dependencies are now correctly included in Docker images.
 - Pods are healthy after the last dependency fix.

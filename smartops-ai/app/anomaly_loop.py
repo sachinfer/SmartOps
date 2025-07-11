@@ -17,7 +17,7 @@ PREDICT_URL = "http://localhost:8000/predict"
 FETCH_INTERVAL_SECONDS = 60  # 1 min
 
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
-TELEGRAM_CHAT_ID = "5520324585"  # Use your group chat ID (negative number) for group alerts
+TELEGRAM_CHAT_ID = "-1002761935159"  # Use your group chat ID (negative number) for group alerts
 DASHBOARD_URL = "http://34.31.86.225"  # Update with your dashboard URL
 
 def parse_cpu(cpu_str):
