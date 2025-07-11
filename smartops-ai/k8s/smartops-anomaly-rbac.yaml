@@ -20,7 +20,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: anomaly-reader-binding
+  name: anomaly-metrics-reader
   namespace: smartops
 subjects:
   - kind: ServiceAccount
@@ -28,5 +28,5 @@ subjects:
     namespace: smartops
 roleRef:
   kind: Role
-  name: read-pod-metrics
+  name: anomaly-metrics-reader
   apiGroup: rbac.authorization.k8s.io
