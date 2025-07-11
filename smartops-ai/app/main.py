@@ -19,3 +19,17 @@ def predict_anomaly(data: InputData):
         "anomaly": is_anomaly,
         "message": "Anomaly detected" if is_anomaly else "Normal"
     }
+
+# Unit test for FastAPI endpoint
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Test code
+from fastapi.testclient import TestClient
+
+def test_predict():
+    client = TestClient(app)
+    response = client.post("/predict", json={"metrics": [0.1, 0.2, 0.3, 0.4]})
+    assert response.status_code == 200
+    assert "anomaly" in response.json()

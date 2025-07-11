@@ -72,6 +72,59 @@ You will now receive both anomaly alerts and be able to query your cluster from 
 
 ---
 
+## 🚦 Telegram Deployment Notifications from CI/CD
+
+You can receive Telegram alerts when a deployment starts, succeeds, or fails via your GitHub Actions pipeline.
+
+### How to Set Up
+1. **Add your bot to your Telegram group.**
+2. **Send a message in the group as a user** (this is required for Telegram to allow the bot to send messages).
+3. **Get your group chat ID** (it will look like `-100xxxxxxxxxx`).
+4. **Add your bot token and chat ID as GitHub repository secrets:**
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+5. **Your workflow will send messages at key stages:**
+   - 🚀 *Production deployment started!*
+   - ✅ *Production deployment completed successfully!*
+   - ❌ *Production deployment failed!*
+
+### Example Workflow Snippet
+```yaml
+- name: Notify Telegram - Deployment Started
+  run: |
+    curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+      -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+      -d text="🚀 *Production deployment started!*" \
+      -d parse_mode=Markdown
+
+- name: Notify Telegram - Deployment Success
+  if: success()
+  run: |
+    curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+      -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+      -d text="✅ *Production deployment completed successfully!*" \
+      -d parse_mode=Markdown
+
+- name: Notify Telegram - Deployment Failed
+  if: failure()
+  run: |
+    curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+      -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+      -d text="❌ *Production deployment failed!*" \
+      -d parse_mode=Markdown
+```
+
+### Troubleshooting: 'chat not found' Error
+- **Make sure your bot is in the group.**
+- **Send a message in the group as a user after adding the bot.**
+- **Use the correct chat ID (starts with -100 for supergroups).**
+- **Check that your bot is not blocked or restricted.**
+- **Double-check your bot token and chat ID in GitHub secrets.**
+
+If you follow these steps, you will receive real-time deployment notifications in your Telegram group!
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.

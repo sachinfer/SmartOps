@@ -206,6 +206,15 @@ def main_loop():
                 logging.error(f"Prediction request failed: {e}")
         time.sleep(FETCH_INTERVAL_SECONDS)
 
+def detect_anomaly(model, metrics):
+    return model.predict([metrics])[0] == -1
+
+# Unit test for anomaly detection
+if __name__ == "__main__":
+    import joblib
+    model = joblib.load("../model/isolation_forest.pkl")
+    assert detect_anomaly(model, [0.1, 0.2, 0.3, 0.4]) in [True, False]
+
 if __name__ == "__main__":
     send_telegram_alert("🚨 Test alert from SmartOps! If you see this, your bot is working.")
     threading.Thread(target=poll_telegram, daemon=True).start()
