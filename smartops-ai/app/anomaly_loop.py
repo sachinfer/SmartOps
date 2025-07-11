@@ -9,6 +9,7 @@ import subprocess
 import threading
 import json
 import re
+from threading import Thread
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -236,4 +237,6 @@ if __name__ == "__main__":
     send_telegram_alert("🚨 Test alert from SmartOps! If you see this, your bot is working.")
     threading.Thread(target=poll_telegram, daemon=True).start()
     threading.Thread(target=monitor_pods_status, daemon=True).start()
+    # Start K8s log monitoring in a background thread
+    Thread(target=monitor_k8s_logs, args=(send_telegram_alert,)).start()
     main_loop() 
