@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - gcp
+      - gcp2
   workflow_dispatch:
 
 jobs:
