@@ -238,7 +238,8 @@ def detect_anomaly(model, metrics):
 # Unit test for anomaly detection
 if __name__ == "__main__":
     import joblib
-    model = joblib.load("../model/isolation_forest.pkl")
+    # Update model loading path for Docker
+    model = joblib.load("app/model/isolation_forest.pkl")
     assert detect_anomaly(model, [0.1, 0.2, 0.3, 0.4]) in [True, False]
 
 if __name__ == "__main__":

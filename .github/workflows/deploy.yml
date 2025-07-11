@@ -13,9 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
 
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+#added new telegram
+      - name: Notify Telegram - Deployment Started
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="🚀 *Production deployment started in namespace `smartops`!*" \
+            -d parse_mode=Markdown
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
