@@ -10,3 +10,4 @@ pymongo
 scikit-learn
 joblib
 numpy
+pytest
