@@ -192,6 +192,7 @@ def monitor_k8s_logs(send_alert_func):
     namespace = os.environ.get("MY_POD_NAMESPACE", "default")
     pod_name = os.environ.get("MY_POD_NAME")
     container_name = os.environ.get("MY_CONTAINER_NAME", "app")
+    print(f"[DEBUG] Starting log monitor with namespace={namespace}, pod_name={pod_name}, container_name={container_name}")
     if not pod_name:
         print("Environment variable MY_POD_NAME not set. Skipping K8s log monitoring.")
         return
@@ -207,8 +208,9 @@ def monitor_k8s_logs(send_alert_func):
                          _preload_content=False):
         if isinstance(line, bytes):
             line = line.decode('utf-8')
-        # Now line is always a string
+        print(f"[DEBUG] K8s log line: {repr(line)}")
         match = status_pattern.search(line)
+        print(f"[DEBUG] Regex match: {match}")
         if match:
             status = match.group(1)
             if status != '200':
@@ -222,6 +224,7 @@ def monitor_k8s_logs(send_alert_func):
                     f"Log: {line.strip()}\n"
                     f"Advice: {advice}"
                 )
+                print(f"[DEBUG] Would send alert: {alert_msg}")
                 send_alert_func(alert_msg)
 
 def detect_anomaly(model, metrics):
