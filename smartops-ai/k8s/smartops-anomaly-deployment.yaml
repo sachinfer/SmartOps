@@ -31,6 +31,17 @@ spec:
         - name: anomaly-loop
           image: gcr.io/icbt-465109/smartops-anomaly:latest  # ← Use the same image
           command: ["python", "app/anomaly_loop.py"]
+          env:
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_CONTAINER_NAME
+              value: fastapi
           volumeMounts:
             - name: dashboard-sqlite-storage
               mountPath: /app/dashboard/data
