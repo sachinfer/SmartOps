@@ -2,7 +2,7 @@ from sklearn.ensemble import IsolationForest
 import numpy as np
 import joblib
 
-model = joblib.load("model_v1.pkl")
+model = joblib.load("model/isolation_forest.pkl")
 
 def is_anomalous(cpu, memory, latency):
     X = np.array([[cpu, memory, latency]])

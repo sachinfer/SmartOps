@@ -3,9 +3,32 @@ from ai_detector import is_anomalous
 from alert_telegram import send_alert
 from log_monitor import detect_non_200_logs
 from k8s_monitor import get_pod_restart_counts
+from kubernetes import client, config
+
+# Configuration for log monitoring
+NAMESPACE = "smartops"
+POD_NAME = "smartops-app-6ccd6f5748-djbbx"  # Update this to match your pod name
+CONTAINER_NAME = "fastapi"
+
+# Initialize Kubernetes client
+config.load_incluster_config()
+v1 = client.CoreV1Api()
+
+def get_pod_logs(namespace, pod_name, container_name, tail_lines=100):
+    try:
+        logs = v1.read_namespaced_pod_log(
+            name=pod_name,
+            namespace=namespace,
+            container=container_name,
+            tail_lines=tail_lines
+        )
+        return logs.splitlines()
+    except Exception as e:
+        print(f"Error fetching pod logs: {e}")
+        return []
 
 while True:
-    # Simulated inputs (replace with real metrics fetch)
+    # Simulated metrics (replace with real metrics fetch if available)
     cpu = 91.5
     memory = 75.3
     latency = 2.4
@@ -20,8 +43,8 @@ while True:
 """
         send_alert(msg)
 
-    # 2. Non-200 HTTP Logs (simulate logs)
-    logs = ["200 OK", "500 Internal Server Error", "404 Not Found"]
+    # 2. Non-200 HTTP Logs (read real logs from pod)
+    logs = get_pod_logs(NAMESPACE, POD_NAME, CONTAINER_NAME, tail_lines=100)
     non_200 = detect_non_200_logs(logs)
     for line in non_200:
         send_alert(f"⚠️ *Non-200 Log Detected:*\n`{line}`")
