@@ -214,18 +214,11 @@ def monitor_k8s_logs(send_alert_func):
         if match:
             status = match.group(1)
             if status != '200':
-                advice = (
-                    'Check user input or resource (4xx).' if status.startswith('4')
-                    else 'Check backend/service health (5xx or other).'
-                )
                 alert_msg = (
-                    f"🚨 Non-200 log detected!\n"
-                    f"Status: {status}\n"
-                    f"Log: {line.strip()}\n"
-                    f"Advice: {advice}"
+                    f"just now - Status: {status} | Log: {line.strip()}"
                 )
                 print(f"[DEBUG] Would send alert: {alert_msg}")
-                send_alert_func(alert_msg)
+                send_alert_func(alert_msg, raw=True)
 
 def detect_anomaly(model, metrics):
     return model.predict([metrics])[0] == -1
