@@ -125,6 +125,53 @@ If you follow these steps, you will receive real-time deployment notifications i
 
 ---
 
+## 🚨 Kubernetes-Native Log Monitoring & Non-200 Alerting
+
+SmartOps now supports real-time monitoring of application logs directly from Kubernetes using the Kubernetes API. The anomaly-loop sidecar streams logs from the main app container and sends alerts for any non-200 HTTP responses (e.g., 404, 500) with actionable advice.
+
+### How It Works
+- The anomaly-loop container uses the Kubernetes Python client to stream logs from the main app container in the same pod.
+- Any log line with a non-200 status code triggers an alert (e.g., via Telegram), including the status, log line, and recommended action.
+
+### Setup Steps
+1. **Environment Variables**
+   Add these to the `anomaly-loop` container in your deployment YAML:
+   ```yaml
+   env:
+     - name: MY_POD_NAMESPACE
+       valueFrom:
+         fieldRef:
+           fieldPath: metadata.namespace
+     - name: MY_POD_NAME
+       valueFrom:
+         fieldRef:
+           fieldPath: metadata.name
+     - name: MY_CONTAINER_NAME
+       value: fastapi  # (or your main app container name)
+   ```
+2. **RBAC Permissions**
+   Your service account must have access to `pods` and `pods/log`:
+   ```yaml
+   - apiGroups: [""]
+     resources: ["pods"]
+     verbs: ["get", "list", "watch"]
+   - apiGroups: [""]
+     resources: ["pods/log"]
+     verbs: ["get", "watch", "list"]
+   ```
+3. **Startup**
+   The anomaly-loop will automatically start log monitoring and send alerts for non-200 logs.
+
+### Troubleshooting
+- If you do not receive alerts:
+  - Check the anomaly-loop logs for debug output (environment variables, log lines, regex matches).
+  - Ensure the environment variables are set correctly in the container.
+  - Ensure the service account has the correct RBAC permissions.
+  - Make sure the main app container name matches `MY_CONTAINER_NAME`.
+  - Trigger a non-200 response (e.g., 404, 500) and check the logs for alert activity.
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
