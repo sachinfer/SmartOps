@@ -75,6 +75,37 @@ def get_pod_metrics():
         logging.error(f"Error fetching pod metrics: {e}")
     return None
 
+def get_all_pod_metrics():
+    metrics_list = []
+    try:
+        load_kube_config_smart()
+        v1 = client.CoreV1Api()
+        metrics = client.CustomObjectsApi()
+        pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=TARGET_POD_LABEL)
+        for pod in pods.items:
+            pod_name = pod.metadata.name
+            labels = pod.metadata.labels or {}
+            m = metrics.get_namespaced_custom_object(
+                group="metrics.k8s.io",
+                version="v1beta1",
+                namespace=NAMESPACE,
+                plural="pods",
+                name=pod_name
+            )
+            containers = m["containers"]
+            for c in containers:
+                cpu = parse_cpu(c["usage"]["cpu"])
+                mem = parse_mem(c["usage"]["memory"])
+                metrics_list.append({
+                    "cpu": cpu,
+                    "memory": mem,
+                    "pod_name": pod_name,
+                    "labels": labels
+                })
+    except Exception as e:
+        logging.error(f"Error fetching pod metrics: {e}")
+    return metrics_list
+
 def log_prediction(cpu, memory, result):
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
@@ -247,67 +278,59 @@ def main_anomaly_loop():
     
     while True:
         try:
-            # 1. Fetch real metrics from Kubernetes
-            metrics = get_pod_metrics()
-            if metrics is None:
+            # 1. Fetch real metrics from Kubernetes for all pods
+            pod_metrics_list = get_all_pod_metrics()
+            if not pod_metrics_list:
                 logging.warning("Failed to fetch pod metrics, retrying in 60 seconds...")
                 time.sleep(60)
                 continue
-            
-            cpu = metrics['cpu']
-            memory = metrics['memory']
-            
-            logging.info(f"Fetched metrics - CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
-            
-            # 2. Call ML model via FastAPI
-            try:
-                response = requests.post(
-                    PREDICT_URL,
-                    json={"cpu": cpu, "memory": memory},
-                    timeout=10
-                )
-                if response.status_code == 200:
-                    result = response.json()
-                    is_anomaly = result["anomaly"]
-                    message = result["message"]
-                else:
-                    logging.error(f"ML API returned status {response.status_code}")
-                    time.sleep(60)
-                    continue
-            except Exception as e:
-                logging.error(f"Failed to call ML API: {e}")
-                time.sleep(60)
-                continue
-            
-            # 3. Log the prediction
-            log_prediction(cpu, memory, message)
-            
-            # 4. Hybrid approach: alert only if ML says anomaly AND outside normal band
-            if is_anomaly:
-                cpu_percent = (cpu * 100) if cpu <= 1 else cpu
-                memory_mb = memory / (1024 * 1024)
+            for metrics in pod_metrics_list:
+                cpu = metrics['cpu']
+                memory = metrics['memory']
                 pod_name = metrics.get("pod_name", "unknown")
                 labels = metrics.get("labels", {})
-                # Alert only if outside normal band
-                if cpu_percent > 50 or memory_mb > 500:
-                    alert_msg = (
-                        f"🚨 AI Anomaly Detected\n"
-                        f"Pod: {pod_name}\n"
-                        f"Labels: {labels}\n"
-                        f"CPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\n"
-                        f"Score: {message}\n"
-                        f"[📊 Open Dashboard]({DASHBOARD_URL})"
+                logging.info(f"Fetched metrics - Pod: {pod_name}, Labels: {labels}, CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
+                # 2. Call ML model via FastAPI
+                try:
+                    response = requests.post(
+                        PREDICT_URL,
+                        json={"cpu": cpu, "memory": memory},
+                        timeout=10
                     )
-                    send_telegram_alert(alert_msg, raw=True)
-                    logging.warning(f"ACTIONABLE ANOMALY - Pod: {pod_name}, Labels: {labels}, CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
+                    if response.status_code == 200:
+                        result = response.json()
+                        is_anomaly = result["anomaly"]
+                        message = result["message"]
+                    else:
+                        logging.error(f"ML API returned status {response.status_code}")
+                        continue
+                except Exception as e:
+                    logging.error(f"Failed to call ML API: {e}")
+                    continue
+                # 3. Log the prediction
+                log_prediction(cpu, memory, message)
+                # 4. Hybrid approach: alert only if ML says anomaly AND outside normal band
+                if is_anomaly:
+                    cpu_percent = (cpu * 100) if cpu <= 1 else cpu
+                    memory_mb = memory / (1024 * 1024)
+                    # Alert only if outside normal band
+                    if cpu_percent > 50 or memory_mb > 500:
+                        alert_msg = (
+                            f"🚨 AI Anomaly Detected\n"
+                            f"Pod: {pod_name}\n"
+                            f"Labels: {labels}\n"
+                            f"CPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\n"
+                            f"Score: {message}\n"
+                            f"[📊 Open Dashboard]({DASHBOARD_URL})"
+                        )
+                        send_telegram_alert(alert_msg, raw=True)
+                        logging.warning(f"ACTIONABLE ANOMALY - Pod: {pod_name}, Labels: {labels}, CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
+                    else:
+                        logging.info(f"Anomaly detected by model, but within normal band: Pod: {pod_name}, Labels: {labels}, CPU={cpu_percent:.1f}%, Mem={memory_mb:.1f}MB. No alert sent.")
                 else:
-                    logging.info(f"Anomaly detected by model, but within normal band: Pod: {pod_name}, Labels: {labels}, CPU={cpu_percent:.1f}%, Mem={memory_mb:.1f}MB. No alert sent.")
-            else:
-                logging.info(f"Normal operation - CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
-            
+                    logging.info(f"Normal operation - Pod: {pod_name}, Labels: {labels}, CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
             # 5. Wait before next check
             time.sleep(FETCH_INTERVAL_SECONDS)
-            
         except Exception as e:
             logging.error(f"Error in main anomaly loop: {e}")
             time.sleep(60)
