@@ -18,13 +18,7 @@ spec:
     spec:
       containers:
       - name: dashboard
-        image: smartops-dashboard:latest
+        image: gcr.io/icbt-465109/smartops-dashboard:latest
         ports:
-        - containerPort: 8501
-        volumeMounts:
-        - name: dashboard-sqlite-storage
-          mountPath: /app/dashboard/data
-      volumes:
-      - name: dashboard-sqlite-storage
-        persistentVolumeClaim:
-          claimName: dashboard-sqlite-pvc 
+        - containerPort: 4173
+      volumes: 
