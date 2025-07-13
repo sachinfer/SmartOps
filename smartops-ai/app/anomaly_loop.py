@@ -281,18 +281,22 @@ def main_anomaly_loop():
             # 3. Log the prediction
             log_prediction(cpu, memory, message)
             
-            # 4. Send alert if anomaly detected by ML model (no hardcoded thresholds)
+            # 4. Hybrid approach: alert only if ML says anomaly AND outside normal band
             if is_anomaly:
                 cpu_percent = (cpu * 100) if cpu <= 1 else cpu
                 memory_mb = memory / (1024 * 1024)
-                alert_msg = (
-                    f"🚨 AI Anomaly Detected\n"
-                    f"CPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\n"
-                    f"Score: {message}\n"
-                    f"[📊 Open Dashboard]({DASHBOARD_URL})"
-                )
-                send_telegram_alert(alert_msg, raw=True)
-                logging.warning(f"ANOMALY DETECTED - CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
+                # Alert only if outside normal band
+                if cpu_percent > 50 or memory_mb > 500:
+                    alert_msg = (
+                        f"🚨 AI Anomaly Detected\n"
+                        f"CPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\n"
+                        f"Score: {message}\n"
+                        f"[📊 Open Dashboard]({DASHBOARD_URL})"
+                    )
+                    send_telegram_alert(alert_msg, raw=True)
+                    logging.warning(f"ACTIONABLE ANOMALY - CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
+                else:
+                    logging.info(f"Anomaly detected by model, but within normal band: CPU={cpu_percent:.1f}%, Mem={memory_mb:.1f}MB. No alert sent.")
             else:
                 logging.info(f"Normal operation - CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
             
