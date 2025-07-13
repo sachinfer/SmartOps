@@ -44,9 +44,15 @@ def parse_mem(mem_str):
         return float(mem_str[:-2]) * 1024 * 1024 * 1024 * 1024
     return float(mem_str)
 
-def get_pod_metrics():
+def load_kube_config_smart():
     try:
         config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+
+def get_pod_metrics():
+    try:
+        load_kube_config_smart()
         v1 = client.CoreV1Api()
         metrics = client.CustomObjectsApi()
         pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=TARGET_POD_LABEL)
