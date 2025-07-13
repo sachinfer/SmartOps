@@ -72,15 +72,14 @@
 #             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
 #             ${{ steps.tags.outputs.dashboard_tag }}
 
-#       - name: Upload Image Tags Artifact
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: image-tags
-#           retention-days: 1
-#           path: |
-#             tags.env
-
+#       - name: Save Image Tags to File
 #         run: |
 #           echo "APP_TAG=${{ steps.tags.outputs.app_tag }}" > tags.env
 #           echo "ANOMALY_TAG=${{ steps.tags.outputs.anomaly_tag }}" >> tags.env
 #           echo "DASHBOARD_TAG=${{ steps.tags.outputs.dashboard_tag }}" >> tags.env
+
+#       - name: Upload Image Tags Artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: image-tags
+#           path: tags.env

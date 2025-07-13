@@ -7,12 +7,18 @@ from kubernetes import client, config
 
 # Configuration for log monitoring
 NAMESPACE = "smartops"
-POD_NAME = "smartops-app-6d6b685bff-d5xh9"  # Update this to match your pod name
+LABEL_SELECTOR = "app=smartops-app"
 CONTAINER_NAME = "fastapi"
 
 # Initialize Kubernetes client
 config.load_incluster_config()
 v1 = client.CoreV1Api()
+
+def get_first_pod_name(namespace, label_selector):
+    pods = v1.list_namespaced_pod(namespace=namespace, label_selector=label_selector)
+    if pods.items:
+        return pods.items[0].metadata.name
+    return None
 
 def get_pod_logs(namespace, pod_name, container_name, tail_lines=100):
     try:
@@ -44,8 +50,13 @@ while True:
         send_alert(msg)
 
     # 2. Non-200 HTTP Logs (read real logs from pod)
+    POD_NAME = get_first_pod_name(NAMESPACE, LABEL_SELECTOR)
+    if not POD_NAME:
+        print("No pod found with label app=smartops-app")
+        time.sleep(30)
+        continue
     logs = get_pod_logs(NAMESPACE, POD_NAME, CONTAINER_NAME, tail_lines=100)
-    print("Fetched logs:")
+    print(f"Fetched logs from pod: {POD_NAME}")
     for line in logs:
         print(line)
     non_200 = detect_non_200_logs(logs)
