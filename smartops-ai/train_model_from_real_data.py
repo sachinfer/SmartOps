@@ -12,8 +12,8 @@ df = pd.read_csv(csv_file)
 # Extract features (cpu, memory)
 X_train = df[["cpu", "memory"]].values
 
-# Train Isolation Forest
-model = IsolationForest(contamination=0.01, random_state=42)
+# Train Isolation Forest with very low contamination
+model = IsolationForest(contamination=0.0001, random_state=42)
 model.fit(X_train)
 
 # Create model directory if it doesn't exist
