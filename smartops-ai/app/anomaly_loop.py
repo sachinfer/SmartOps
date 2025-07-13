@@ -7,7 +7,7 @@ from kubernetes import client, config
 
 # Configuration for log monitoring
 NAMESPACE = "smartops"
-POD_NAME = "smartops-app-6ccd6f5748-djbbx"  # Update this to match your pod name
+POD_NAME = "smartops-app-6d6b685bff-d5xh9"  # Update this to match your pod name
 CONTAINER_NAME = "fastapi"
 
 # Initialize Kubernetes client
@@ -31,13 +31,12 @@ while True:
     # Simulated metrics (replace with real metrics fetch if available)
     cpu = 91.5
     memory = 75.3
-    latency = 2.4
 
     # 1. Anomaly Detection
-    is_outlier, score = is_anomalous(cpu, memory, latency)
+    is_outlier, score = is_anomalous(cpu, memory)
     if is_outlier:
         msg = f"""🚨 *AI Anomaly Detected*
-*CPU:* {cpu}% | *Mem:* {memory}% | *Latency:* {latency}s
+*CPU:* {cpu}% | *Mem:* {memory}%
 *Score:* {score:.2f}
 📊 [Open Dashboard](http://dashboard-url)
 """

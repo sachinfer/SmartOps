@@ -21,8 +21,8 @@ else:
 
 model = joblib.load(model_path)
 
-def is_anomalous(cpu, memory, latency):
-    X = np.array([[cpu, memory, latency]])
+def is_anomalous(cpu, memory):
+    X = np.array([[cpu, memory]])
     score = model.decision_function(X)[0]
     is_outlier = model.predict(X)[0] == -1
     return is_outlier, score 
