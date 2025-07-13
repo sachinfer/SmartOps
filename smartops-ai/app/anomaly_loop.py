@@ -223,6 +223,76 @@ def monitor_k8s_logs(send_alert_func):
 def detect_anomaly(model, metrics):
     return model.predict([metrics])[0] == -1
 
+def main_anomaly_loop():
+    """Main loop that fetches real metrics and detects anomalies"""
+    import joblib
+    import requests
+    
+    # Load the trained model
+    try:
+        model = joblib.load("/app/app/model/isolation_forest.pkl")
+        logging.info("ML model loaded successfully")
+    except Exception as e:
+        logging.error(f"Failed to load ML model: {e}")
+        return
+    
+    logging.info("Starting main anomaly detection loop...")
+    
+    while True:
+        try:
+            # 1. Fetch real metrics from Kubernetes
+            metrics = get_pod_metrics()
+            if metrics is None:
+                logging.warning("Failed to fetch pod metrics, retrying in 60 seconds...")
+                time.sleep(60)
+                continue
+            
+            cpu = metrics['cpu']
+            memory = metrics['memory']
+            
+            logging.info(f"Fetched metrics - CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
+            
+            # 2. Call ML model via FastAPI
+            try:
+                response = requests.post(
+                    PREDICT_URL,
+                    json={"cpu": cpu, "memory": memory},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    is_anomaly = result["anomaly"]
+                    message = result["message"]
+                else:
+                    logging.error(f"ML API returned status {response.status_code}")
+                    time.sleep(60)
+                    continue
+            except Exception as e:
+                logging.error(f"Failed to call ML API: {e}")
+                time.sleep(60)
+                continue
+            
+            # 3. Log the prediction
+            log_prediction(cpu, memory, message)
+            
+            # 4. Send alert if anomaly detected
+            if is_anomaly:
+                cpu_percent = (cpu * 100) if cpu <= 1 else cpu
+                memory_mb = memory / (1024 * 1024)
+                
+                alert_msg = f"🚨 AI Anomaly Detected\nCPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\nScore: {message}\n📊 Open Dashboard"
+                send_telegram_alert(alert_msg, raw=True)
+                logging.warning(f"ANOMALY DETECTED - CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
+            else:
+                logging.info(f"Normal operation - CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
+            
+            # 5. Wait before next check
+            time.sleep(FETCH_INTERVAL_SECONDS)
+            
+        except Exception as e:
+            logging.error(f"Error in main anomaly loop: {e}")
+            time.sleep(60)
+
 # Unit test for anomaly detection
 if __name__ == "__main__":
     import joblib
@@ -237,5 +307,5 @@ if __name__ == "__main__":
     threading.Thread(target=monitor_pods_status, daemon=True).start()
     # Start K8s log monitoring in a background thread
     Thread(target=monitor_k8s_logs, args=(send_telegram_alert,)).start()
-    # Remove or comment out the call to main_loop() as it is not defined
-    # main_loop() 
+    # Start the main anomaly detection loop
+    main_anomaly_loop() 
