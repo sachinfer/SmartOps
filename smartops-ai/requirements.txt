@@ -11,3 +11,4 @@ scikit-learn
 joblib
 numpy
 pytest
+prometheus_client>=0.17.1

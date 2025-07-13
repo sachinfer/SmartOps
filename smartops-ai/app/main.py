@@ -1,26 +1,19 @@
-from fastapi import FastAPI, Request
-from pydantic import BaseModel
-import numpy as np
-import joblib
+from fastapi import FastAPI
+from prometheus_client import Gauge, generate_latest, CONTENT_TYPE_LATEST
+from starlette.responses import Response
 
 app = FastAPI()
-model = joblib.load("/app/app/model/isolation_forest.pkl")
 
-class InputData(BaseModel):
-    cpu: float
-    memory: float
+# Define the Prometheus gauge metric
+anomaly_score = Gauge("anomaly_score", "SmartOps anomaly score")
 
-@app.post("/predict")
-def predict_anomaly(data: InputData):
-    features = np.array([[data.cpu, data.memory]])
-    prediction = model.predict(features)
-    is_anomaly = bool(prediction[0] == -1)
-    return {
-        "anomaly": is_anomaly,
-        "message": "Anomaly detected" if is_anomaly else "Normal"
-    }
+@app.get("/predict")
+def predict():
+    # ⚠️ Replace this with real prediction logic
+    score = 0.84  # example dummy score
+    anomaly_score.set(score)
+    return {"anomaly_score": score}
 
-# Unit test for FastAPI endpoint
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
