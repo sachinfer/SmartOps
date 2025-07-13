@@ -280,7 +280,12 @@ def main_anomaly_loop():
                 cpu_percent = (cpu * 100) if cpu <= 1 else cpu
                 memory_mb = memory / (1024 * 1024)
                 
-                alert_msg = f"🚨 AI Anomaly Detected\nCPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\nScore: {message}\n📊 Open Dashboard"
+                alert_msg = (
+                    f"🚨 AI Anomaly Detected\n"
+                    f"CPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\n"
+                    f"Score: {message}\n"
+                    f"[📊 Open Dashboard]({DASHBOARD_URL})"
+                )
                 send_telegram_alert(alert_msg, raw=True)
                 logging.warning(f"ANOMALY DETECTED - CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
             else:
