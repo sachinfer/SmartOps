@@ -58,6 +58,7 @@ def get_pod_metrics():
         pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=TARGET_POD_LABEL)
         for pod in pods.items:
             pod_name = pod.metadata.name
+            labels = pod.metadata.labels or {}
             m = metrics.get_namespaced_custom_object(
                 group="metrics.k8s.io",
                 version="v1beta1",
@@ -69,7 +70,7 @@ def get_pod_metrics():
             for c in containers:
                 cpu = parse_cpu(c["usage"]["cpu"])
                 mem = parse_mem(c["usage"]["memory"])
-                return {"cpu": cpu, "memory": mem}
+                return {"cpu": cpu, "memory": mem, "pod_name": pod_name, "labels": labels}
     except Exception as e:
         logging.error(f"Error fetching pod metrics: {e}")
     return None
@@ -285,18 +286,22 @@ def main_anomaly_loop():
             if is_anomaly:
                 cpu_percent = (cpu * 100) if cpu <= 1 else cpu
                 memory_mb = memory / (1024 * 1024)
+                pod_name = metrics.get("pod_name", "unknown")
+                labels = metrics.get("labels", {})
                 # Alert only if outside normal band
                 if cpu_percent > 50 or memory_mb > 500:
                     alert_msg = (
                         f"🚨 AI Anomaly Detected\n"
+                        f"Pod: {pod_name}\n"
+                        f"Labels: {labels}\n"
                         f"CPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\n"
                         f"Score: {message}\n"
                         f"[📊 Open Dashboard]({DASHBOARD_URL})"
                     )
                     send_telegram_alert(alert_msg, raw=True)
-                    logging.warning(f"ACTIONABLE ANOMALY - CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
+                    logging.warning(f"ACTIONABLE ANOMALY - Pod: {pod_name}, Labels: {labels}, CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
                 else:
-                    logging.info(f"Anomaly detected by model, but within normal band: CPU={cpu_percent:.1f}%, Mem={memory_mb:.1f}MB. No alert sent.")
+                    logging.info(f"Anomaly detected by model, but within normal band: Pod: {pod_name}, Labels: {labels}, CPU={cpu_percent:.1f}%, Mem={memory_mb:.1f}MB. No alert sent.")
             else:
                 logging.info(f"Normal operation - CPU: {cpu:.3f}, Memory: {memory:.0f} bytes")
             
