@@ -281,11 +281,10 @@ def main_anomaly_loop():
             # 3. Log the prediction
             log_prediction(cpu, memory, message)
             
-            # 4. Send alert if anomaly detected
+            # 4. Send alert if anomaly detected by ML model (no hardcoded thresholds)
             if is_anomaly:
                 cpu_percent = (cpu * 100) if cpu <= 1 else cpu
                 memory_mb = memory / (1024 * 1024)
-                
                 alert_msg = (
                     f"🚨 AI Anomaly Detected\n"
                     f"CPU: {cpu_percent:.1f}% | Mem: {memory_mb:.1f}MB\n"
