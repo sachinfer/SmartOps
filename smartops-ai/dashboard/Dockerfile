@@ -1,17 +1,10 @@
-# Stage 1: Build
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package.json package-lock.json* yarn.lock* ./
-RUN npm install
-COPY . .
-RUN npm run build
+FROM python:3.10-slim
 
-# Stage 2: Serve
-FROM node:18-alpine AS runner
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json ./
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 4173
-CMD ["npx", "vite", "preview", "--host", "0.0.0.0", "--port", "4173"] 
+COPY streamlit_app.py .
+
+EXPOSE 8501
+CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"] 
