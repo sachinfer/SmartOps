@@ -204,3 +204,8 @@ SmartOps now supports real-time monitoring of application logs directly from Kub
 - [ ] Add user authentication to dashboard (optional)
 - [ ] Clean up and optimize Kubernetes manifests
 - [ ] Add more documentation and usage examples
+
+Next Steps (Optional)
+Tune thresholds or model sensitivity as needed for your environment.
+Add more “bad” data over time to improve the model.
+Use this workflow for real incident response and root cause analysis
