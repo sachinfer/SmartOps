@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 NAMESPACE = os.getenv("SMARTOPS_NAMESPACE", "smartops")
 TARGET_POD_LABEL = "app=smartops-app"
-PREDICT_URL = "http://localhost:8000/predict"
+PREDICT_URL = "http://34.46.130.148/predict"
 FETCH_INTERVAL_SECONDS = 60  # 1 min
 
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
