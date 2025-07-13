@@ -84,7 +84,13 @@ else:
 
     # Table of recent predictions
     st.subheader("🕒 Recent Predictions")
-    show_df = filtered_df[['timestamp', 'cpu', 'memory', 'prediction']].copy()
+    # Add pod_name and labels columns if present
+    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+    if 'pod_name' in filtered_df.columns:
+        display_cols.append('pod_name')
+    if 'labels' in filtered_df.columns:
+        display_cols.append('labels')
+    show_df = filtered_df[display_cols].copy()
     show_df = show_df.sort_values('timestamp', ascending=False).head(20)
     def rec_action(row):
         pred = row['prediction']
@@ -109,7 +115,9 @@ else:
         'timestamp': 'Timestamp',
         'cpu': 'CPU Usage',
         'memory': 'Memory Usage',
-        'prediction': 'Prediction'
+        'prediction': 'Prediction',
+        'pod_name': 'Pod Name',
+        'labels': 'Labels'
     })
     st.dataframe(show_df, use_container_width=True)
 

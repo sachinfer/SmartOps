@@ -106,7 +106,7 @@ def get_all_pod_metrics():
         logging.error(f"Error fetching pod metrics: {e}")
     return metrics_list
 
-def log_prediction(cpu, memory, result):
+def log_prediction(cpu, memory, result, pod_name=None, labels=None):
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
         cursor = conn.cursor()
@@ -116,11 +116,15 @@ def log_prediction(cpu, memory, result):
                 timestamp TEXT,
                 cpu REAL,
                 memory REAL,
-                prediction TEXT
+                prediction TEXT,
+                pod_name TEXT,
+                labels TEXT
             )
         ''')
-        cursor.execute("INSERT INTO anomalies (timestamp, cpu, memory, prediction) VALUES (?, ?, ?, ?)",
-                       (datetime.utcnow().isoformat(), cpu, memory, result))
+        cursor.execute(
+            "INSERT INTO anomalies (timestamp, cpu, memory, prediction, pod_name, labels) VALUES (?, ?, ?, ?, ?, ?)",
+            (datetime.utcnow().isoformat(), cpu, memory, result, pod_name, str(labels))
+        )
         conn.commit()
         conn.close()
     except Exception as e:
@@ -308,7 +312,7 @@ def main_anomaly_loop():
                     logging.error(f"Failed to call ML API: {e}")
                     continue
                 # 3. Log the prediction
-                log_prediction(cpu, memory, message)
+                log_prediction(cpu, memory, message, pod_name, labels)
                 # 4. Hybrid approach: alert only if ML says anomaly AND outside normal band
                 if is_anomaly:
                     cpu_percent = (cpu * 100) if cpu <= 1 else cpu
