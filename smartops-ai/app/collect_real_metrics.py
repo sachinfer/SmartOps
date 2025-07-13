@@ -3,11 +3,14 @@ import csv
 from datetime import datetime
 import sys
 
-# Import get_pod_metrics from anomaly_loop.py
+# Import get_pod_metrics and load_kube_config_smart from anomaly_loop.py
 sys.path.append('.')
-from anomaly_loop import get_pod_metrics
+from anomaly_loop import get_pod_metrics, load_kube_config_smart
 
 output_file = "real_metrics.csv"
+
+# Load Kubernetes config smartly
+load_kube_config_smart()
 
 with open(output_file, "w", newline="") as csvfile:
     writer = csv.writer(csvfile)
