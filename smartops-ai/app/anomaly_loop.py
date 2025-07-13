@@ -315,7 +315,8 @@ def main_anomaly_loop():
                 log_prediction(cpu, memory, message, pod_name, labels)
                 # 4. Hybrid approach: alert only if ML says anomaly AND outside normal band
                 if is_anomaly:
-                    cpu_percent = (cpu * 100) if cpu <= 1 else cpu
+                    # Fix: Always multiply by 100 to get percent
+                    cpu_percent = cpu * 100
                     memory_mb = memory / (1024 * 1024)
                     # Alert only if outside normal band
                     if cpu_percent > 50 or memory_mb > 500:
