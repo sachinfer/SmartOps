@@ -22,4 +22,4 @@ with open(output_file, "w", newline="") as csvfile:
             print(f"[{i+1}/100] Logged: CPU={metrics['cpu']}, Mem={metrics['memory']}")
         else:
             print(f"[{i+1}/100] Failed to fetch metrics.")
-        time.sleep(60)  # Wait 60 seconds before next sample 
+        time.sleep(5)  # Wait 5 seconds before next sample 
