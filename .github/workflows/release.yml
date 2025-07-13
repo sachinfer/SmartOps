@@ -1,91 +1,91 @@
-name: Release to SmartOps GKE
+# name: Release to SmartOps GKE
 
-on:
-  workflow_run:
-    workflows: ["Build SmartOps Docker Images"]
-    types:
-      - completed
+# on:
+#   workflow_run:
+#     workflows: ["Build SmartOps Docker Images"]
+#     types:
+#       - completed
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    env:
-      NAMESPACE: smartops
+# jobs:
+#   release:
+#     runs-on: ubuntu-latest
+#     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+#     env:
+#       NAMESPACE: smartops
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
 
-      - name: Download Artifact - Image Tags
-        uses: actions/download-artifact@v4
-        with:
-          name: image-tags
+#       - name: Download Artifact - Image Tags
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: image-tags
 
-      - name: Load Image Tags
-        run: |
-          set -a
-          source tags.env
-          set +a
+#       - name: Load Image Tags
+#         run: |
+#           set -a
+#           source tags.env
+#           set +a
 
-      - name: Notify Telegram - Deployment Started
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="🚀 *Deployment to \`${{ env.NAMESPACE }}\` started with latest image tags!*" \
-            -d parse_mode=Markdown
+#       - name: Notify Telegram - Deployment Started
+#         run: |
+#           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+#             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+#             -d text="🚀 *Deployment to \`${{ env.NAMESPACE }}\` started with latest image tags!*" \
+#             -d parse_mode=Markdown
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+#       - name: Authenticate to Google Cloud
+#         uses: google-github-actions/auth@v2
+#         with:
+#           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Set up gcloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: "gke-gcloud-auth-plugin"
+#       - name: Set up gcloud SDK
+#         uses: google-github-actions/setup-gcloud@v1
+#         with:
+#           project_id: ${{ secrets.GCP_PROJECT_ID }}
+#           install_components: "gke-gcloud-auth-plugin"
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0'
+#       - name: Set up kubectl
+#         uses: azure/setup-kubectl@v3
+#         with:
+#           version: 'v1.28.0'
 
-      - name: Configure Kubeconfig
-        run: |
-          gcloud container clusters get-credentials smartops-cluster \
-            --zone us-central1-a \
-            --project ${{ secrets.GCP_PROJECT_ID }}
+#       - name: Configure Kubeconfig
+#         run: |
+#           gcloud container clusters get-credentials smartops-cluster \
+#             --zone us-central1-a \
+#             --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Deploy to GKE
-        run: |
-          kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
+#       - name: Deploy to GKE
+#         run: |
+#           kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
-          kubectl apply -f k8s/deployment.yaml -n $NAMESPACE
-          kubectl apply -f k8s/service.yaml -n $NAMESPACE
-          kubectl set image deployment/smartops-app smartops-app=$APP_TAG -n $NAMESPACE
+#           kubectl apply -f k8s/deployment.yaml -n $NAMESPACE
+#           kubectl apply -f k8s/service.yaml -n $NAMESPACE
+#           kubectl set image deployment/smartops-app smartops-app=$APP_TAG -n $NAMESPACE
 
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n $NAMESPACE
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n $NAMESPACE
-          kubectl set image deployment/smartops-anomaly-deployment fastapi=$ANOMALY_TAG anomaly-loop=$ANOMALY_TAG -n $NAMESPACE
+#           kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n $NAMESPACE
+#           kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n $NAMESPACE
+#           kubectl set image deployment/smartops-anomaly-deployment fastapi=$ANOMALY_TAG anomaly-loop=$ANOMALY_TAG -n $NAMESPACE
 
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n $NAMESPACE
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n $NAMESPACE
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n $NAMESPACE
-          kubectl set image deployment/smartops-dashboard dashboard=$DASHBOARD_TAG -n $NAMESPACE
+#           kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n $NAMESPACE
+#           kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n $NAMESPACE
+#           kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n $NAMESPACE
+#           kubectl set image deployment/smartops-dashboard dashboard=$DASHBOARD_TAG -n $NAMESPACE
 
-      - name: Notify Telegram - Deployment Success
-        if: success()
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="✅ *Deployment to \`${{ env.NAMESPACE }}\` completed successfully!*" \
-            -d parse_mode=Markdown
+#       - name: Notify Telegram - Deployment Success
+#         if: success()
+#         run: |
+#           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+#             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+#             -d text="✅ *Deployment to \`${{ env.NAMESPACE }}\` completed successfully!*" \
+#             -d parse_mode=Markdown
 
-      - name: Notify Telegram - Deployment Failed
-        if: failure()
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="❌ *Deployment to \`${{ env.NAMESPACE }}\` failed!*" \
-            -d parse_mode=Markdown
+#       - name: Notify Telegram - Deployment Failed
+#         if: failure()
+#         run: |
+#           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+#             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+#             -d text="❌ *Deployment to \`${{ env.NAMESPACE }}\` failed!*" \
+#             -d parse_mode=Markdown

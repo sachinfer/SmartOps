@@ -1,130 +1,130 @@
-# name: Build and Deploy SmartOps App & Anomaly Service
+name: Build and Deploy SmartOps App & Anomaly Service
 
-# on:
-#   push:
-#     branches:
-#       - main
-#       - gcp
-#       - gcp2
-#       - alerting-logic
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - main
+      - gcp
+      - gcp2
+      - alerting-logic
+  workflow_dispatch:
 
-# jobs:
-#   build-and-deploy:
-#     runs-on: ubuntu-latest
-#     environment: dev
-#     env:
-#       NAMESPACE: smartops
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      NAMESPACE: smartops
 
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-#       - name: Notify Telegram - Deployment Started
-#         run: |
-#           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-#             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-#             -d text="🚀 *Production deployment started in namespace \`${{ env.NAMESPACE }}\`!*" \
-#             -d parse_mode=Markdown
+      - name: Notify Telegram - Deployment Started
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="🚀 *Production deployment started in namespace \`${{ env.NAMESPACE }}\`!*" \
+            -d parse_mode=Markdown
 
-#       - name: Authenticate to Google Cloud
-#         uses: google-github-actions/auth@v2
-#         with:
-#           credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-#       - name: Set up gcloud SDK
-#         uses: google-github-actions/setup-gcloud@v1
-#         with:
-#           project_id: ${{ secrets.GCP_PROJECT_ID }}
-#           install_components: "gke-gcloud-auth-plugin"
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: "gke-gcloud-auth-plugin"
 
-#       - name: Authenticate Docker to Artifact Registry
-#         run: |
-#           gcloud auth configure-docker us-docker.pkg.dev
+      - name: Authenticate Docker to Artifact Registry
+        run: |
+          gcloud auth configure-docker us-docker.pkg.dev
 
-#       - name: Generate Image Tags
-#         run: |
-#           echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-#           echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
-#           echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
-#           echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
+      - name: Generate Image Tags
+        run: |
+          echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-#       - name: Build & Push App Image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: .
-#           push: true
-#           tags: |
-#             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
-#             ${{ env.APP_TAG }}
+      - name: Build & Push App Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
+            ${{ env.APP_TAG }}
 
-#       - name: Build & Push Anomaly Service Image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./smartops-ai
-#           push: true
-#           tags: |
-#             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
-#             ${{ env.ANOMALY_TAG }}
+      - name: Build & Push Anomaly Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./smartops-ai
+          push: true
+          tags: |
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
+            ${{ env.ANOMALY_TAG }}
 
-#       - name: Build & Push Dashboard Image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./smartops-ai/dashboard
-#           file: ./smartops-ai/dashboard/Dockerfile
-#           push: true
-#           tags: |
-#             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
-#             ${{ env.DASHBOARD_TAG }}
+      - name: Build & Push Dashboard Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./smartops-ai/dashboard
+          file: ./smartops-ai/dashboard/Dockerfile
+          push: true
+          tags: |
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
+            ${{ env.DASHBOARD_TAG }}
 
-#       - name: Set up kubectl
-#         uses: azure/setup-kubectl@v3
-#         with:
-#           version: 'v1.28.0'
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
 
-#       - name: Configure Kubeconfig
-#         run: |
-#           gcloud container clusters get-credentials smartops-cluster \
-#             --zone us-central1-a \
-#             --project ${{ secrets.GCP_PROJECT_ID }}
+      - name: Configure Kubeconfig
+        run: |
+          gcloud container clusters get-credentials smartops-cluster \
+            --zone us-central1-a \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
-#       - name: Deploy to GKE
-#         run: |
-#           kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
+      - name: Deploy to GKE
+        run: |
+          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
 
-#           # Deploy Main App
-#           kubectl apply -f k8s/deployment.yaml -n ${{ env.NAMESPACE }}
-#           kubectl apply -f k8s/service.yaml -n ${{ env.NAMESPACE }}
-#           kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n ${{ env.NAMESPACE }}
+          # Deploy Main App
+          kubectl apply -f k8s/deployment.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f k8s/service.yaml -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n ${{ env.NAMESPACE }}
 
-#           # Deploy Anomaly Service
-#           kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n ${{ env.NAMESPACE }}
-#           kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n ${{ env.NAMESPACE }}
-#           kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n ${{ env.NAMESPACE }}
+          # Deploy Anomaly Service
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n ${{ env.NAMESPACE }}
 
-#           # Deploy Dashboard Service
-#           kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n ${{ env.NAMESPACE }}
-#           kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n ${{ env.NAMESPACE }}
-#           kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n ${{ env.NAMESPACE }}
-#           kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n ${{ env.NAMESPACE }}
+          # Deploy Dashboard Service
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n ${{ env.NAMESPACE }}
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n ${{ env.NAMESPACE }}
 
-#       - name: Notify Telegram - Deployment Success
-#         if: success()
-#         run: |
-#           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-#             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-#             -d text="✅ *Production deployment completed successfully in namespace \`${{ env.NAMESPACE }}\`!*" \
-#             -d parse_mode=Markdown
+      - name: Notify Telegram - Deployment Success
+        if: success()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="✅ *Production deployment completed successfully in namespace \`${{ env.NAMESPACE }}\`!*" \
+            -d parse_mode=Markdown
 
-#       - name: Notify Telegram - Deployment Failed
-#         if: failure()
-#         run: |
-#           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-#             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-#             -d text="❌ *Production deployment failed in namespace \`${{ env.NAMESPACE }}\`!*" \
-#             -d parse_mode=Markdown
-#       # - name: Force Restart Anomaly Deployment (Hotfix)
-#       #   run: |
-#       #     kubectl rollout restart deployment smartops-anomaly-deployment -n smartops
-#       #     kubectl rollout status deployment smartops-anomaly-deployment -n smartops
-#       #     kubectl get pods -n smartops -l app=smartops-anomaly
+      - name: Notify Telegram - Deployment Failed
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="❌ *Production deployment failed in namespace \`${{ env.NAMESPACE }}\`!*" \
+            -d parse_mode=Markdown
+      # - name: Force Restart Anomaly Deployment (Hotfix)
+      #   run: |
+      #     kubectl rollout restart deployment smartops-anomaly-deployment -n smartops
+      #     kubectl rollout status deployment smartops-anomaly-deployment -n smartops
+      #     kubectl get pods -n smartops -l app=smartops-anomaly
