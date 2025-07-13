@@ -107,6 +107,7 @@ def get_all_pod_metrics():
     return metrics_list
 
 def log_prediction(cpu, memory, result, pod_name=None, labels=None):
+    print(f"LOGGING: cpu={cpu}, memory={memory}, result={result}, pod_name={pod_name}, labels={labels}")
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
         cursor = conn.cursor()
@@ -127,8 +128,9 @@ def log_prediction(cpu, memory, result, pod_name=None, labels=None):
         )
         conn.commit()
         conn.close()
+        print("LOGGING: Prediction logged successfully.")
     except Exception as e:
-        print(f"Failed to log prediction: {e}")
+        print(f"LOGGING ERROR: Failed to log prediction: {e}")
 
 def send_telegram_alert(message, cpu=None, memory=None, details=None, namespace=None, raw=False):
     if raw:
