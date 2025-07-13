@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: smartops-anomaly
+      annotations:
+        grafana.com/metrics: "true"
+        grafana.com/logs: "true"
     spec:
       serviceAccountName: anomaly-metrics-reader  # ✅ Enable metrics access
       containers:
