@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_PATH = "smartops-ai/dashboard/data/data.db"
+DB_PATH = "data.db"
 
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
