@@ -30,6 +30,7 @@ spec:
               mountPath: /app/dashboard/data
         - name: anomaly-loop
           image: gcr.io/icbt-465109/smartops-anomaly:latest  # ← Use the same image
+          imagePullPolicy: Always
           command: ["python", "app/anomaly_loop.py"]
           env:
             - name: MY_POD_NAMESPACE
