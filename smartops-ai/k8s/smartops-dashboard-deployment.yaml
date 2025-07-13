@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: smartops-dashboard
+      annotations:
+        grafana.com/metrics: "true"
+        grafana.com/logs: "true"
     spec:
       containers:
       - name: dashboard
