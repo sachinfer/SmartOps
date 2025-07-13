@@ -27,6 +27,7 @@ def get_pod_logs(namespace, pod_name, container_name, tail_lines=100):
         print(f"Error fetching pod logs: {e}")
         return []
 
+print('anomaly_loop.py has started running')
 while True:
     # Simulated metrics (replace with real metrics fetch if available)
     cpu = 91.5
