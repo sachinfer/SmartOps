@@ -13,18 +13,18 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment: dev
+    env:
+      NAMESPACE: smartops
 
-    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-#added new telegram
       - name: Notify Telegram - Deployment Started
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="🚀 *Production deployment started in namespace `smartops`!*" \
+            -d text="🚀 *Production deployment started in namespace \`${{ env.NAMESPACE }}\`!*" \
             -d parse_mode=Markdown
 
       - name: Authenticate to Google Cloud
@@ -88,42 +88,32 @@ jobs:
             --zone us-central1-a \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
-      # - name: Notify Telegram - Deployment Started
-      #   run: |
-      #     curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-      #       -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-      #       -d text="🚀 *Production deployment started in namespace `smartops`!*" \
-      #       -d parse_mode=Markdown
-
       - name: Deploy to GKE
         run: |
-          kubectl get ns smartops || kubectl create ns smartops
-
-          # # Deploy ServiceAccount and RBAC for Anomaly Service
-          # kubectl apply -f smartops-ai/k8s/anomaly-metrics-reader.yaml -n smartops
+          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
 
           # Deploy Main App
-          kubectl apply -f k8s/deployment.yaml -n smartops
-          kubectl apply -f k8s/service.yaml -n smartops
-          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops
+          kubectl apply -f k8s/deployment.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f k8s/service.yaml -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n ${{ env.NAMESPACE }}
 
           # Deploy Anomaly Service
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops
-          kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n smartops
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n ${{ env.NAMESPACE }}
 
           # Deploy Dashboard Service
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops
-          kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n ${{ env.NAMESPACE }}
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n ${{ env.NAMESPACE }}
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n ${{ env.NAMESPACE }}
 
       - name: Notify Telegram - Deployment Success
         if: success()
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="✅ *Production deployment completed successfully in namespace `smartops`!*" \
+            -d text="✅ *Production deployment completed successfully in namespace \`${{ env.NAMESPACE }}\`!*" \
             -d parse_mode=Markdown
 
       - name: Notify Telegram - Deployment Failed
@@ -131,9 +121,8 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="❌ *Production deployment failed in namespace `smartops`!*" \
+            -d text="❌ *Production deployment failed in namespace \`${{ env.NAMESPACE }}\`!*" \
             -d parse_mode=Markdown
-
       # - name: Force Restart Anomaly Deployment (Hotfix)
       #   run: |
       #     kubectl rollout restart deployment smartops-anomaly-deployment -n smartops

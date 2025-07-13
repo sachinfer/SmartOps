@@ -44,8 +44,13 @@ while True:
 
     # 2. Non-200 HTTP Logs (read real logs from pod)
     logs = get_pod_logs(NAMESPACE, POD_NAME, CONTAINER_NAME, tail_lines=100)
+    print("Fetched logs:")
+    for line in logs:
+        print(line)
     non_200 = detect_non_200_logs(logs)
+    print("Non-200 detected:")
     for line in non_200:
+        print(line)
         send_alert(f"⚠️ *Non-200 Log Detected:*\n`{line}`")
 
     # 3. Pod Health Check
