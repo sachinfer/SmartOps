@@ -12,7 +12,8 @@ apps_v1 = client.AppsV1Api()
 # Telegram setup
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
 TELEGRAM_CHAT_ID = "-1002761935159"
-STATUS_FILE = "pod_status.json"
+STATUS_FILE = "monitor_status.json"
+DASHBOARD_URL = "http://34.31.86.225"
 
 def send_telegram_alert(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -39,6 +40,8 @@ def save_status(status_dict):
         json.dump(status_dict, f)
 
 def check_deployments(namespace="smartops"):
+    last_status = load_status()
+    current_status = {}
     try:
         deployments = apps_v1.list_namespaced_deployment(namespace=namespace)
         pods = v1.list_namespaced_pod(namespace=namespace)
@@ -47,9 +50,6 @@ def check_deployments(namespace="smartops"):
             deploy_name = deploy.metadata.name
             expected_replicas = deploy.spec.replicas
             selector = deploy.spec.selector.match_labels
-            # Build a label selector string
-            label_selector = ",".join([f"{k}={v}" for k, v in selector.items()])
-            # Count running pods matching the selector
             running_pods = [
                 pod for pod in pod_list
                 if pod.status.phase == "Running" and all(
@@ -57,12 +57,23 @@ def check_deployments(namespace="smartops"):
                 )
             ]
             running_count = len(running_pods)
-            if running_count < expected_replicas:
+            is_unhealthy = running_count < expected_replicas
+            last_state = last_status.get(deploy_name, "healthy")
+            current_state = "unhealthy" if is_unhealthy else "healthy"
+            # Only alert on state change
+            if is_unhealthy and last_state != "unhealthy":
                 send_telegram_alert(
-                    f"🚨 *ALERT*: Deployment `{deploy_name}` in namespace `{namespace}` has *{running_count}/{expected_replicas}* running pods!"
+                    f"🚨 *ALERT*: Deployment `{deploy_name}` in namespace `{namespace}` has *{running_count}/{expected_replicas}* running pods!\n"
+                    f"[Open Dashboard]({DASHBOARD_URL}/?namespace={namespace}&deployment={deploy_name})"
                 )
-            else:
-                print(f"Deployment {deploy_name}: {running_count}/{expected_replicas} pods running (OK).")
+            elif not is_unhealthy and last_state == "unhealthy":
+                send_telegram_alert(
+                    f"🟢 *RECOVERY*: Deployment `{deploy_name}` in namespace `{namespace}` is healthy again with *{running_count}/{expected_replicas}* running pods.\n"
+                    f"[Open Dashboard]({DASHBOARD_URL}/?namespace={namespace}&deployment={deploy_name})"
+                )
+            print(f"Deployment {deploy_name}: {running_count}/{expected_replicas} pods running ({'UNHEALTHY' if is_unhealthy else 'OK'}).")
+            current_status[deploy_name] = current_state
+        save_status(current_status)
     except Exception as e:
         send_telegram_alert(f"❌ *Error checking deployments in namespace {namespace}*: {e}")
 
