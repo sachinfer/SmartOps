@@ -5,7 +5,7 @@ import requests
 import time
 
 # Kubernetes setup
-config.load_kube_config()  # Use config.load_incluster_config() if running inside the cluster
+config.load_incluster_config()
 v1 = client.CoreV1Api()
 apps_v1 = client.AppsV1Api()
 
