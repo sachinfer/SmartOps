@@ -141,9 +141,12 @@ else:
 # Deployment events summary
 st.header("Deployment Workflow Events")
 try:
-    events = pd.read_csv("src/deployment_events.csv")
+    db_path = "data/deployment_events.db"
+    conn = sqlite3.connect(db_path)
+    events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
+    conn.close()
     if not events.empty:
-        latest = events.iloc[-1]
+        latest = events.iloc[0]
         if latest["status"] == "success":
             st.success(f"✅ Deployment Success at {latest['timestamp']}: {latest['message']}")
         elif latest["status"] == "failed":
@@ -156,6 +159,6 @@ try:
     st.metric("Deployments Successful", (events["status"] == "success").sum())
     st.metric("Deployments Failed", (events["status"] == "failed").sum())
     st.write("### Recent Deployment Events")
-    st.dataframe(events.tail(10))
+    st.dataframe(events.head(10))
 except Exception as e:
     st.warning(f"Could not load deployment events: {e}") 

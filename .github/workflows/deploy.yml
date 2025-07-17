@@ -106,9 +106,18 @@ jobs:
         run: |
           kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies for event logging
+        run: |
+          pip install -r smartops-ai/dashboard/requirements.txt
+
       - name: Log Deployment Started
         run: |
-          echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),started,Deployment started" >> smartops-ai/dashboard/src/deployment_events.csv
+          python smartops-ai/dashboard/log_deployment_event.py --event started --message "Deployment started" --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
       # - name: Notify Telegram - Deployment Started
       #   run: |
@@ -143,7 +152,7 @@ jobs:
       - name: Notify Telegram - Deployment Success
         if: success()
         run: |
-          echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),success,Deployment completed successfully" >> smartops-ai/dashboard/src/deployment_events.csv
+          python smartops-ai/dashboard/log_deployment_event.py --event success --message "Deployment completed successfully" --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="✅ *Production deployment completed successfully in namespace `smartops`!*" \
@@ -152,7 +161,7 @@ jobs:
       - name: Notify Telegram - Deployment Failed
         if: failure()
         run: |
-          echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),failed,Deployment failed" >> smartops-ai/dashboard/src/deployment_events.csv
+          python smartops-ai/dashboard/log_deployment_event.py --event failed --message "Deployment failed" --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="❌ *Production deployment failed in namespace `smartops`!*" \
