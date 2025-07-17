@@ -172,6 +172,30 @@ SmartOps now supports real-time monitoring of application logs directly from Kub
 
 ---
 
+## 🛠️ Troubleshooting & Recent Fixes
+
+### Issue: Anomalies Not Appearing in Dashboard/Database
+- **Symptom:** Telegram alerts are sent for actionable anomalies, but no rows appear in the `anomalies` table in the shared SQLite database (even after copying from the correct pod/container).
+- **Root Cause:** The anomaly-loop code was not logging errors or debug info for database writes, so silent failures (e.g., permissions, schema, or transaction issues) were not visible.
+- **Fix:**
+  - Added debug logging to the `log_prediction` function in `anomaly_loop.py`.
+  - Now, every attempt to log a prediction prints before and after the DB insert, and logs any error encountered.
+  - This will help pinpoint if/why database writes are failing.
+- **Next Steps:**
+  1. Redeploy the anomaly-loop pod with the new debug logging.
+  2. Trigger a new anomaly (e.g., with a stress-test pod).
+  3. Check the anomaly-loop logs for `LOGGING:` or `LOGGING ERROR:` messages.
+  4. Copy the database file and check for new rows.
+  5. Once confirmed, remove or reduce debug logging for production.
+
+### Status Update
+- **Anomaly detection, alerting, and dashboard are all functional.**
+- **Database logging of anomalies is under active investigation/fix.**
+- **Volume mounts and database paths are confirmed correct and shared.**
+- **Debug logging is now in place to ensure all future issues are visible and actionable.**
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
