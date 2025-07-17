@@ -247,7 +247,8 @@ def monitor_k8s_logs(send_alert_func):
 
     # Noise paths to ignore (add more as needed)
     NOISE_PATHS = [
-        "/phpunit/", "/eval-stdin.php", "/vendor/", "/pscan", "/metadatauploader"
+        "/phpunit/", "/eval-stdin.php", "/vendor/", "/pscan", "/metadatauploader",
+        "GET / HTTP/1.1", "GET /index.html HTTP/1.1"
     ]
 
     def is_noise_log(line):
