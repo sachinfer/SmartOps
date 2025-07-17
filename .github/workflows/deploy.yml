@@ -77,6 +77,19 @@ jobs:
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
             ${{ env.DASHBOARD_TAG }}
 
+      - name: Build & Push Monitor Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./smartops-ai/app
+          file: ./smartops-ai/app/Dockerfile.monitor
+          push: true
+          tags: |
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest
+
+      - name: Deploy Monitor CronJob
+        run: |
+          kubectl apply -f smartops-ai/k8s/monitor-cronjob.yaml -n smartops
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
