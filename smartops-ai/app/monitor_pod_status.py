@@ -1,3 +1,5 @@
+import os
+import json
 from kubernetes import client, config
 import requests
 
@@ -8,6 +10,7 @@ v1 = client.CoreV1Api()
 # Telegram setup
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
 TELEGRAM_CHAT_ID = "-1002761935159"
+STATUS_FILE = "pod_status.json"
 
 def send_telegram_alert(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -23,24 +26,44 @@ def send_telegram_alert(message):
     except Exception as e:
         print(f"Telegram alert error: {e}")
 
+def load_status():
+    if os.path.exists(STATUS_FILE):
+        with open(STATUS_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_status(status_dict):
+    with open(STATUS_FILE, "w") as f:
+        json.dump(status_dict, f)
+
 def check_all_pods(namespace="smartops"):
+    last_status = load_status()
+    current_status = {}
     try:
         pods = v1.list_namespaced_pod(namespace=namespace)
-        healthy = True
         for pod in pods.items:
             pod_name = pod.metadata.name
             status = pod.status.phase
             restarts = sum([c.restart_count for c in (pod.status.container_statuses or [])])
-            if status != "Running" or restarts > 0:
-                healthy = False
+            current_status[pod_name] = status
+
+            # Red alert if not running
+            if status != "Running":
                 message = (
                     f"🚨 *ALERT*: Pod `{pod_name}` in namespace `{namespace}` is *{status}* with *{restarts}* restarts!"
                 )
                 send_telegram_alert(message)
-            else:
-                print(f"Pod {pod_name} is healthy.")
-        if healthy:
-            print(f"All pods in namespace '{namespace}' are healthy.")
+
+            # Green alert if pod was not running before and is now running
+            if last_status.get(pod_name) and last_status[pod_name] != "Running" and status == "Running":
+                message = (
+                    f"🟢 *RECOVERY*: Pod `{pod_name}` in namespace `{namespace}` is back to *Running* state!"
+                )
+                send_telegram_alert(message)
+
+            print(f"Pod {pod_name} is {status}.")
+
+        save_status(current_status)
     except Exception as e:
         send_telegram_alert(f"❌ *Error checking pods in namespace {namespace}*: {e}")
 
