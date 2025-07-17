@@ -42,69 +42,69 @@ jobs:
         run: |
           gcloud auth configure-docker us-docker.pkg.dev
 
-      - name: Generate Image Tags
-        run: |
-          echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
+      # - name: Generate Image Tags
+      #   run: |
+      #     echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
+      #     echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+      #     echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
+      #     echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-      - name: Build & Push App Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
-            ${{ env.APP_TAG }}
+      # - name: Build & Push App Image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     push: true
+      #     tags: |
+      #       us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
+      #       ${{ env.APP_TAG }}
 
-      - name: Build & Push Anomaly Service Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./smartops-ai
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
-            ${{ env.ANOMALY_TAG }}
+      # - name: Build & Push Anomaly Service Image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: ./smartops-ai
+      #     push: true
+      #     tags: |
+      #       us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
+      #       ${{ env.ANOMALY_TAG }}
 
-      - name: Build & Push Dashboard Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./smartops-ai/dashboard
-          file: ./smartops-ai/dashboard/Dockerfile
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
-            ${{ env.DASHBOARD_TAG }}
+      # - name: Build & Push Dashboard Image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: ./smartops-ai/dashboard
+      #     file: ./smartops-ai/dashboard/Dockerfile
+      #     push: true
+      #     tags: |
+      #       us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
+      #       ${{ env.DASHBOARD_TAG }}
 
-      - name: Build & Push Monitor Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./smartops-ai/app
-          file: ./smartops-ai/app/Dockerfile.monitor
-          push: true
-          tags: |
-            us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
+      # - name: Build & Push Monitor Image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: ./smartops-ai/app
+      #     file: ./smartops-ai/app/Dockerfile.monitor
+      #     push: true
+      #     tags: |
+      #       us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0'
+      # - name: Set up kubectl
+      #   uses: azure/setup-kubectl@v3
+      #   with:
+      #     version: 'v1.28.0'
 
-      - name: Configure Kubeconfig
-        run: |
-          gcloud container clusters get-credentials smartops-cluster \
-            --zone us-central1-a \
-            --project ${{ secrets.GCP_PROJECT_ID }}
+      # - name: Configure Kubeconfig
+      #   run: |
+      #     gcloud container clusters get-credentials smartops-cluster \
+      #       --zone us-central1-a \
+      #       --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Debug kubectl context
-        run: |
-          kubectl config current-context
-          kubectl get nodes
+      # - name: Debug kubectl context
+      #   run: |
+      #     kubectl config current-context
+      #     kubectl get nodes
 
-      - name: Deploy Monitor Deployment
-        run: |
-          kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops
+      # - name: Deploy Monitor Deployment
+      #   run: |
+      #     kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -115,6 +115,8 @@ jobs:
         run: |
           pip install -r smartops-ai/dashboard/requirements.txt
 
+      - name: Ensure data directory exists
+        run: mkdir -p smartops-ai/dashboard/data
       - name: Log Deployment Started
         run: |
           python smartops-ai/dashboard/log_deployment_event.py --event started --message "Deployment started" --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
