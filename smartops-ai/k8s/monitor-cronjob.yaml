@@ -11,6 +11,6 @@ spec:
         spec:
           containers:
           - name: monitor
-            image: us-docker.pkg.dev/${GCP_PROJECT_ID}/smartops-repo/smartops-monitor:latest
+            image: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
             command: ["python", "monitor_pod_status.py"]
           restartPolicy: OnFailure 
