@@ -41,8 +41,10 @@ def check_all_pods(namespace="smartops"):
     current_status = {}
     try:
         pods = v1.list_namespaced_pod(namespace=namespace)
+        found_pods = set()
         for pod in pods.items:
             pod_name = pod.metadata.name
+            found_pods.add(pod_name)
             status = pod.status.phase
             restarts = sum([c.restart_count for c in (pod.status.container_statuses or [])])
             current_status[pod_name] = status
@@ -62,6 +64,11 @@ def check_all_pods(namespace="smartops"):
                 send_telegram_alert(message)
 
             print(f"Pod {pod_name} is {status}.")
+
+        # Alert for missing pods
+        missing_pods = set(last_status.keys()) - found_pods
+        for missing in missing_pods:
+            send_telegram_alert(f"🚨 *ALERT*: Pod `{missing}` is MISSING from namespace `{namespace}`!")
 
         save_status(current_status)
     except Exception as e:
