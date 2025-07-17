@@ -252,6 +252,13 @@ def monitor_k8s_logs(send_alert_func):
         "/favicon.ico", "/robots.txt", "/satori.ci/opt", "HEAD /"
     ]
 
+    USER_AGENT_KEYWORDS = [
+        "curl", "Postman", "Mozilla", "Chrome", "Safari", "Firefox", "Edge"
+    ]
+
+    def is_real_user_agent(line):
+        return any(ua in line for ua in USER_AGENT_KEYWORDS)
+
     def is_noise_log(line):
         return any(noise in line for noise in NOISE_PATHS)
 
@@ -268,7 +275,7 @@ def monitor_k8s_logs(send_alert_func):
         print(f"[DEBUG] Regex match: {match}")
         if match:
             status = match.group(1)
-            if status != '200' and not is_noise_log(line):
+            if status != '200' and not is_noise_log(line) and is_real_user_agent(line):
                 alert_msg = (
                     f"just now - Status: {status} | Log: {line.strip()}"
                 )
