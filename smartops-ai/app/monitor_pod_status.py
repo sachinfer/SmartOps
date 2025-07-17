@@ -79,5 +79,6 @@ def check_deployments(namespace="smartops"):
 
 if __name__ == "__main__":
     while True:
+        print("Monitor loop running...")
         check_deployments("smartops")
         time.sleep(60)  # Check every 60 seconds 
