@@ -86,15 +86,6 @@ jobs:
           tags: |
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest
 
-      - name: Debug kubectl context
-        run: |
-          kubectl config current-context
-          kubectl get nodes
-
-      - name: Deploy Monitor CronJob
-        run: |
-          kubectl apply -f smartops-ai/k8s/monitor-cronjob.yaml -n smartops --validate=false
-
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -105,6 +96,15 @@ jobs:
           gcloud container clusters get-credentials smartops-cluster \
             --zone us-central1-a \
             --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Debug kubectl context
+        run: |
+          kubectl config current-context
+          kubectl get nodes
+
+      - name: Deploy Monitor CronJob
+        run: |
+          kubectl apply -f smartops-ai/k8s/monitor-cronjob.yaml -n smartops --validate=false
 
       # - name: Notify Telegram - Deployment Started
       #   run: |
