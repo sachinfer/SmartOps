@@ -4,6 +4,22 @@ import sqlite3
 from datetime import datetime
 from typing import Tuple
 
+# Ensure deployment_events table exists
+try:
+    db_path = "data/deployment_events.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS deployment_events (
+            timestamp TEXT,
+            status TEXT,
+            message TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+except Exception as e:
+    st.warning(f"Could not initialize deployment_events table: {e}")
+
 # Optional: Auto-refresh every 60 seconds
 try:
     from streamlit_autorefresh import st_autorefresh
