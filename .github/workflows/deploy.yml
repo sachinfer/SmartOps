@@ -86,6 +86,11 @@ jobs:
           tags: |
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest
 
+      - name: Debug kubectl context
+        run: |
+          kubectl config current-context
+          kubectl get nodes
+
       - name: Deploy Monitor CronJob
         run: |
           kubectl apply -f smartops-ai/k8s/monitor-cronjob.yaml -n smartops --validate=false
