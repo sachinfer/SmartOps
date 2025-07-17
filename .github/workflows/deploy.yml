@@ -84,7 +84,7 @@ jobs:
           file: ./smartops-ai/app/Dockerfile.monitor
           push: true
           tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest
+            us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
