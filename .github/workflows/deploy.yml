@@ -102,9 +102,9 @@ jobs:
           kubectl config current-context
           kubectl get nodes
 
-      - name: Deploy Monitor CronJob
+      - name: Deploy Monitor Deployment
         run: |
-          kubectl apply -f smartops-ai/k8s/monitor-cronjob.yaml -n smartops
+          kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops
 
       - name: Log Deployment Started
         run: |
