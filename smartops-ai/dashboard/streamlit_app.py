@@ -129,4 +129,16 @@ else:
     if anomaly_count == 0:
         st.success("Everything looks good! No anomalies detected in the recent data.")
     else:
-        st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.") 
+        st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.")
+
+# Deployment events summary
+st.header("Deployment Workflow Events")
+try:
+    events = pd.read_csv("src/deployment_events.csv")
+    st.metric("Deployments Started", (events["status"] == "started").sum())
+    st.metric("Deployments Successful", (events["status"] == "success").sum())
+    st.metric("Deployments Failed", (events["status"] == "failed").sum())
+    st.write("### Recent Deployment Events")
+    st.dataframe(events.tail(10))
+except Exception as e:
+    st.warning(f"Could not load deployment events: {e}") 
