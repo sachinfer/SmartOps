@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartops-monitor
+  namespace: smartops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartops-monitor
+  template:
+    metadata:
+      labels:
+        app: smartops-monitor
+    spec:
+      containers:
+      - name: monitor
+        image: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
+        command: ["python", "monitor_pod_status.py"] 

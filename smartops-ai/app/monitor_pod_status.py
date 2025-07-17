@@ -80,4 +80,4 @@ def check_deployments(namespace="smartops"):
 if __name__ == "__main__":
     while True:
         check_deployments("smartops")
-        # No sleep, runs as fast as possible 
+        time.sleep(60)  # Check every 60 seconds 
