@@ -2,10 +2,12 @@ import os
 import json
 from kubernetes import client, config
 import requests
+import time
 
 # Kubernetes setup
 config.load_kube_config()  # Use config.load_incluster_config() if running inside the cluster
 v1 = client.CoreV1Api()
+apps_v1 = client.AppsV1Api()
 
 # Telegram setup
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
@@ -36,43 +38,35 @@ def save_status(status_dict):
     with open(STATUS_FILE, "w") as f:
         json.dump(status_dict, f)
 
-def check_all_pods(namespace="smartops"):
-    last_status = load_status()
-    current_status = {}
+def check_deployments(namespace="smartops"):
     try:
+        deployments = apps_v1.list_namespaced_deployment(namespace=namespace)
         pods = v1.list_namespaced_pod(namespace=namespace)
-        found_pods = set()
-        for pod in pods.items:
-            pod_name = pod.metadata.name
-            found_pods.add(pod_name)
-            status = pod.status.phase
-            restarts = sum([c.restart_count for c in (pod.status.container_statuses or [])])
-            current_status[pod_name] = status
-
-            # Red alert if not running
-            if status != "Running":
-                message = (
-                    f"🚨 *ALERT*: Pod `{pod_name}` in namespace `{namespace}` is *{status}* with *{restarts}* restarts!"
+        pod_list = list(pods.items)
+        for deploy in deployments.items:
+            deploy_name = deploy.metadata.name
+            expected_replicas = deploy.spec.replicas
+            selector = deploy.spec.selector.match_labels
+            # Build a label selector string
+            label_selector = ",".join([f"{k}={v}" for k, v in selector.items()])
+            # Count running pods matching the selector
+            running_pods = [
+                pod for pod in pod_list
+                if pod.status.phase == "Running" and all(
+                    pod.metadata.labels.get(k) == v for k, v in selector.items()
                 )
-                send_telegram_alert(message)
-
-            # Green alert if pod was not running before and is now running
-            if last_status.get(pod_name) and last_status[pod_name] != "Running" and status == "Running":
-                message = (
-                    f"🟢 *RECOVERY*: Pod `{pod_name}` in namespace `{namespace}` is back to *Running* state!"
+            ]
+            running_count = len(running_pods)
+            if running_count < expected_replicas:
+                send_telegram_alert(
+                    f"🚨 *ALERT*: Deployment `{deploy_name}` in namespace `{namespace}` has *{running_count}/{expected_replicas}* running pods!"
                 )
-                send_telegram_alert(message)
-
-            print(f"Pod {pod_name} is {status}.")
-
-        # Alert for missing pods
-        missing_pods = set(last_status.keys()) - found_pods
-        for missing in missing_pods:
-            send_telegram_alert(f"🚨 *ALERT*: Pod `{missing}` is MISSING from namespace `{namespace}`!")
-
-        save_status(current_status)
+            else:
+                print(f"Deployment {deploy_name}: {running_count}/{expected_replicas} pods running (OK).")
     except Exception as e:
-        send_telegram_alert(f"❌ *Error checking pods in namespace {namespace}*: {e}")
+        send_telegram_alert(f"❌ *Error checking deployments in namespace {namespace}*: {e}")
 
 if __name__ == "__main__":
-    check_all_pods("smartops") 
+    while True:
+        check_deployments("smartops")
+        # No sleep, runs as fast as possible 

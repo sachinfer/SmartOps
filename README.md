@@ -196,6 +196,36 @@ SmartOps now supports real-time monitoring of application logs directly from Kub
 
 ---
 
+## 🛡️ Pod Monitoring & Telegram Alerts
+
+A custom Python script (`monitor_pod_status.py`) is provided to monitor all pods in the `smartops` namespace and send real-time alerts to Telegram:
+
+- **Red alert** if any pod is not running or has restarted.
+- **Green (recovery) alert** if a pod transitions from a non-running state to Running.
+- **Red alert** if any previously-seen pod is now missing (deleted or disappeared).
+
+### How It Works
+- The script tracks the last known status of each pod in `pod_status.json`.
+- On each run, it compares the current pod list and statuses to the previous run, sending alerts for failures, recoveries, and missing pods.
+
+### Usage
+1. **Configure your Telegram bot token and chat ID** in the script (already set for SmartOps).
+2. **Run the script manually:**
+   ```sh
+   python smartops-ai/app/monitor_pod_status.py
+   ```
+3. **Schedule the script** for continuous monitoring (e.g., with cron or as a Kubernetes CronJob):
+   ```sh
+   */5 * * * * python /path/to/SmartOps/smartops-ai/app/monitor_pod_status.py
+   ```
+4. **Alerts** will be sent to your configured Telegram group for any pod failures, recoveries, or missing pods in the `smartops` namespace.
+
+### Extending Monitoring
+- To monitor additional namespaces, modify the script to loop over a list of namespaces.
+- To add resource usage or log-based alerts, extend the script with additional checks.
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
