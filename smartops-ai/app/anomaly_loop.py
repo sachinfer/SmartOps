@@ -244,6 +244,15 @@ def monitor_k8s_logs(send_alert_func):
     v1 = client.CoreV1Api()
     w = watch.Watch()
     status_pattern = re.compile(r'\s(\d{3})\s')
+
+    # Noise paths to ignore (add more as needed)
+    NOISE_PATHS = [
+        "/phpunit/", "/eval-stdin.php", "/vendor/", "/pscan", "/metadatauploader"
+    ]
+
+    def is_noise_log(line):
+        return any(noise in line for noise in NOISE_PATHS)
+
     for line in w.stream(v1.read_namespaced_pod_log,
                          name=pod_name,
                          namespace=namespace,
@@ -257,7 +266,7 @@ def monitor_k8s_logs(send_alert_func):
         print(f"[DEBUG] Regex match: {match}")
         if match:
             status = match.group(1)
-            if status != '200':
+            if status != '200' and not is_noise_log(line):
                 alert_msg = (
                     f"just now - Status: {status} | Log: {line.strip()}"
                 )
