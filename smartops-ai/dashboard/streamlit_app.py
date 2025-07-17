@@ -4,6 +4,13 @@ import sqlite3
 from datetime import datetime
 from typing import Tuple
 
+# Optional: Auto-refresh every 60 seconds
+try:
+    from streamlit_autorefresh import st_autorefresh
+    st_autorefresh(interval=60 * 1000)
+except ImportError:
+    pass
+
 st.set_page_config(page_title="SmartOps Dashboard", layout="wide")
 st.title("🔍 SmartOps Anomaly Detection Dashboard")
 
@@ -135,6 +142,16 @@ else:
 st.header("Deployment Workflow Events")
 try:
     events = pd.read_csv("src/deployment_events.csv")
+    if not events.empty:
+        latest = events.iloc[-1]
+        if latest["status"] == "success":
+            st.success(f"✅ Deployment Success at {latest['timestamp']}: {latest['message']}")
+        elif latest["status"] == "failed":
+            st.error(f"❌ Deployment Failed at {latest['timestamp']}: {latest['message']}")
+        elif latest["status"] == "started":
+            st.info(f"🚀 Deployment Started at {latest['timestamp']}: {latest['message']}")
+    else:
+        st.info("No deployment events recorded yet.")
     st.metric("Deployments Started", (events["status"] == "started").sum())
     st.metric("Deployments Successful", (events["status"] == "success").sum())
     st.metric("Deployments Failed", (events["status"] == "failed").sum())
