@@ -226,6 +226,29 @@ A custom Python script (`monitor_pod_status.py`) is provided to monitor all pods
 
 ---
 
+## 🚀 Automated Monitoring CronJob Deployment
+
+The SmartOps GitHub Actions pipeline now automatically builds, pushes, and deploys a Kubernetes CronJob for monitoring your cluster:
+
+- **Location:** `smartops-ai/app/monitor_pod_status.py` (script), `smartops-ai/app/Dockerfile.monitor` (Dockerfile), `smartops-ai/k8s/monitor-cronjob.yaml` (CronJob manifest)
+- **Pipeline Integration:** The pipeline builds the monitor image and applies the CronJob manifest after each deployment.
+- **Schedule:** The CronJob runs every 1 minute (`* * * * *`), checking all Deployments in the `smartops` namespace.
+- **Alerting:**
+  - Alerts if any Deployment has fewer running pods than expected.
+  - Alerts if a Deployment is scaled to zero or pods are missing for more than a minute.
+  - Alerts are sent to your configured Telegram group.
+
+### How It Works
+- If a pod is deleted and not immediately replaced, you will receive an alert within 1 minute.
+- If a pod is deleted and replaced instantly (as with Deployments), no alert is sent unless the number of running pods drops below the desired replica count.
+- The monitoring is continuous and fully automated—no manual intervention required after deployment.
+
+### Customization
+- To change the monitoring interval, edit the `schedule` field in `monitor-cronjob.yaml`.
+- To monitor additional namespaces or add more checks, update the monitoring script and redeploy.
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
