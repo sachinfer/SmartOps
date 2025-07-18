@@ -8,9 +8,11 @@ spec:
   selector:
     app: smartops-dashboard
   ports:
-    - protocol: TCP
+    - name: streamlit
+      protocol: TCP
       port: 80
       targetPort: 8501   # Streamlit
-    - protocol: TCP
+    - name: event-api
+      protocol: TCP
       port: 8000
       targetPort: 8000   # FastAPI event API 
