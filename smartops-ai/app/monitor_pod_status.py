@@ -10,12 +10,27 @@ v1 = client.CoreV1Api()
 apps_v1 = client.AppsV1Api()
 
 # Telegram setup
-TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
+TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fBf5tqjh4c"
 TELEGRAM_CHAT_ID = "-1002761935159"
 STATUS_FILE = "monitor_status.json"
 DASHBOARD_URL = "http://34.31.86.225"
+DASHBOARD_EVENT_API = f"{DASHBOARD_URL}:8000/log_event"
 
-def send_telegram_alert(message):
+# Log event to dashboard API
+def log_dashboard_event(status, message, namespace="smartops"):
+    payload = {
+        "status": status,
+        "message": message,
+        "namespace": namespace
+    }
+    try:
+        resp = requests.post(DASHBOARD_EVENT_API, json=payload, timeout=5)
+        if resp.status_code != 200:
+            print(f"Failed to log dashboard event: {resp.text}")
+    except Exception as e:
+        print(f"Dashboard event log error: {e}")
+
+def send_telegram_alert(message, status="info", namespace="smartops"):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -28,6 +43,8 @@ def send_telegram_alert(message):
             print(f"Failed to send Telegram alert: {resp.text}")
     except Exception as e:
         print(f"Telegram alert error: {e}")
+    # Also log to dashboard
+    log_dashboard_event(status, message, namespace)
 
 def load_status():
     if os.path.exists(STATUS_FILE):
@@ -52,7 +69,7 @@ def check_deployments(namespace="smartops"):
             selector = deploy.spec.selector.match_labels
             running_pods = [
                 pod for pod in pod_list
-                if pod.status.phase == "Running" and all(
+                if pod.status.phase == "Running" and pod.metadata.labels is not None and all(
                     pod.metadata.labels.get(k) == v for k, v in selector.items()
                 )
             ]
@@ -60,22 +77,26 @@ def check_deployments(namespace="smartops"):
             is_unhealthy = running_count < expected_replicas
             last_state = last_status.get(deploy_name, "healthy")
             current_state = "unhealthy" if is_unhealthy else "healthy"
+            dashboard_link = f"[Open Dashboard]({DASHBOARD_URL}/?namespace={namespace}&deployment={deploy_name})"
             # Only alert on state change
             if is_unhealthy and last_state != "unhealthy":
-                send_telegram_alert(
+                msg = (
                     f"🚨 *ALERT*: Deployment `{deploy_name}` in namespace `{namespace}` has *{running_count}/{expected_replicas}* running pods!\n"
-                    f"[Open Dashboard]({DASHBOARD_URL}/?namespace={namespace}&deployment={deploy_name})"
+                    f"{dashboard_link}"
                 )
+                send_telegram_alert(msg, status="unhealthy", namespace=namespace)
             elif not is_unhealthy and last_state == "unhealthy":
-                send_telegram_alert(
+                msg = (
                     f"🟢 *RECOVERY*: Deployment `{deploy_name}` in namespace `{namespace}` is healthy again with *{running_count}/{expected_replicas}* running pods.\n"
-                    f"[Open Dashboard]({DASHBOARD_URL}/?namespace={namespace}&deployment={deploy_name})"
+                    f"{dashboard_link}"
                 )
+                send_telegram_alert(msg, status="healthy", namespace=namespace)
             print(f"Deployment {deploy_name}: {running_count}/{expected_replicas} pods running ({'UNHEALTHY' if is_unhealthy else 'OK'}).")
             current_status[deploy_name] = current_state
         save_status(current_status)
     except Exception as e:
-        send_telegram_alert(f"❌ *Error checking deployments in namespace {namespace}*: {e}")
+        msg = f"❌ *Error checking deployments in namespace {namespace}*: {e}\n[Open Dashboard]({DASHBOARD_URL}/?namespace={namespace})"
+        send_telegram_alert(msg, status="error", namespace=namespace)
 
 if __name__ == "__main__":
     while True:
