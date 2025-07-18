@@ -161,6 +161,11 @@ try:
     conn = sqlite3.connect(db_path)
     events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
     conn.close()
+    # Add namespace filter for deployment events
+    ns_options = ['all'] + sorted([ns for ns in events['namespace'].dropna().unique() if ns]) if 'namespace' in events.columns else ['all']
+    selected_ns = st.selectbox('Select Deployment Namespace', ns_options, index=0, key='deploy_ns')
+    if selected_ns != 'all' and 'namespace' in events.columns:
+        events = events[events['namespace'] == selected_ns]
     if not events.empty:
         latest = events.iloc[0]
         if latest["status"] == "success":
