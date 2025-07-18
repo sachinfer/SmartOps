@@ -81,10 +81,12 @@ def get_all_pod_metrics():
         load_kube_config_smart()
         v1 = client.CoreV1Api()
         metrics = client.CustomObjectsApi()
-        pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=TARGET_POD_LABEL)
+        # Remove label_selector to monitor all pods
+        pods = v1.list_namespaced_pod(namespace=NAMESPACE)
         for pod in pods.items:
             pod_name = pod.metadata.name
             labels = pod.metadata.labels or {}
+            logging.info(f"Checking pod for anomaly: {pod_name}, labels: {labels}")
             m = metrics.get_namespaced_custom_object(
                 group="metrics.k8s.io",
                 version="v1beta1",
