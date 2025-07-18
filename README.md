@@ -249,6 +249,51 @@ The SmartOps GitHub Actions pipeline now automatically builds, pushes, and deplo
 
 ---
 
+## 🏷️ Namespace-Aware Deployment Event Logging & Filtering
+
+SmartOps now supports namespace-aware deployment event logging and dashboard filtering.
+
+### How It Works
+- Every deployment event (started, success, failed) is logged with a `namespace` field (default: `smartops`).
+- The dashboard UI allows you to filter deployment events by namespace, making it easy to track deployments for specific environments or teams.
+
+### How to Use
+
+#### 1. **API Usage**
+To log a deployment event with a namespace:
+```bash
+curl -X POST "http://<dashboard-service-ip>:8000/log_event" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}'
+```
+
+#### 2. **Workflow Integration**
+In your GitHub Actions workflow, include the `namespace` field in all event POSTs:
+```yaml
+- name: Log Deployment Started (to dashboard API)
+  run: |
+    curl -X POST "http://<dashboard-service-ip>:8000/log_event" \
+      -H "Content-Type: application/json" \
+      -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}'
+```
+
+#### 3. **Dashboard Filtering**
+- The dashboard now features a **Select Deployment Namespace** dropdown above the deployment events table.
+- Choose a namespace to filter events, or select "all" to view all deployment events.
+
+#### 4. **Default Namespace**
+- If not specified, the namespace defaults to `smartops`.
+- You can use any string to represent your environment, team, or project.
+
+#### 5. **Schema**
+The `deployment_events` table now includes:
+- `timestamp` (IST)
+- `status` (started, success, failed, etc.)
+- `message`
+- `namespace`
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
