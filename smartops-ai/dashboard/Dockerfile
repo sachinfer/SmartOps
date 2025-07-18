@@ -4,12 +4,14 @@ WORKDIR /app
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y supervisor
 
 COPY . ./dashboard/
 WORKDIR /app/dashboard
 
-EXPOSE 8501
+COPY supervisord.conf ./
 
-# To run the event API (for dev):
-# CMD ["uvicorn", "event_api:app", "--host", "0.0.0.0", "--port", "8000"]
-CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"] 
+EXPOSE 8501
+EXPOSE 8000
+
+CMD ["/usr/bin/supervisord", "-c", "/app/dashboard/supervisord.conf"] 
