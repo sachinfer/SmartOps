@@ -105,9 +105,8 @@ else:
     status, advice, banner_type, latest_action = get_status_and_advice(latest['prediction'], cpu_val, mem_val)
     st.markdown(f"<div style='padding:1em; border-radius:8px; background-color:{'#d4edda' if banner_type=='success' else '#f8d7da'}; color:{'#155724' if banner_type=='success' else '#721c24'}; font-size:1.2em; margin-bottom:1em;'><b>{status}</b><br>{advice}</div>", unsafe_allow_html=True)
 
-    # Table of recent predictions
-    st.subheader("🕒 Recent Predictions")
-    # Add pod_name and labels columns if present
+    # Table of recent predictions (anomalies)
+    st.subheader("🕒 Recent Anomalies")
     display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
     if 'pod_name' in filtered_df.columns:
         display_cols.append('pod_name')
@@ -115,33 +114,6 @@ else:
         display_cols.append('labels')
     show_df = filtered_df[display_cols].copy()
     show_df = show_df.sort_values('timestamp', ascending=False).head(20)
-    def rec_action(row):
-        pred = row['prediction']
-        try:
-            cpu_val = float(row['cpu'])
-        except:
-            cpu_val = 0.0
-        try:
-            mem_val = float(row['memory'])
-        except:
-            mem_val = 0.0
-        if pred.lower() == "normal":
-            return "No action needed"
-        elif cpu_val > 0.8:
-            return "High CPU: Consider scaling CPU"
-        elif mem_val > 0.8 * 1024*1024*1024:
-            return "High Memory: Consider scaling memory"
-        else:
-            return "Check logs and recent deployments"
-    show_df['Recommended Action'] = show_df.apply(rec_action, axis=1)
-    show_df = show_df.rename(columns={
-        'timestamp': 'Timestamp',
-        'cpu': 'CPU Usage',
-        'memory': 'Memory Usage',
-        'prediction': 'Prediction',
-        'pod_name': 'Pod Name',
-        'labels': 'Labels'
-    })
     st.dataframe(show_df, use_container_width=True)
 
     # Plain English summary
