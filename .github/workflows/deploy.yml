@@ -6,7 +6,7 @@ on:
       - main
       - gcp
       - gcp2
-      # - dash
+      - dash
   workflow_dispatch:
 
 jobs:
@@ -117,9 +117,11 @@ jobs:
 
       - name: Ensure data directory exists
         run: mkdir -p smartops-ai/dashboard/data
-      - name: Log Deployment Started
+      - name: Log Deployment Started (to dashboard API)
         run: |
-          python smartops-ai/dashboard/log_deployment_event.py --event started --message "Deployment started" --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          curl -X POST "http://34.31.86.225:8000/log_event" \
+            -H "Content-Type: application/json" \
+            -d '{"status": "started", "message": "Deployment started"}'
 
       # - name: Notify Telegram - Deployment Started
       #   run: |
@@ -154,7 +156,9 @@ jobs:
       - name: Notify Telegram - Deployment Success
         if: success()
         run: |
-          python smartops-ai/dashboard/log_deployment_event.py --event success --message "Deployment completed successfully" --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          curl -X POST "http://34.31.86.225:8000/log_event" \
+            -H "Content-Type: application/json" \
+            -d '{"status": "success", "message": "Deployment completed successfully"}'
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="✅ *Production deployment completed successfully in namespace `smartops`!*" \
@@ -163,7 +167,9 @@ jobs:
       - name: Notify Telegram - Deployment Failed
         if: failure()
         run: |
-          python smartops-ai/dashboard/log_deployment_event.py --event failed --message "Deployment failed" --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          curl -X POST "http://34.31.86.225:8000/log_event" \
+            -H "Content-Type: application/json" \
+            -d '{"status": "failed", "message": "Deployment failed"}'
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="❌ *Production deployment failed in namespace `smartops`!*" \
