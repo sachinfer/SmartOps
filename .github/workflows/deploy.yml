@@ -117,11 +117,11 @@ jobs:
 
       - name: Ensure data directory exists
         run: mkdir -p smartops-ai/dashboard/data
-      - name: Log Deployment Started (to dashboard API)
-        run: |
-          curl -X POST "http://34.31.86.225:8000/log_event" \
-            -H "Content-Type: application/json" \
-            -d '{"status": "started", "message": "Deployment started"}'
+      # - name: Log Deployment Started (to dashboard API)
+      #   run: |
+      #     curl -X POST "http://34.31.86.225:8000/log_event" \
+      #       -H "Content-Type: application/json" \
+      #       -d '{"status": "started", "message": "Deployment started"}'
 
       # - name: Notify Telegram - Deployment Started
       #   run: |
