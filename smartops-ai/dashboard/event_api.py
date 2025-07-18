@@ -11,6 +11,7 @@ DB_PATH = "data/deployment_events.db"
 class Event(BaseModel):
     status: str
     message: str
+    namespace: str = "smartops"
     timestamp: str = None
 
 @app.post("/log_event")
@@ -21,7 +22,8 @@ def log_event(event: Event):
         CREATE TABLE IF NOT EXISTS deployment_events (
             timestamp TEXT,
             status TEXT,
-            message TEXT
+            message TEXT,
+            namespace TEXT
         )
     """)
     if event.timestamp:
@@ -30,8 +32,8 @@ def log_event(event: Event):
         ist = pytz.timezone('Asia/Kolkata')
         ts = datetime.now(ist).isoformat()
     conn.execute(
-        "INSERT INTO deployment_events (timestamp, status, message) VALUES (?, ?, ?)",
-        (ts, event.status, event.message)
+        "INSERT INTO deployment_events (timestamp, status, message, namespace) VALUES (?, ?, ?, ?)",
+        (ts, event.status, event.message, event.namespace)
     )
     conn.commit()
     conn.close()
