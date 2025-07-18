@@ -26,7 +26,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           volumeMounts:
-            - name: dashboard-sqlite-storage
+            - name: dashboard-data
               mountPath: /app/dashboard/data
         - name: anomaly-loop
           image: gcr.io/icbt-465109/smartops-anomaly:latest  # ← Use the same image
@@ -43,9 +43,9 @@ spec:
             - name: MY_CONTAINER_NAME
               value: fastapi
           volumeMounts:
-            - name: dashboard-sqlite-storage
+            - name: dashboard-data
               mountPath: /app/dashboard/data
       volumes:
-        - name: dashboard-sqlite-storage
+        - name: dashboard-data
           persistentVolumeClaim:
-            claimName: dashboard-sqlite-pvc
+            claimName: dashboard-data-pvc
