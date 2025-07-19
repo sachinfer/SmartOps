@@ -216,7 +216,7 @@ def dashboard_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # Connect to DB
+    # Connect to DB and define df immediately
     conn = sqlite3.connect("/app/dashboard/data/data.db")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS anomalies (
@@ -232,6 +232,7 @@ def dashboard_page():
     conn.commit()
     df = pd.read_sql_query("SELECT * FROM anomalies", conn)
     conn.close()
+    # Now df is always defined before any use
 
     # Fetch namespaces for dropdown
     namespace_options = ['all'] + fetch_namespaces()
