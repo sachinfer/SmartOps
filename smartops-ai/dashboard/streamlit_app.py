@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pytz
+import requests
 
 # Page config with modern theme
 st.set_page_config(
@@ -228,10 +229,11 @@ with col3:
         """, unsafe_allow_html=True)
 
 with col4:
-    # Make the card clickable using Streamlit's button
     if st.button('🟦 Available Pods', key='show_pods'):
         st.session_state['show_pods'] = not st.session_state.get('show_pods', False)
-    available_pods_count = 23  # Placeholder, replace with real count from backend/API
+    # Fetch real pod count from backend
+    pods_data = fetch_pods(selected_ns)
+    available_pods_count = len(pods_data)
     st.markdown(f"""
     <div class="metric-card">
         <h3>🟦 Available Pods</h3>
@@ -242,17 +244,7 @@ with col4:
 # Show all pods table if the card is clicked
 if st.session_state.get('show_pods', False):
     st.markdown('### 🟦 All Available Pods')
-    # Mocked pod data; replace with real API/backend call
-    pod_data = [
-        {'name': 'smartops-app-123', 'namespace': 'smartops', 'status': 'Running'},
-        {'name': 'smartops-dashboard-456', 'namespace': 'smartops', 'status': 'Running'},
-        {'name': 'nginx-789', 'namespace': 'default', 'status': 'Pending'},
-        # ... add more or fetch from backend ...
-    ]
-    pods_df = pd.DataFrame(pod_data)
-    # Filter by selected namespace if not 'all'
-    if selected_ns != 'all':
-        pods_df = pods_df[pods_df['namespace'] == selected_ns]
+    pods_df = pd.DataFrame(pods_data)
     st.dataframe(pods_df, use_container_width=True)
 
 if filtered_df.empty:
@@ -570,3 +562,20 @@ st.markdown("""
     <p>Built with ❤️ using Streamlit and AI/ML</p>
 </div>
 """, unsafe_allow_html=True) 
+
+# Helper to fetch pods from FastAPI backend
+@st.cache_data(ttl=30)
+def fetch_pods(namespace):
+    try:
+        url = f"http://localhost:8000/pods"
+        params = {}
+        if namespace and namespace != 'all':
+            params['namespace'] = namespace
+        resp = requests.get(url, params=params, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('pods', [])
+        else:
+            return []
+    except Exception as e:
+        st.warning(f"Could not fetch pods: {e}")
+        return [] 
