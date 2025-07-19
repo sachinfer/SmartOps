@@ -307,6 +307,34 @@ def monitor_k8s_logs(send_alert_func):
 def detect_anomaly(model, metrics):
     return model.predict([metrics])[0] == -1
 
+def log_ai_action(pod_name, namespace, reason, status='pending'):
+    import logging
+    logging.warning(f"[AI ACTION] Logging AI action: pod_name={pod_name}, namespace={namespace}, reason={reason}, status={status}")
+    db_path = '/app/dashboard/data/ai_actions.db'
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS ai_actions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                pod_name TEXT,
+                namespace TEXT,
+                reason TEXT,
+                status TEXT
+            )
+        ''')
+        from datetime import datetime
+        ts = datetime.utcnow().isoformat()
+        conn.execute(
+            "INSERT INTO ai_actions (timestamp, pod_name, namespace, reason, status) VALUES (?, ?, ?, ?, ?)",
+            (ts, pod_name, namespace, reason, status)
+        )
+        conn.commit()
+        conn.close()
+        logging.warning(f"[AI ACTION] Successfully logged AI action for pod {pod_name}")
+    except Exception as e:
+        logging.error(f"[AI ACTION] Failed to log AI action for pod {pod_name}: {e}")
+
 def main_anomaly_loop():
     """Main loop that fetches real metrics and detects anomalies"""
     import joblib
