@@ -97,14 +97,14 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-    conn.execute("""
+conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-            timestamp TEXT,
+        timestamp TEXT,
             status TEXT,
             message TEXT
-        )
-    """)
-    conn.commit()
+    )
+""")
+conn.commit()
     conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
@@ -168,8 +168,8 @@ def fetch_pods(namespace):
 def load_anomalies_df():
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
-        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-        conn.close()
+df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+conn.close()
         return df
     except Exception as e:
         st.warning(f"Could not load anomalies data: {e}")
@@ -236,7 +236,7 @@ def dashboard_page():
 
     # Fetch namespaces for dropdown
     namespace_options = ['all'] + fetch_namespaces()
-    selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
+selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
     # Namespace stats (pods/services count)
     ns_stats = fetch_namespace_stats(selected_ns)
@@ -391,9 +391,9 @@ else:
         st.info("No AI actions in history.")
     else:
         import pandas as pd
-        df = pd.DataFrame(actions)
-        if not df.empty:
-            df = df.rename(columns={
+        actions_df = pd.DataFrame(actions)
+        if not actions_df.empty:
+            actions_df = actions_df.rename(columns={
                 "timestamp": "Timestamp",
                 "pod_name": "Pod Name",
                 "namespace": "Namespace",
@@ -401,7 +401,7 @@ else:
                 "status": "Status"
             })
             # Summary counts
-            status_counts = df["Status"].value_counts().to_dict()
+            status_counts = actions_df["Status"].value_counts().to_dict()
             st.markdown(f"**Completed:** {status_counts.get('completed', 0)} | **Pending:** {status_counts.get('pending', 0)} | **Failed:** {status_counts.get('failed', 0)} | **Not Found:** {status_counts.get('not_found', 0)}")
             # Color-code status
             def color_status(val):
@@ -417,7 +417,7 @@ else:
                     return "background-color: #b2bec3; color: black;"
                 return ""
             st.dataframe(
-                df[["Timestamp", "Pod Name", "Namespace", "Reason", "Status"]]
+                actions_df[["Timestamp", "Pod Name", "Namespace", "Reason", "Status"]]
                 .style.applymap(color_status, subset=["Status"]),
                 use_container_width=True
             )
