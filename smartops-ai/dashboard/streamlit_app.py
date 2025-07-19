@@ -189,101 +189,45 @@ def fetch_namespaces():
 namespace_options = ['all'] + fetch_namespaces()
 selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
-# Filter dataframe by namespace if applicable
-if has_namespace_column(df) and selected_ns != 'all':
-    filtered_df = df[df['namespace'] == selected_ns].copy()
-else:
-    filtered_df = df.copy()
+# Top Anomalies by CPU Usage (directly under namespace dropdown)
+st.markdown("## 🔥 Top Anomalies by CPU Usage")
+chart_df = filtered_df.copy()
+chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
+chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
+chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
+top_cpu_df = chart_df.nlargest(5, 'cpu_percent')[['timestamp', 'pod_name', 'cpu_percent', 'memory_mb', 'prediction']]
+top_cpu_df['cpu_percent'] = top_cpu_df['cpu_percent'].round(1).astype(str) + '%'
+top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
+top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
+st.dataframe(top_cpu_df, use_container_width=True)
 
-# Metrics cards row
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.markdown(f"""
-    <div class="metric-card">
-        <h3>📊 Total Anomalies</h3>
-        <h2>{len(filtered_df)}</h2>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    anomaly_count = (filtered_df['prediction'].str.lower() != 'normal').sum() if not filtered_df.empty else 0
-    st.markdown(f"""
-    <div class="metric-card">
-        <h3>🎉 Active Anomalies</h3>
-        <h2>{anomaly_count}</h2>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col3:
-    if not filtered_df.empty:
-        filtered_df['timestamp'] = pd.to_datetime(filtered_df['timestamp'])
-        latest_time = filtered_df['timestamp'].max()
-        if latest_time.tzinfo is None:
-            latest_time = pytz.utc.localize(latest_time)
-        ist_latest_time = latest_time.astimezone(IST)
-        current_ist = datetime.now(IST)
-        time_ago = current_ist - ist_latest_time
-        minutes_ago = int(time_ago.total_seconds() / 60)
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>⏰ Last Update</h3>
-            <h2>{minutes_ago}m ago</h2>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>⏰ Last Update</h3>
-            <h2>N/A</h2>
-        </div>
-        """, unsafe_allow_html=True)
-
-# Helper to fetch pods from FastAPI backend
-@st.cache_data(ttl=30)
-def fetch_pods(namespace):
-    try:
-        url = f"http://localhost:8000/pods"
-        params = {}
-        if namespace and namespace != 'all':
-            params['namespace'] = namespace
-        resp = requests.get(url, params=params, timeout=5)
-        if resp.status_code == 200:
-            return resp.json().get('pods', [])
-        else:
-            return []
-    except Exception as e:
-        st.warning(f"Could not fetch pods: {e}")
-        return []
-
-# At the top, initialize session state
-if 'show_pods' not in st.session_state:
-    st.session_state['show_pods'] = False
-
-def toggle_show_pods():
-    st.session_state['show_pods'] = not st.session_state.get('show_pods', False)
-
-with col4:
-    pods_data = fetch_pods(selected_ns)
-    available_pods_count = len(pods_data)
-    # Use a styled button as the card, matching the others
-    card_html = f"""
-    <div class="metric-card" style="cursor:pointer;" onclick="window.parent.postMessage('togglePods', '*');">
-        <h3>🛰️ Available Pods</h3>
-        <h2>{available_pods_count}</h2>
-    </div>
-    """
-    st.markdown(card_html, unsafe_allow_html=True)
-    # Use a hidden button for Streamlit to catch the click
-    if st.button("", key="hidden_show_pods", help="Show pods table"):
-        toggle_show_pods()
-
-if st.session_state.get('show_pods', False):
-    st.markdown('### 🟦 All Available Pods')
-    pods_df = pd.DataFrame(pods_data)
-    display_cols = ['name', 'namespace', 'status', 'node', 'start_time', 'restarts', 'images']
-    display_cols = [col for col in display_cols if col in pods_df.columns]
-    st.dataframe(pods_df[display_cols], use_container_width=True)
+# Recent Anomalies (directly under namespace dropdown)
+st.markdown("## 🕒 Recent Anomalies")
+display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+if 'pod_name' in filtered_df.columns:
+    display_cols.append('pod_name')
+if 'labels' in filtered_df.columns:
+    display_cols.append('labels')
+show_df = filtered_df[display_cols].copy()
+show_df = show_df.sort_values('timestamp', ascending=False).head(20)
+show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
+show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
+show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
+show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
+display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
+if 'pod_name' in show_df.columns:
+    display_df['pod_name'] = show_df['pod_name']
+if 'labels' in show_df.columns:
+    display_df['labels'] = show_df['labels']
+display_df = display_df.rename(columns={
+    'timestamp': 'Timestamp',
+    'cpu_display': 'CPU',
+    'memory_display': 'Memory',
+    'pod_name': 'Pod Name',
+    'labels': 'Labels'
+})
+st.dataframe(display_df, use_container_width=True)
 
 if filtered_df.empty:
     st.markdown("""
@@ -391,84 +335,6 @@ else:
     fig.update_layout(height=600, showlegend=False, title_text="Resource Usage Analytics")
     st.plotly_chart(fig, use_container_width=True)
     
-    # Top anomalies by CPU usage
-    st.markdown("## 🔥 Top Anomalies by CPU Usage")
-    top_cpu_df = chart_df.nlargest(5, 'cpu_percent')[['timestamp_ist', 'pod_name', 'cpu_percent', 'memory_mb', 'prediction']]
-    top_cpu_df['timestamp_ist'] = top_cpu_df['timestamp_ist'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
-    top_cpu_df['cpu_percent'] = top_cpu_df['cpu_percent'].round(1).astype(str) + '%'
-    top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
-    top_cpu_df = top_cpu_df.rename(columns={'timestamp_ist': 'Timestamp (IST)'})
-    st.dataframe(top_cpu_df, use_container_width=True)
-
-    # Recent anomalies table with enhanced styling
-    st.markdown("## 🕒 Recent Anomalies")
-    # Prepare data for display
-    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
-    if 'pod_name' in filtered_df.columns:
-        display_cols.append('pod_name')
-    if 'labels' in filtered_df.columns:
-        display_cols.append('labels')
-    show_df = filtered_df[display_cols].copy()
-    show_df = show_df.sort_values('timestamp', ascending=False).head(20)
-    
-    # Convert timestamps to IST
-    def parse_recent_timestamp(ts):
-        try:
-            if pd.isna(ts):
-                return ts
-            if isinstance(ts, str):
-                # Handle ISO format without timezone
-                if 'T' in ts:
-                    dt = pd.to_datetime(ts, format='ISO8601')
-                    if dt.tzinfo is None:
-                        dt = pytz.utc.localize(dt)
-                    return dt.astimezone(IST)
-                else:
-                    dt = pd.to_datetime(ts)
-                    if dt.tzinfo is None:
-                        dt = pytz.utc.localize(dt)
-                    return dt.astimezone(IST)
-            else:
-                # Already a datetime object
-                if ts.tzinfo is None:
-                    ts = pytz.utc.localize(ts)
-                return ts.astimezone(IST)
-        except Exception:
-            return ts
-    
-    show_df['timestamp_ist'] = show_df['timestamp'].apply(parse_recent_timestamp)
-    show_df['timestamp_ist'] = show_df['timestamp_ist'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
-    
-    # Format the display
-    if not show_df.empty:
-        # Convert CPU and memory to numeric, handling any non-numeric values
-        show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
-        show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
-        
-        # Convert CPU to percentage and memory to MB for display
-        show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
-        show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
-        
-        # Create display dataframe with formatted columns
-        display_df = show_df[['timestamp_ist', 'cpu_display', 'memory_display', 'prediction']].copy()
-        if 'pod_name' in show_df.columns:
-            display_df['pod_name'] = show_df['pod_name']
-        if 'labels' in show_df.columns:
-            display_df['labels'] = show_df['labels']
-        
-        # Rename columns for display
-        display_df = display_df.rename(columns={
-            'timestamp_ist': 'Timestamp (IST)',
-            'cpu_display': 'CPU',
-            'memory_display': 'Memory',
-            'pod_name': 'Pod Name',
-            'labels': 'Labels'
-        })
-        
-        st.dataframe(display_df, use_container_width=True)
-    else:
-        st.info("No anomalies detected in the recent data.")
-
     # Plain English summary
     st.markdown("## 📢 System Summary")
     anomaly_count = (filtered_df['prediction'].str.lower() != 'normal').sum()
@@ -477,7 +343,7 @@ else:
     if anomaly_count == 0:
         st.success("Everything looks good! No anomalies detected in the recent data.")
     else:
-        st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.")
+        st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.") 
 
 # Deployment events summary with enhanced styling
 st.markdown("## 🚀 Deployment Workflow Events")
