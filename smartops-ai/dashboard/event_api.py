@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import pytz
 from typing import List, Optional
+from fastapi.responses import JSONResponse
 
 # Kubernetes client
 from kubernetes import client, config
@@ -96,4 +97,43 @@ def get_pod_logs(namespace: str = Query(..., description="Namespace of the pod")
         logs = v1.read_namespaced_pod_log(name=pod, namespace=namespace, container=container)
     except Exception as e:
         return {"error": str(e), "logs": ""}
-    return {"logs": logs} 
+    return {"logs": logs}
+
+@app.post("/restart_pod")
+def restart_pod(namespace: str = Query(...), pod: str = Query(...)):
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    try:
+        v1.delete_namespaced_pod(name=pod, namespace=namespace)
+        return {"result": "restarted"}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/delete_pod")
+def delete_pod(namespace: str = Query(...), pod: str = Query(...)):
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    try:
+        v1.delete_namespaced_pod(name=pod, namespace=namespace)
+        return {"result": "deleted"}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/describe_pod")
+def describe_pod(namespace: str = Query(...), pod: str = Query(...)):
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    try:
+        pod_obj = v1.read_namespaced_pod(name=pod, namespace=namespace)
+        return pod_obj.to_dict()
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)}) 
