@@ -54,12 +54,17 @@ def list_pods(namespace: Optional[str] = Query(None, description="Namespace to f
         pods = v1.list_namespaced_pod(namespace=namespace)
     else:
         pods = v1.list_pod_for_all_namespaces()
-    pod_list = [
-        {
+    pod_list = []
+    for pod in pods.items:
+        restarts = sum([c.restart_count for c in pod.status.container_statuses or []])
+        images = ', '.join([c.image for c in pod.spec.containers])
+        pod_list.append({
             "name": pod.metadata.name,
             "namespace": pod.metadata.namespace,
-            "status": pod.status.phase
-        }
-        for pod in pods.items
-    ]
+            "status": pod.status.phase,
+            "node": getattr(pod.spec, 'node_name', ''),
+            "start_time": str(pod.status.start_time) if pod.status.start_time else '',
+            "restarts": restarts,
+            "images": images
+        })
     return {"pods": pod_list} 
