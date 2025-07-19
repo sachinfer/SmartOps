@@ -67,4 +67,15 @@ def list_pods(namespace: Optional[str] = Query(None, description="Namespace to f
             "restarts": restarts,
             "images": images
         })
-    return {"pods": pod_list} 
+    return {"pods": pod_list}
+
+@app.get("/namespaces")
+def list_namespaces():
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    ns_list = v1.list_namespace()
+    namespaces = [ns.metadata.name for ns in ns_list.items]
+    return {"namespaces": namespaces} 

@@ -294,6 +294,40 @@ The `deployment_events` table now includes:
 
 ---
 
+## 🟦 Real-Time Pod Explorer in the Dashboard
+
+SmartOps now includes a powerful, interactive pod explorer directly in the Streamlit dashboard:
+
+- **Available Pods Card:**
+  - Shows the live count of all pods in the selected namespace (or all namespaces).
+  - Click the card to reveal a table of all pods, updated in real time from your GCP Kubernetes cluster.
+
+- **Namespace Filtering:**
+  - Use the namespace dropdown at the top to filter the pod count and pod table by namespace.
+  - Selecting "all" shows pods from all namespaces.
+
+- **Pod Details Displayed:**
+  - **Name:** Pod name
+  - **Namespace:** Namespace the pod belongs to
+  - **Status:** Running, Pending, etc.
+  - **Node:** Node where the pod is scheduled
+  - **Start Time:** When the pod started
+  - **Restarts:** Total container restarts for the pod
+  - **Images:** Container images used in the pod
+
+- **How it Works:**
+  - The dashboard calls the FastAPI backend `/pods` endpoint, which queries the Kubernetes API for live pod data.
+  - The pod table and count update automatically as you switch namespaces or click the card.
+
+- **Requirements:**
+  - The FastAPI backend must run inside the cluster (or with access to the GKE API) and have permission to list pods.
+  - The dashboard and backend must be able to communicate (usually via `localhost:8000` or the appropriate service name).
+
+- **Extending:**
+  - You can add more pod details (labels, IP, etc.) or actions (logs, delete) by updating the backend and dashboard code.
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
