@@ -436,43 +436,42 @@ st.markdown("## 🚀 Deployment Workflow Events")
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
+    
+    # Check if namespace column exists, if not add it
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA table_info(deployment_events)")
+    columns = [column[1] for column in cursor.fetchall()]
+    
+    if 'namespace' not in columns:
+        # Add namespace column to existing table
+        cursor.execute("ALTER TABLE deployment_events ADD COLUMN namespace TEXT DEFAULT 'smartops'")
+        conn.commit()
+        st.info("Updated deployment events table to include namespace column.")
+    
     events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
     conn.close()
     
     # Convert timestamps to IST
     if not events.empty:
-        # Handle different timestamp formats
-        def parse_timestamp(ts_str):
-            try:
-                # Try parsing as ISO format first
-                if 'T' in str(ts_str):
-                    # Handle ISO format without timezone
-                    dt = pd.to_datetime(ts_str, format='ISO8601')
-                    # Assume UTC if no timezone info
-                    if dt.tzinfo is None:
-                        dt = pytz.utc.localize(dt)
-                    return dt
-                else:
-                    # Handle other formats
-                    dt = pd.to_datetime(ts_str)
-                    if dt.tzinfo is None:
-                        dt = pytz.utc.localize(dt)
-                    return dt
-            except Exception:
-                # Fallback to simple parsing
-                return pd.to_datetime(ts_str)
-        
-        events['timestamp'] = events['timestamp'].apply(parse_timestamp)
+        events['timestamp'] = pd.to_datetime(events['timestamp'])
         events['timestamp_ist'] = events['timestamp'].apply(lambda x: 
             x.astimezone(IST) if x.tzinfo else pytz.utc.localize(x).astimezone(IST)
         )
         events['timestamp_ist'] = events['timestamp_ist'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
     
     # Add namespace filter for deployment events
-    ns_options = ['all'] + sorted([ns for ns in events['namespace'].dropna().unique() if ns]) if 'namespace' in events.columns else ['all']
+    if 'namespace' in events.columns and not events.empty:
+        # Get unique namespaces, excluding None/NaN values
+        unique_namespaces = events['namespace'].dropna().unique().tolist()
+        ns_options = ['all'] + sorted([ns for ns in unique_namespaces if ns and ns.strip()])
+    else:
+        ns_options = ['all']
+    
     selected_ns = st.selectbox('Select Deployment Namespace', ns_options, index=0, key='deploy_ns')
+    
     if selected_ns != 'all' and 'namespace' in events.columns:
         events = events[events['namespace'] == selected_ns]
+    
     if not events.empty:
         latest = events.iloc[0]
         if latest["status"] == "success":
@@ -517,6 +516,7 @@ try:
         st.info("No deployment events to display.")
 except Exception as e:
     st.warning(f"Could not load deployment events: {e}")
+    st.error(f"Error details: {str(e)}")
 
 # Footer
 st.markdown("---")
