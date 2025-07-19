@@ -809,10 +809,30 @@ pages = {
     "Pod Explorer & Logs": pod_explorer_page,
     "Cluster Explorer": cluster_explorer_page
 }
-page = st.sidebar.radio("Navigate", list(pages.keys()))
-
-# Show AI actions and retrain button in sidebar for all pages
+sidebar_icons = {
+    "Dashboard": "🏠",
+    "Pod Explorer & Logs": "🛰️",
+    "Cluster Explorer": "🔍"
+}
 with st.sidebar:
+    st.markdown("""
+    <div style='text-align:center; margin-bottom:1.5rem;'>
+        <span style='font-size:2rem;'>🚀</span>
+        <span style='font-size:1.4rem; font-weight:bold;'>SmartOps</span>
+        <div style='font-size:0.9rem; color:#888;'>AI Kubernetes Platform</div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### Navigation")
+    page = st.radio(
+        "",
+        [f"{sidebar_icons[p]} {p}" for p in pages.keys()],
+        index=list(pages.keys()).index("Dashboard"),
+        key="nav_radio"
+    )
+    # Remove icon for page lookup
+    page = page.split(' ', 1)[1]
+    st.markdown("---")
     ai_actions_section()
     retrain_model_section()
 
