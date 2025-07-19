@@ -206,7 +206,12 @@ def dashboard_page():
             st.warning(f"Could not fetch namespace stats: {e}")
             return {"pod_count": 0, "service_count": 0}
     ns_stats = fetch_namespace_stats(selected_ns)
-    st.markdown(f"**Pods:** {ns_stats['pod_count']} | **Services:** {ns_stats['service_count']}")
+    st.markdown(f"""
+    <div style='display: flex; gap: 1.5rem; margin-bottom: 1.5rem;'>
+        <span style='background:#00b894; color:white; border-radius:8px; padding:0.4em 1.2em; font-size:1.2rem; font-weight:bold;'>Pods: {ns_stats['pod_count']}</span>
+        <span style='background:#0984e3; color:white; border-radius:8px; padding:0.4em 1.2em; font-size:1.2rem; font-weight:bold;'>Services: {ns_stats['service_count']}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Filter dataframe by namespace if applicable
     if has_namespace_column(df) and selected_ns != 'all':
