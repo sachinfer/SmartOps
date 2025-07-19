@@ -812,6 +812,79 @@ pages = {
     "Pod Explorer & Logs": pod_explorer_page,
     "Cluster Explorer": cluster_explorer_page
 }
+# --- Enhanced Sidebar navigation ---
+st.markdown("""
+<style>
+/* Sidebar styling */
+section[data-testid="stSidebar"] > div:first-child {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    box-shadow: 2px 0 16px rgba(102,126,234,0.08);
+}
+.sidebar-logo {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.sidebar-logo span {
+    font-size: 2.2rem;
+    display: block;
+}
+.sidebar-logo .project {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: 1px;
+}
+.sidebar-logo .subtitle {
+    font-size: 0.9rem;
+    color: #dfe6e9;
+}
+.sidebar-nav {
+    margin-bottom: 2rem;
+}
+.sidebar-nav label {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+.sidebar-nav .stRadio > div {
+    flex-direction: column;
+}
+.sidebar-nav .stRadio label {
+    padding: 0.7em 1.2em;
+    border-radius: 8px;
+    margin-bottom: 0.3em;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.sidebar-nav .stRadio label[data-selected="true"] {
+    background: #fff;
+    color: #764ba2;
+    font-weight: bold;
+}
+.sidebar-nav .stRadio label:hover {
+    background: #a29bfe;
+    color: #fff;
+}
+.sidebar-section {
+    border-top: 1px solid #dfe6e9;
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+}
+/* Main content padding */
+section.main > div.block-container {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
 sidebar_icons = {
     "Dashboard": "🏠",
     "Pod Explorer & Logs": "🛰️",
@@ -819,25 +892,25 @@ sidebar_icons = {
 }
 with st.sidebar:
     st.markdown("""
-    <div style='text-align:center; margin-bottom:1.5rem;'>
-        <span style='font-size:2rem;'>🚀</span>
-        <span style='font-size:1.4rem; font-weight:bold;'>SmartOps</span>
-        <div style='font-size:0.9rem; color:#888;'>AI Kubernetes Platform</div>
+    <div class='sidebar-logo'>
+        <span>🚀</span>
+        <span class='project'>SmartOps</span>
+        <div class='subtitle'>AI Kubernetes Platform</div>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown("---")
-    st.markdown("### Navigation")
+    st.markdown("<div class='sidebar-nav'>", unsafe_allow_html=True)
     page = st.radio(
         "",
         [f"{sidebar_icons[p]} {p}" for p in pages.keys()],
         index=list(pages.keys()).index("Dashboard"),
         key="nav_radio"
     )
-    # Remove icon for page lookup
     page = page.split(' ', 1)[1]
-    st.markdown("---")
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sidebar-section'>", unsafe_allow_html=True)
     ai_actions_section()
     retrain_model_section()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 pages[page]()
 # Footer
