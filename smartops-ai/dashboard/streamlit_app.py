@@ -171,11 +171,22 @@ def get_status_and_advice(latest_pred: str, cpu: float, memory: float) -> Tuple[
 def has_namespace_column(df):
     return 'namespace' in df.columns
 
-# Namespace selection UI
-namespace_options = ['all']
-if has_namespace_column(df):
-    ns_list = df['namespace'].dropna().unique().tolist()
-    namespace_options += sorted(ns_list)
+# Helper to fetch namespaces from FastAPI backend
+@st.cache_data(ttl=30)
+def fetch_namespaces():
+    try:
+        url = f"http://localhost:8000/namespaces"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('namespaces', [])
+        else:
+            return []
+    except Exception as e:
+        st.warning(f"Could not fetch namespaces: {e}")
+        return []
+
+# Fetch namespaces for dropdown
+namespace_options = ['all'] + fetch_namespaces()
 selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
 # Filter dataframe by namespace if applicable
@@ -245,28 +256,25 @@ def fetch_pods(namespace):
         st.warning(f"Could not fetch pods: {e}")
         return []
 
+# At the top, initialize session state
+if 'show_pods' not in st.session_state:
+    st.session_state['show_pods'] = False
+
 def toggle_show_pods():
     st.session_state['show_pods'] = not st.session_state.get('show_pods', False)
 
 with col4:
-    st.button('🟦 Available Pods', key='show_pods_btn', on_click=toggle_show_pods)
     pods_data = fetch_pods(selected_ns)
     available_pods_count = len(pods_data)
-    st.markdown(f"""
-    <div class="metric-card">
-        <h3>🟦 Available Pods</h3>
-        <h2>{available_pods_count}</h2>
-    </div>
-    """, unsafe_allow_html=True)
+    # Use a styled button as the card
+    if st.button(f'🟦 Available Pods: {available_pods_count}', key='show_pods_btn'):
+        toggle_show_pods()
+    # Optionally, you can style this further with st.markdown if you want a fancier card look
 
-# Show all pods table if the card is clicked
 if st.session_state.get('show_pods', False):
     st.markdown('### 🟦 All Available Pods')
     pods_df = pd.DataFrame(pods_data)
-    # Reorder columns for better display
-    display_cols = [
-        'name', 'namespace', 'status', 'node', 'start_time', 'restarts', 'images'
-    ]
+    display_cols = ['name', 'namespace', 'status', 'node', 'start_time', 'restarts', 'images']
     display_cols = [col for col in display_cols if col in pods_df.columns]
     st.dataframe(pods_df[display_cols], use_container_width=True)
 
