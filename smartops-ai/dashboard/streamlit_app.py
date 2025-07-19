@@ -162,6 +162,7 @@ def get_status_and_advice(latest_pred: str, cpu: float, memory: float) -> Tuple[
 
 # --- Dashboard Page ---
 def dashboard_page():
+    import pandas as pd
     # Main header with gradient
     st.markdown("""
     <div class="main-header">
