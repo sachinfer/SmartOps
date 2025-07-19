@@ -97,15 +97,15 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-    conn.execute("""
+conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-            timestamp TEXT,
+        timestamp TEXT,
             status TEXT,
             message TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+    )
+""")
+conn.commit()
+conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
 
@@ -116,7 +116,20 @@ try:
 except ImportError:
     pass
 
-# Helper to fetch namespaces from FastAPI backend
+# Top-level cached functions
+@st.cache_data(ttl=30)
+def fetch_namespace_stats(ns):
+    try:
+        url = f"http://localhost:8000/namespace_stats"
+        resp = requests.get(url, params={"namespace": ns}, timeout=5)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return {"pod_count": 0, "service_count": 0}
+    except Exception as e:
+        st.warning(f"Could not fetch namespace stats: {e}")
+        return {"pod_count": 0, "service_count": 0}
+
 @st.cache_data(ttl=30)
 def fetch_namespaces():
     try:
@@ -129,6 +142,38 @@ def fetch_namespaces():
     except Exception as e:
         st.warning(f"Could not fetch namespaces: {e}")
         return []
+
+@st.cache_data(ttl=30)
+def fetch_resource_types():
+    try:
+        resp = requests.get("http://localhost:8000/kubectl_resource_types", timeout=5)
+        return resp.json().get("resource_types", [])
+    except Exception:
+        return ["pods", "services", "deployments", "nodes", "events"]
+
+@st.cache_data(ttl=30)
+def fetch_pods(namespace):
+    try:
+        url = f"http://localhost:8000/pods"
+        resp = requests.get(url, params={"namespace": namespace}, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get("pods", [])
+        else:
+            return []
+    except Exception as e:
+        st.warning(f"Could not fetch pods: {e}")
+        return []
+
+@st.cache_data(ttl=30)
+def load_anomalies_df():
+    try:
+        conn = sqlite3.connect("/app/dashboard/data/data.db")
+        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+        conn.close()
+        return df
+    except Exception as e:
+        st.warning(f"Could not load anomalies data: {e}")
+        return pd.DataFrame()
 
 # Check if 'namespace' column exists in the anomalies table
 def has_namespace_column(df):
@@ -190,21 +235,9 @@ def dashboard_page():
 
     # Fetch namespaces for dropdown
     namespace_options = ['all'] + fetch_namespaces()
-selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
+    selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
     # Namespace stats (pods/services count)
-    @st.cache_data(ttl=30)
-    def fetch_namespace_stats(ns):
-        try:
-            url = f"http://localhost:8000/namespace_stats"
-            resp = requests.get(url, params={"namespace": ns}, timeout=5)
-            if resp.status_code == 200:
-                return resp.json()
-            else:
-                return {"pod_count": 0, "service_count": 0}
-        except Exception as e:
-            st.warning(f"Could not fetch namespace stats: {e}")
-            return {"pod_count": 0, "service_count": 0}
     ns_stats = fetch_namespace_stats(selected_ns)
     st.markdown(f"""
     <div style='display: flex; gap: 1.5rem; margin-bottom: 1.5rem;'>
@@ -450,37 +483,11 @@ def pod_explorer_page():
     st.title("🛰️ Pod Explorer & Logs")
     st.write("Explore pods and view their logs in real time.")
 
-    @st.cache_data(ttl=30)
-    def fetch_namespaces():
-        try:
-            url = f"http://localhost:8000/namespaces"
-            resp = requests.get(url, timeout=5)
-            if resp.status_code == 200:
-                return resp.json().get('namespaces', [])
-            else:
-                return []
-        except Exception as e:
-            st.warning(f"Could not fetch namespaces: {e}")
-            return []
-
     namespaces = fetch_namespaces()
     if not namespaces:
         st.warning("No namespaces found.")
         return
     namespace = st.selectbox("Select Namespace", namespaces)
-
-    @st.cache_data(ttl=30)
-    def fetch_pods(namespace):
-        try:
-            url = f"http://localhost:8000/pods"
-            resp = requests.get(url, params={"namespace": namespace}, timeout=5)
-            if resp.status_code == 200:
-                return resp.json().get("pods", [])
-            else:
-                return []
-        except Exception as e:
-            st.warning(f"Could not fetch pods: {e}")
-            return []
 
     pods = fetch_pods(namespace)
     if not pods:
@@ -554,21 +561,10 @@ def pod_explorer_page():
 
     # --- Pod Resource Graphs ---
     # Load anomalies data for pod resource usage
-    @st.cache_data(ttl=30)
-    def load_anomalies_df():
-        try:
-            conn = sqlite3.connect("/app/dashboard/data/data.db")
-            df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-            conn.close()
-            return df
-        except Exception as e:
-            st.warning(f"Could not load anomalies data: {e}")
-            return pd.DataFrame()
-    anomalies_df = load_anomalies_df()
     pod_resource_df = pd.DataFrame()
-    if not anomalies_df.empty and pod:
-        if 'pod_name' in anomalies_df.columns:
-            pod_resource_df = anomalies_df[anomalies_df['pod_name'] == pod].copy()
+    if not fetch_anomalies_df().empty and pod:
+        if 'pod_name' in fetch_anomalies_df().columns:
+            pod_resource_df = fetch_anomalies_df()[fetch_anomalies_df()['pod_name'] == pod].copy()
     if not pod_resource_df.empty:
         pod_resource_df['timestamp'] = pd.to_datetime(pod_resource_df['timestamp'])
         pod_resource_df['cpu_numeric'] = pd.to_numeric(pod_resource_df['cpu'], errors='coerce').fillna(0)
@@ -716,20 +712,6 @@ def cluster_explorer_page():
     st.write("Run safe kubectl-like queries on your cluster.")
 
     # Fetch resource types and namespaces for autocomplete
-    @st.cache_data(ttl=30)
-    def fetch_resource_types():
-        try:
-            resp = requests.get("http://localhost:8000/kubectl_resource_types", timeout=5)
-            return resp.json().get("resource_types", [])
-        except Exception:
-            return ["pods", "services", "deployments", "nodes", "events"]
-    @st.cache_data(ttl=30)
-    def fetch_namespaces():
-        try:
-            resp = requests.get("http://localhost:8000/kubectl_namespaces", timeout=5)
-            return resp.json().get("namespaces", [])
-        except Exception:
-            return ["default", "smartops"]
     resource_types = fetch_resource_types()
     namespaces = fetch_namespaces()
 
