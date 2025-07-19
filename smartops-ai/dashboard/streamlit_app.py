@@ -339,14 +339,6 @@ def dashboard_page():
         )
         fig.update_layout(height=600, showlegend=False, title_text="Resource Usage Analytics")
         st.plotly_chart(fig, use_container_width=True)
-        st.markdown("## 📢 System Summary")
-        anomaly_count = (filtered_df['prediction'].str.lower() != 'normal').sum()
-        total = len(filtered_df)
-        st.info(f"Out of {total} recent checks, {anomaly_count} anomalies were detected.")
-        if anomaly_count == 0:
-            st.success("Everything looks good! No anomalies detected in the recent data.")
-        else:
-            st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.")
 
     # --- AI Action History (now in main dashboard) ---
     st.markdown("## 📜 AI Action History")
@@ -392,7 +384,6 @@ def dashboard_page():
             )
 
     # --- Deployment Workflow Events Summary ---
-    st.markdown("## 🚀 Deployment Workflow Events")
     try:
         db_path = "data/deployment_events.db"
         conn = sqlite3.connect(db_path)
@@ -401,8 +392,7 @@ def dashboard_page():
         if not events.empty:
             # Count by status
             status_counts = events["status"].value_counts().to_dict()
-            st.markdown(f"**Successful:** {status_counts.get('success', 0)} | **Failed:** {status_counts.get('failed', 0)} | **Started:** {status_counts.get('started', 0)}")
-            # Show the events table as before
+            st.markdown(f"## 🚀 Deployment Workflow Events (Successful: {status_counts.get('success', 0)} | Failed: {status_counts.get('failed', 0)} | Started: {status_counts.get('started', 0)})")
             # (existing event table code follows)
             # Convert timestamps to IST
             def parse_deployment_timestamp(ts_str):
@@ -431,6 +421,7 @@ def dashboard_page():
             events = events.rename(columns={'timestamp_ist': 'Timestamp (IST)', 'status': 'Status', 'message': 'Message', 'namespace': 'Namespace'})
             st.dataframe(events[['Timestamp (IST)', 'Status', 'Message', 'Namespace']], use_container_width=True)
         else:
+            st.markdown("## 🚀 Deployment Workflow Events (Successful: 0 | Failed: 0 | Started: 0)")
             st.info("No deployment events found.")
     except Exception as e:
         st.warning(f"Could not load deployment events: {e}")
