@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 NAMESPACE = os.getenv("SMARTOPS_NAMESPACE", "smartops")
 TARGET_POD_LABEL = "app=smartops-app"
-PREDICT_URL = "http://34.46.130.148/predict"
+PREDICT_URL = "http://localhost:8000/predict"  # Use local FastAPI endpoint
 FETCH_INTERVAL_SECONDS = 60  # 1 min
 
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
@@ -111,8 +111,16 @@ def get_all_pod_metrics():
 def log_prediction(cpu, memory, result, pod_name=None, labels=None):
     print(f"LOGGING: cpu={cpu}, memory={memory}, result={result}, pod_name={pod_name}, labels={labels}")
     try:
-        conn = sqlite3.connect("/app/dashboard/data/data.db")
+        db_path = "/app/dashboard/data/data.db"
+        print(f"LOGGING: Connecting to database at {db_path}")
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
+        
+        # Check if table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='anomalies'")
+        table_exists = cursor.fetchone()
+        print(f"LOGGING: Anomalies table exists: {table_exists}")
+        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS anomalies (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,15 +132,27 @@ def log_prediction(cpu, memory, result, pod_name=None, labels=None):
                 labels TEXT
             )
         ''')
-        cursor.execute(
-            "INSERT INTO anomalies (timestamp, cpu, memory, prediction, pod_name, labels) VALUES (?, ?, ?, ?, ?, ?)",
-            (datetime.utcnow().isoformat(), cpu, memory, result, pod_name, str(labels))
-        )
+        
+        # Insert the data
+        insert_sql = "INSERT INTO anomalies (timestamp, cpu, memory, prediction, pod_name, labels) VALUES (?, ?, ?, ?, ?, ?)"
+        insert_data = (datetime.utcnow().isoformat(), cpu, memory, result, pod_name, str(labels))
+        print(f"LOGGING: Executing SQL: {insert_sql}")
+        print(f"LOGGING: With data: {insert_data}")
+        
+        cursor.execute(insert_sql, insert_data)
         conn.commit()
+        
+        # Verify the insert
+        cursor.execute("SELECT COUNT(*) FROM anomalies")
+        count = cursor.fetchone()[0]
+        print(f"LOGGING: Total records in anomalies table: {count}")
+        
         conn.close()
         print("LOGGING: Prediction logged successfully.")
     except Exception as e:
         print(f"LOGGING ERROR: Failed to log prediction: {e}")
+        import traceback
+        traceback.print_exc()
 
 def send_telegram_alert(message, cpu=None, memory=None, details=None, namespace=None, raw=False):
     if raw:
