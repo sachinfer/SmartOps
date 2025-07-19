@@ -406,7 +406,7 @@ def pod_explorer_page():
             url = f"http://localhost:8000/pods"
             resp = requests.get(url, params={"namespace": namespace}, timeout=5)
             if resp.status_code == 200:
-                return [pod["name"] for pod in resp.json().get("pods", [])]
+                return resp.json().get("pods", [])
             else:
                 return []
         except Exception as e:
@@ -417,16 +417,45 @@ def pod_explorer_page():
     if not pods:
         st.warning("No pods found in this namespace.")
         return
-    pod = st.selectbox("Select Pod", pods)
+
+    # Show pod table with details
+    pod_table = pd.DataFrame(pods)
+    st.markdown("### Available Pods")
+    st.dataframe(pod_table[["name", "status", "node", "restarts", "images", "containers"]], use_container_width=True)
+
+    pod_names = [pod["name"] for pod in pods]
+    pod = st.selectbox("Select Pod", pod_names)
+    selected_pod = next((p for p in pods if p["name"] == pod), None)
+
+    container = None
+    if selected_pod:
+        containers = selected_pod.get("containers", [])
+        if len(containers) > 1:
+            container = st.selectbox("Select Container", containers)
+        elif len(containers) == 1:
+            container = containers[0]
+
+    # Add a refresh button
+    refresh = st.button("🔄 Refresh Logs")
 
     if pod:
         url = f"http://localhost:8000/logs"
-        try:
-            resp = requests.get(url, params={"namespace": namespace, "pod": pod}, timeout=10)
-            logs = resp.json().get("logs", "")
-            st.text_area("Pod Logs", logs, height=400)
-        except Exception as e:
-            st.warning(f"Could not fetch logs: {e}")
+        params = {"namespace": namespace, "pod": pod}
+        if container:
+            params["container"] = container
+        logs = ""
+        error = None
+        if refresh or True:  # Always fetch logs on first render and on refresh
+            try:
+                resp = requests.get(url, params=params, timeout=10)
+                data = resp.json()
+                logs = data.get("logs", "")
+                error = data.get("error", None)
+            except Exception as e:
+                error = str(e)
+        if error:
+            st.error(f"Error fetching logs: {error}")
+        st.text_area(f"Pod Logs ({container if container else 'default'})", logs, height=400)
 
 # --- Sidebar navigation ---
 pages = {
