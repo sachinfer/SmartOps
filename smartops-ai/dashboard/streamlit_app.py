@@ -116,30 +116,23 @@ try:
 except ImportError:
     pass
 
-# Main header with gradient
-st.markdown("""
-<div class="main-header">
-    <h1>🚀 SmartOps AI Anomaly Detection Dashboard</h1>
-    <p>Real-time Kubernetes monitoring with AI-powered anomaly detection</p>
-</div>
-""", unsafe_allow_html=True)
+# Helper to fetch namespaces from FastAPI backend
+@st.cache_data(ttl=30)
+def fetch_namespaces():
+    try:
+        url = f"http://localhost:8000/namespaces"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('namespaces', [])
+        else:
+            return []
+    except Exception as e:
+        st.warning(f"Could not fetch namespaces: {e}")
+        return []
 
-# Connect to DB
-conn = sqlite3.connect("/app/dashboard/data/data.db")
-conn.execute("""
-    CREATE TABLE IF NOT EXISTS anomalies (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT,
-        cpu REAL,
-        memory REAL,
-        prediction TEXT,
-        pod_name TEXT,
-        labels TEXT
-    )
-""")
-conn.commit()
-df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-conn.close()
+# Check if 'namespace' column exists in the anomalies table
+def has_namespace_column(df):
+    return 'namespace' in df.columns
 
 def get_status_and_advice(latest_pred: str, cpu: float, memory: float) -> Tuple[str, str, str, str]:
     if latest_pred.lower() == "normal":
@@ -167,303 +160,281 @@ def get_status_and_advice(latest_pred: str, cpu: float, memory: float) -> Tuple[
             action
         )
 
-# Check if 'namespace' column exists in the anomalies table
-def has_namespace_column(df):
-    return 'namespace' in df.columns
-
-# Helper to fetch namespaces from FastAPI backend
-@st.cache_data(ttl=30)
-def fetch_namespaces():
-    try:
-        url = f"http://localhost:8000/namespaces"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            return resp.json().get('namespaces', [])
-        else:
-            return []
-    except Exception as e:
-        st.warning(f"Could not fetch namespaces: {e}")
-        return []
-
-# Fetch namespaces for dropdown
-namespace_options = ['all'] + fetch_namespaces()
-selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
-
-# Filter dataframe by namespace if applicable
-if has_namespace_column(df) and selected_ns != 'all':
-    filtered_df = df[df['namespace'] == selected_ns].copy()
-else:
-    filtered_df = df.copy()
-
-# Top Anomalies by CPU Usage (directly under namespace dropdown)
-st.markdown("## 🔥 Top Anomalies by CPU Usage")
-chart_df = filtered_df.copy()
-chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
-chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
-chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
-chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
-top_cpu_df = chart_df.nlargest(5, 'cpu_percent')[['timestamp', 'pod_name', 'cpu_percent', 'memory_mb', 'prediction']]
-top_cpu_df['cpu_percent'] = top_cpu_df['cpu_percent'].round(1).astype(str) + '%'
-top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
-top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
-st.dataframe(top_cpu_df, use_container_width=True)
-
-# Recent Anomalies (directly under namespace dropdown)
-st.markdown("## 🕒 Recent Anomalies")
-display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
-if 'pod_name' in filtered_df.columns:
-    display_cols.append('pod_name')
-if 'labels' in filtered_df.columns:
-    display_cols.append('labels')
-show_df = filtered_df[display_cols].copy()
-show_df = show_df.sort_values('timestamp', ascending=False).head(20)
-show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
-show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
-show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
-show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
-display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
-if 'pod_name' in show_df.columns:
-    display_df['pod_name'] = show_df['pod_name']
-if 'labels' in show_df.columns:
-    display_df['labels'] = show_df['labels']
-display_df = display_df.rename(columns={
-    'timestamp': 'Timestamp',
-    'cpu_display': 'CPU',
-    'memory_display': 'Memory',
-    'pod_name': 'Pod Name',
-    'labels': 'Labels'
-})
-st.dataframe(display_df, use_container_width=True)
-
-if filtered_df.empty:
+# --- Dashboard Page ---
+def dashboard_page():
+    # Main header with gradient
     st.markdown("""
-    <div class="success-banner">
-        <h3>✅ No Data Available</h3>
-        <p>No anomalies detected for the selected namespace. All systems are running smoothly!</p>
+    <div class="main-header">
+        <h1>🚀 SmartOps AI Anomaly Detection Dashboard</h1>
+        <p>Real-time Kubernetes monitoring with AI-powered anomaly detection</p>
     </div>
     """, unsafe_allow_html=True)
-else:
-    filtered_df['timestamp'] = pd.to_datetime(filtered_df['timestamp'])
-    latest = filtered_df.iloc[-1]
-    # Get CPU and memory values (convert to numeric if needed)
-    cpu_val = pd.to_numeric(latest['cpu'], errors='coerce') if pd.notna(latest['cpu']) else 0.0
-    mem_val = pd.to_numeric(latest['memory'], errors='coerce') if pd.notna(latest['memory']) else 0.0
-    status, advice, banner_type, latest_action = get_status_and_advice(latest['prediction'], cpu_val, mem_val)
-    
-    if banner_type == 'error':
-        st.markdown(f"""
-        <div class="alert-banner">
-            <h3>🚨 {status}</h3>
-            <p>{advice}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class="success-banner">
-            <h3>✅ {status}</h3>
-            <p>{advice}</p>
-        </div>
-        """, unsafe_allow_html=True)
 
-    # Charts section
-    st.markdown("## 📈 Analytics Dashboard")
-    
-    # Prepare data for charts
+    # Connect to DB
+    conn = sqlite3.connect("/app/dashboard/data/data.db")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS anomalies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            cpu REAL,
+            memory REAL,
+            prediction TEXT,
+            pod_name TEXT,
+            labels TEXT
+        )
+    """)
+    conn.commit()
+    df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+    conn.close()
+
+    # Fetch namespaces for dropdown
+    namespace_options = ['all'] + fetch_namespaces()
+    selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
+
+    # Filter dataframe by namespace if applicable
+    if has_namespace_column(df) and selected_ns != 'all':
+        filtered_df = df[df['namespace'] == selected_ns].copy()
+    else:
+        filtered_df = df.copy()
+
+    # Top Anomalies by CPU Usage
+    st.markdown("## 🔥 Top Anomalies by CPU Usage")
     chart_df = filtered_df.copy()
     chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
-    chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
     chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+    chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
     chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
-    
-    # Convert timestamps to IST for charts with robust parsing
-    def parse_anomaly_timestamp(ts):
-        try:
-            if pd.isna(ts):
-                return ts
-            if isinstance(ts, str):
-                # Handle ISO format without timezone
-                if 'T' in ts:
-                    dt = pd.to_datetime(ts, format='ISO8601')
-                    if dt.tzinfo is None:
-                        dt = pytz.utc.localize(dt)
-                    return dt.astimezone(IST)
-                else:
-                    dt = pd.to_datetime(ts)
-                    if dt.tzinfo is None:
-                        dt = pytz.utc.localize(dt)
-                    return dt.astimezone(IST)
-            else:
-                # Already a datetime object
-                if ts.tzinfo is None:
-                    ts = pytz.utc.localize(ts)
-                return ts.astimezone(IST)
-        except Exception:
-            return ts
-    
-    chart_df['timestamp_ist'] = chart_df['timestamp'].apply(parse_anomaly_timestamp)
-    
-    # Create subplots for CPU and Memory trends
-    fig = make_subplots(
-        rows=2, cols=2,
-        subplot_titles=('CPU Usage Over Time (IST)', 'Memory Usage Over Time (IST)', 'CPU Distribution', 'Memory Distribution'),
-        specs=[[{"secondary_y": False}, {"secondary_y": False}],
-               [{"secondary_y": False}, {"secondary_y": False}]]
-    )
-    
-    # CPU over time
-    fig.add_trace(
-        go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['cpu_percent'], 
-                  mode='lines+markers', name='CPU %', line=dict(color='#667eea')),
-        row=1, col=1
-    )
-    
-    # Memory over time
-    fig.add_trace(
-        go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['memory_mb'], 
-                  mode='lines+markers', name='Memory MB', line=dict(color='#764ba2')),
-        row=1, col=2
-    )
-    
-    # CPU histogram
-    fig.add_trace(
-        go.Histogram(x=chart_df['cpu_percent'], name='CPU Distribution', 
-                    marker_color='#667eea', opacity=0.7),
-        row=2, col=1
-    )
-    
-    # Memory histogram
-    fig.add_trace(
-        go.Histogram(x=chart_df['memory_mb'], name='Memory Distribution', 
-                    marker_color='#764ba2', opacity=0.7),
-        row=2, col=2
-    )
-    
-    fig.update_layout(height=600, showlegend=False, title_text="Resource Usage Analytics")
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Plain English summary
-    st.markdown("## 📢 System Summary")
-    anomaly_count = (filtered_df['prediction'].str.lower() != 'normal').sum()
-    total = len(filtered_df)
-    st.info(f"Out of {total} recent checks, {anomaly_count} anomalies were detected.")
-    if anomaly_count == 0:
-        st.success("Everything looks good! No anomalies detected in the recent data.")
-    else:
-        st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.") 
+    top_cpu_df = chart_df.nlargest(5, 'cpu_percent')[['timestamp', 'pod_name', 'cpu_percent', 'memory_mb', 'prediction']]
+    top_cpu_df['cpu_percent'] = top_cpu_df['cpu_percent'].round(1).astype(str) + '%'
+    top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
+    top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
+    st.dataframe(top_cpu_df, use_container_width=True)
 
-# Deployment events summary with enhanced styling
-st.markdown("## 🚀 Deployment Workflow Events")
-try:
-    db_path = "data/deployment_events.db"
-    conn = sqlite3.connect(db_path)
-    
-    # Check if namespace column exists, if not add it
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(deployment_events)")
-    columns = [column[1] for column in cursor.fetchall()]
-    
-    if 'namespace' not in columns:
-        # Add namespace column to existing table
-        cursor.execute("ALTER TABLE deployment_events ADD COLUMN namespace TEXT DEFAULT 'smartops'")
-        conn.commit()
-        st.info("Updated deployment events table to include namespace column.")
-    
-    events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
-    conn.close()
-    
-    # Convert timestamps to IST
-    if not events.empty:
-        # Handle different timestamp formats
-        def parse_deployment_timestamp(ts_str):
-            try:
-                if pd.isna(ts_str):
-                    return ts_str
-                if isinstance(ts_str, str):
-                    # Handle ISO format without timezone
-                    if 'T' in ts_str:
-                        dt = pd.to_datetime(ts_str, format='ISO8601')
-                        if dt.tzinfo is None:
-                            dt = pytz.utc.localize(dt)
-                        return dt
-                    else:
-                        dt = pd.to_datetime(ts_str)
-                        if dt.tzinfo is None:
-                            dt = pytz.utc.localize(dt)
-                        return dt
-                else:
-                    # Already a datetime object
-                    if ts_str.tzinfo is None:
-                        ts_str = pytz.utc.localize(ts_str)
-                    return ts_str
-            except Exception:
-                # Fallback to simple parsing
-                return pd.to_datetime(ts_str)
-        
-        events['timestamp'] = events['timestamp'].apply(parse_deployment_timestamp)
-        events['timestamp_ist'] = events['timestamp'].apply(lambda x: 
-            x.astimezone(IST) if x.tzinfo else pytz.utc.localize(x).astimezone(IST)
-        )
-        events['timestamp_ist'] = events['timestamp_ist'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
-    
-    # Add namespace filter for deployment events
-    if 'namespace' in events.columns and not events.empty:
-        # Get unique namespaces, excluding None/NaN values
-        unique_namespaces = events['namespace'].dropna().unique().tolist()
-        ns_options = ['all'] + sorted([ns for ns in unique_namespaces if ns and ns.strip()])
+    # Recent Anomalies
+    st.markdown("## 🕒 Recent Anomalies")
+    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+    if 'pod_name' in filtered_df.columns:
+        display_cols.append('pod_name')
+    if 'labels' in filtered_df.columns:
+        display_cols.append('labels')
+    show_df = filtered_df[display_cols].copy()
+    show_df = show_df.sort_values('timestamp', ascending=False).head(20)
+    show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
+    show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
+    show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
+    show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
+    display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
+    if 'pod_name' in show_df.columns:
+        display_df['pod_name'] = show_df['pod_name']
+    if 'labels' in show_df.columns:
+        display_df['labels'] = show_df['labels']
+    display_df = display_df.rename(columns={
+        'timestamp': 'Timestamp',
+        'cpu_display': 'CPU',
+        'memory_display': 'Memory',
+        'pod_name': 'Pod Name',
+        'labels': 'Labels'
+    })
+    st.dataframe(display_df, use_container_width=True)
+
+    if filtered_df.empty:
+        st.markdown("""
+        <div class="success-banner">
+            <h3>✅ No Data Available</h3>
+            <p>No anomalies detected for the selected namespace. All systems are running smoothly!</p>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        ns_options = ['all']
-    
-    selected_ns = st.selectbox('Select Deployment Namespace', ns_options, index=0, key='deploy_ns')
-    
-    if selected_ns != 'all' and 'namespace' in events.columns:
-        events = events[events['namespace'] == selected_ns]
-    
-    if not events.empty:
-        latest = events.iloc[0]
-        if latest["status"] == "success":
-            st.markdown(f"""
-            <div class="success-banner">
-                <h3>✅ Deployment Success at {latest['timestamp_ist']}</h3>
-                <p>{latest['message']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        elif latest["status"] == "failed":
+        filtered_df['timestamp'] = pd.to_datetime(filtered_df['timestamp'])
+        latest = filtered_df.iloc[-1]
+        cpu_val = pd.to_numeric(latest['cpu'], errors='coerce') if pd.notna(latest['cpu']) else 0.0
+        mem_val = pd.to_numeric(latest['memory'], errors='coerce') if pd.notna(latest['memory']) else 0.0
+        status, advice, banner_type, latest_action = get_status_and_advice(latest['prediction'], cpu_val, mem_val)
+        if banner_type == 'error':
             st.markdown(f"""
             <div class="alert-banner">
-                <h3>❌ Deployment Failed at {latest['timestamp_ist']}</h3>
-                <p>{latest['message']}</p>
+                <h3>🚨 {status}</h3>
+                <p>{advice}</p>
             </div>
             """, unsafe_allow_html=True)
-        elif latest["status"] == "started":
+        else:
             st.markdown(f"""
-            <div class="metric-card">
-                <h3>🚀 Deployment Started at {latest['timestamp_ist']}</h3>
-                <p>{latest['message']}</p>
+            <div class="success-banner">
+                <h3>✅ {status}</h3>
+                <p>{advice}</p>
             </div>
             """, unsafe_allow_html=True)
-    else:
-        st.info("No deployment events recorded yet.")
-    
-    # Deployment metrics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("🚀 Deployments Started", (events["status"] == "started").sum())
-    with col2:
-        st.metric("✅ Deployments Successful", (events["status"] == "success").sum())
-    with col3:
-        st.metric("❌ Deployments Failed", (events["status"] == "failed").sum())
-    
-    st.markdown("### 📋 Recent Deployment Events")
-    if not events.empty:
-        display_events = events[['timestamp_ist', 'status', 'message']].copy()
-        display_events = display_events.rename(columns={'timestamp_ist': 'Timestamp (IST)'})
-        st.dataframe(display_events.head(10), use_container_width=True)
-    else:
-        st.info("No deployment events to display.")
-except Exception as e:
-    st.warning(f"Could not load deployment events: {e}")
-    st.error(f"Error details: {str(e)}")
 
+        # Charts section
+        st.markdown("## 📈 Analytics Dashboard")
+        chart_df = filtered_df.copy()
+        chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
+        chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
+        chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+        chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
+        def parse_anomaly_timestamp(ts):
+            try:
+                if pd.isna(ts):
+                    return ts
+                if isinstance(ts, str):
+                    if 'T' in ts:
+                        dt = pd.to_datetime(ts, format='ISO8601')
+                        if dt.tzinfo is None:
+                            dt = pytz.utc.localize(dt)
+                        return dt.astimezone(IST)
+                    else:
+                        dt = pd.to_datetime(ts)
+                        if dt.tzinfo is None:
+                            dt = pytz.utc.localize(dt)
+                        return dt.astimezone(IST)
+                else:
+                    if ts.tzinfo is None:
+                        ts = pytz.utc.localize(ts)
+                    return ts.astimezone(IST)
+            except Exception:
+                return ts
+        chart_df['timestamp_ist'] = chart_df['timestamp'].apply(parse_anomaly_timestamp)
+        fig = make_subplots(
+            rows=2, cols=2,
+            subplot_titles=('CPU Usage Over Time (IST)', 'Memory Usage Over Time (IST)', 'CPU Distribution', 'Memory Distribution'),
+            specs=[[{"secondary_y": False}, {"secondary_y": False}],
+                   [{"secondary_y": False}, {"secondary_y": False}]]
+        )
+        fig.add_trace(
+            go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['cpu_percent'], 
+                      mode='lines+markers', name='CPU %', line=dict(color='#667eea')),
+            row=1, col=1
+        )
+        fig.add_trace(
+            go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['memory_mb'], 
+                      mode='lines+markers', name='Memory MB', line=dict(color='#764ba2')),
+            row=1, col=2
+        )
+        fig.add_trace(
+            go.Histogram(x=chart_df['cpu_percent'], name='CPU Distribution', 
+                        marker_color='#667eea', opacity=0.7),
+            row=2, col=1
+        )
+        fig.add_trace(
+            go.Histogram(x=chart_df['memory_mb'], name='Memory Distribution', 
+                        marker_color='#764ba2', opacity=0.7),
+            row=2, col=2
+        )
+        fig.update_layout(height=600, showlegend=False, title_text="Resource Usage Analytics")
+        st.plotly_chart(fig, use_container_width=True)
+        st.markdown("## 📢 System Summary")
+        anomaly_count = (filtered_df['prediction'].str.lower() != 'normal').sum()
+        total = len(filtered_df)
+        st.info(f"Out of {total} recent checks, {anomaly_count} anomalies were detected.")
+        if anomaly_count == 0:
+            st.success("Everything looks good! No anomalies detected in the recent data.")
+        else:
+            st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.")
+
+    # Deployment events summary
+    st.markdown("## 🚀 Deployment Workflow Events")
+    try:
+        db_path = "data/deployment_events.db"
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(deployment_events)")
+        columns = [column[1] for column in cursor.fetchall()]
+        if 'namespace' not in columns:
+            cursor.execute("ALTER TABLE deployment_events ADD COLUMN namespace TEXT DEFAULT 'smartops'")
+            conn.commit()
+            st.info("Updated deployment events table to include namespace column.")
+        events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
+        conn.close()
+        if not events.empty:
+            def parse_deployment_timestamp(ts_str):
+                try:
+                    if pd.isna(ts_str):
+                        return ts_str
+                    if isinstance(ts_str, str):
+                        if 'T' in ts_str:
+                            dt = pd.to_datetime(ts_str, format='ISO8601')
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            return dt
+                        else:
+                            dt = pd.to_datetime(ts_str)
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            return dt
+                    else:
+                        if ts_str.tzinfo is None:
+                            ts_str = pytz.utc.localize(ts_str)
+                        return ts_str
+                except Exception:
+                    return pd.to_datetime(ts_str)
+            events['timestamp_ist'] = events['timestamp'].apply(parse_deployment_timestamp)
+            events['timestamp_ist'] = events['timestamp_ist'].apply(lambda x: x.astimezone(IST) if hasattr(x, 'astimezone') else x)
+            events = events.rename(columns={'timestamp_ist': 'Timestamp (IST)', 'status': 'Status', 'message': 'Message', 'namespace': 'Namespace'})
+            st.dataframe(events[['Timestamp (IST)', 'Status', 'Message', 'Namespace']], use_container_width=True)
+        else:
+            st.info("No deployment events found.")
+    except Exception as e:
+        st.warning(f"Could not load deployment events: {e}")
+
+# --- Pod Explorer & Logs Page ---
+def pod_explorer_page():
+    st.title("🛰️ Pod Explorer & Logs")
+    st.write("Explore pods and view their logs in real time.")
+
+    @st.cache_data(ttl=30)
+    def fetch_namespaces():
+        try:
+            url = f"http://localhost:8000/namespaces"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                return resp.json().get('namespaces', [])
+            else:
+                return []
+        except Exception as e:
+            st.warning(f"Could not fetch namespaces: {e}")
+            return []
+
+    namespaces = fetch_namespaces()
+    if not namespaces:
+        st.warning("No namespaces found.")
+        return
+    namespace = st.selectbox("Select Namespace", namespaces)
+
+    @st.cache_data(ttl=30)
+    def fetch_pods(namespace):
+        try:
+            url = f"http://localhost:8000/pods"
+            resp = requests.get(url, params={"namespace": namespace}, timeout=5)
+            if resp.status_code == 200:
+                return [pod["name"] for pod in resp.json().get("pods", [])]
+            else:
+                return []
+        except Exception as e:
+            st.warning(f"Could not fetch pods: {e}")
+            return []
+
+    pods = fetch_pods(namespace)
+    if not pods:
+        st.warning("No pods found in this namespace.")
+        return
+    pod = st.selectbox("Select Pod", pods)
+
+    if pod:
+        url = f"http://localhost:8000/logs"
+        try:
+            resp = requests.get(url, params={"namespace": namespace, "pod": pod}, timeout=10)
+            logs = resp.json().get("logs", "")
+            st.text_area("Pod Logs", logs, height=400)
+        except Exception as e:
+            st.warning(f"Could not fetch logs: {e}")
+
+# --- Sidebar navigation ---
+pages = {
+    "Dashboard": dashboard_page,
+    "Pod Explorer & Logs": pod_explorer_page
+}
+page = st.sidebar.radio("Navigate", list(pages.keys()))
+pages[page]()
 # Footer
 st.markdown("---")
 st.markdown("""

@@ -78,4 +78,20 @@ def list_namespaces():
     v1 = client.CoreV1Api()
     ns_list = v1.list_namespace()
     namespaces = [ns.metadata.name for ns in ns_list.items]
-    return {"namespaces": namespaces} 
+    return {"namespaces": namespaces}
+
+@app.get("/logs")
+def get_pod_logs(namespace: str = Query(..., description="Namespace of the pod"), pod: str = Query(..., description="Pod name"), container: Optional[str] = Query(None, description="Container name (optional)")):
+    """
+    Fetch logs for a given pod in a given namespace. Optionally specify container.
+    """
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    try:
+        logs = v1.read_namespaced_pod_log(name=pod, namespace=namespace, container=container)
+    except Exception as e:
+        return {"error": str(e), "logs": ""}
+    return {"logs": logs} 
