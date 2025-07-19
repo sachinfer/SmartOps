@@ -97,14 +97,14 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-    conn.execute("""
+conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-            timestamp TEXT,
+        timestamp TEXT,
             status TEXT,
             message TEXT
-        )
-    """)
-    conn.commit()
+    )
+""")
+conn.commit()
     conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
@@ -168,8 +168,8 @@ def fetch_pods(namespace):
 def load_anomalies_df():
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
-        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-        conn.close()
+df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+conn.close()
         return df
     except Exception as e:
         st.warning(f"Could not load anomalies data: {e}")
@@ -236,7 +236,7 @@ def dashboard_page():
 
     # Fetch namespaces for dropdown
     namespace_options = ['all'] + fetch_namespaces()
-selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
+    selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
     # Namespace stats (pods/services count)
     ns_stats = fetch_namespace_stats(selected_ns)
@@ -247,11 +247,11 @@ selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
     </div>
     """, unsafe_allow_html=True)
 
-# Filter dataframe by namespace if applicable
-if has_namespace_column(df) and selected_ns != 'all':
-    filtered_df = df[df['namespace'] == selected_ns].copy()
-else:
-    filtered_df = df.copy()
+    # Filter dataframe by namespace if applicable
+    if has_namespace_column(df) and selected_ns != 'all':
+        filtered_df = df[df['namespace'] == selected_ns].copy()
+    else:
+        filtered_df = df.copy()
 
     # Top Anomalies by CPU Usage
     st.markdown("## 🔥 Top Anomalies by CPU Usage")
