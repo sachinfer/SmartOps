@@ -312,6 +312,14 @@ def main_anomaly_loop():
     import joblib
     import requests
     
+    # Fix database schema first
+    try:
+        from fix_database_schema import fix_database_schema
+        fix_database_schema()
+        logging.info("Database schema fixed successfully")
+    except Exception as e:
+        logging.error(f"Failed to fix database schema: {e}")
+    
     # Load the trained model
     try:
         model = joblib.load("/app/app/model/isolation_forest.pkl")
