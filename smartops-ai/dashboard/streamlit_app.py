@@ -198,7 +198,7 @@ with col2:
     anomaly_count = (filtered_df['prediction'].str.lower() != 'normal').sum() if not filtered_df.empty else 0
     st.markdown(f"""
     <div class="metric-card">
-        <h3>🚨 Active Anomalies</h3>
+        <h3>🎉 Active Anomalies</h3>
         <h2>{anomaly_count}</h2>
     </div>
     """, unsafe_allow_html=True)
@@ -207,7 +207,6 @@ with col3:
     if not filtered_df.empty:
         filtered_df['timestamp'] = pd.to_datetime(filtered_df['timestamp'])
         latest_time = filtered_df['timestamp'].max()
-        # Convert to IST for accurate time calculation
         if latest_time.tzinfo is None:
             latest_time = pytz.utc.localize(latest_time)
         ist_latest_time = latest_time.astimezone(IST)
@@ -229,13 +228,32 @@ with col3:
         """, unsafe_allow_html=True)
 
 with col4:
-    unique_pods = filtered_df['pod_name'].nunique() if not filtered_df.empty and 'pod_name' in filtered_df.columns else 0
+    # Make the card clickable using Streamlit's button
+    if st.button('🟦 Available Pods', key='show_pods'):
+        st.session_state['show_pods'] = not st.session_state.get('show_pods', False)
+    available_pods_count = 23  # Placeholder, replace with real count from backend/API
     st.markdown(f"""
     <div class="metric-card">
-        <h3>🔧 Monitored Pods</h3>
-        <h2>{unique_pods}</h2>
+        <h3>🟦 Available Pods</h3>
+        <h2>{available_pods_count}</h2>
     </div>
     """, unsafe_allow_html=True)
+
+# Show all pods table if the card is clicked
+if st.session_state.get('show_pods', False):
+    st.markdown('### 🟦 All Available Pods')
+    # Mocked pod data; replace with real API/backend call
+    pod_data = [
+        {'name': 'smartops-app-123', 'namespace': 'smartops', 'status': 'Running'},
+        {'name': 'smartops-dashboard-456', 'namespace': 'smartops', 'status': 'Running'},
+        {'name': 'nginx-789', 'namespace': 'default', 'status': 'Pending'},
+        # ... add more or fetch from backend ...
+    ]
+    pods_df = pd.DataFrame(pod_data)
+    # Filter by selected namespace if not 'all'
+    if selected_ns != 'all':
+        pods_df = pods_df[pods_df['namespace'] == selected_ns]
+    st.dataframe(pods_df, use_container_width=True)
 
 if filtered_df.empty:
     st.markdown("""
