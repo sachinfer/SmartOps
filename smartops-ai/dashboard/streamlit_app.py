@@ -714,17 +714,34 @@ def retrain_model_section():
 def cluster_explorer_page():
     st.title("🔍 Cluster Explorer")
     st.write("Run safe kubectl-like queries on your cluster.")
-    resource_types = ["pods", "services", "deployments", "nodes"]
+
+    # Fetch resource types and namespaces for autocomplete
+    @st.cache_data(ttl=30)
+    def fetch_resource_types():
+        try:
+            resp = requests.get("http://localhost:8000/kubectl_resource_types", timeout=5)
+            return resp.json().get("resource_types", [])
+        except Exception:
+            return ["pods", "services", "deployments", "nodes", "events"]
+    @st.cache_data(ttl=30)
+    def fetch_namespaces():
+        try:
+            resp = requests.get("http://localhost:8000/kubectl_namespaces", timeout=5)
+            return resp.json().get("namespaces", [])
+        except Exception:
+            return ["default", "smartops"]
+    resource_types = fetch_resource_types()
+    namespaces = fetch_namespaces()
+
+    # UI for resource type and namespace
     resource = st.selectbox("Resource Type", resource_types, index=0)
-    all_ns = st.checkbox("All Namespaces", value=True)
+    ns = st.selectbox("Namespace", ["All"] + namespaces, index=0)
+    all_ns = ns == "All"
     if st.button("Fetch"):
         with st.spinner("Fetching data..."):
             try:
-                resp = requests.get(
-                    "http://localhost:8000/kubectl_get",
-                    params={"resource_type": resource, "all_namespaces": str(all_ns).lower()},
-                    timeout=15
-                )
+                params = {"resource_type": resource, "all_namespaces": str(all_ns).lower()}
+                resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
                 items = resp.json().get("items", [])
                 if not items:
                     st.info("No results found.")
@@ -734,26 +751,57 @@ def cluster_explorer_page():
                     st.dataframe(df, use_container_width=True)
             except Exception as e:
                 st.error(f"Error fetching data: {e}")
+
     st.markdown("---")
     st.markdown("### ⚠️ Raw Kubectl Command (Dev Only)")
-    st.warning("This feature is for dev environments only. Use with caution!")
+    st.warning("This feature is for dev environments only. Use with caution! Only 'get', 'describe', 'logs' are allowed.")
+    if "kubectl_history" not in st.session_state:
+        st.session_state.kubectl_history = []
     raw_cmd = st.text_input("kubectl command (after 'kubectl')", "get pods -A")
     if st.button("Run kubectl command"):
-        with st.spinner("Running kubectl..."):
-            try:
-                resp = requests.post(
-                    "http://localhost:8000/kubectl_raw",
-                    params={"command": raw_cmd},
-                    timeout=30
-                )
-                data = resp.json()
-                st.code(data.get("stdout", ""), language="shell")
-                if data.get("stderr"):
-                    st.error(data["stderr"])
-                if data.get("returncode", 0) != 0:
-                    st.warning(f"kubectl exited with code {data.get('returncode')}")
-            except Exception as e:
-                st.error(f"Error running kubectl: {e}")
+        # Restrict to safe commands
+        allowed = ["get", "describe", "logs"]
+        if not any(raw_cmd.strip().startswith(a) for a in allowed):
+            st.error("Only 'get', 'describe', 'logs' commands are allowed.")
+        else:
+            st.session_state.kubectl_history.insert(0, raw_cmd)
+            with st.spinner("Running kubectl..."):
+                try:
+                    resp = requests.post(
+                        "http://localhost:8000/kubectl_raw",
+                        params={"command": raw_cmd},
+                        timeout=30
+                    )
+                    data = resp.json()
+                    # If 'get', try to parse as table
+                    if raw_cmd.strip().startswith("get") and data.get("stdout"):
+                        import pandas as pd
+                        lines = data["stdout"].strip().splitlines()
+                        if len(lines) > 1:
+                            header = lines[0].split()
+                            rows = [l.split() for l in lines[1:] if l.strip()]
+                            try:
+                                df = pd.DataFrame(rows, columns=header)
+                                st.dataframe(df, use_container_width=True)
+                            except Exception:
+                                st.code(data["stdout"], language="shell")
+                        else:
+                            st.code(data["stdout"], language="shell")
+                    else:
+                        st.code(data.get("stdout", ""), language="shell")
+                    if data.get("stderr"):
+                        st.error(data["stderr"])
+                    if data.get("returncode", 0) != 0:
+                        st.warning(f"kubectl exited with code {data.get('returncode')}")
+                except Exception as e:
+                    st.error(f"Error running kubectl: {e}")
+    # Command history
+    if st.session_state.kubectl_history:
+        st.markdown("#### Command History")
+        for cmd in st.session_state.kubectl_history[:10]:
+            if st.button(f"▶️ {cmd}", key=f"history_{cmd}"):
+                st.session_state["raw_cmd"] = cmd
+                st.experimental_rerun()
 
 # --- Sidebar navigation ---
 pages = {

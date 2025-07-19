@@ -312,4 +312,20 @@ def kubectl_raw(command: str = Query(..., description="kubectl command after 'ku
             "returncode": result.returncode
         }
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)}) 
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/kubectl_namespaces")
+def kubectl_namespaces():
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    ns_list = v1.list_namespace()
+    namespaces = [ns.metadata.name for ns in ns_list.items]
+    return {"namespaces": namespaces}
+
+@app.get("/kubectl_resource_types")
+def kubectl_resource_types():
+    # Only allow safe resource types
+    return {"resource_types": ["pods", "services", "deployments", "nodes", "events"]} 
