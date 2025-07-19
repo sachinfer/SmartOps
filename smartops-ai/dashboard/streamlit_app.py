@@ -95,9 +95,9 @@ if filtered_df.empty:
 else:
     filtered_df['timestamp'] = pd.to_datetime(filtered_df['timestamp'])
     latest = filtered_df.iloc[-1]
-    # Get CPU and memory values (they're already REAL type now)
-    cpu_val = latest['cpu'] if pd.notna(latest['cpu']) else 0.0
-    mem_val = latest['memory'] if pd.notna(latest['memory']) else 0.0
+    # Get CPU and memory values (convert to numeric if needed)
+    cpu_val = pd.to_numeric(latest['cpu'], errors='coerce') if pd.notna(latest['cpu']) else 0.0
+    mem_val = pd.to_numeric(latest['memory'], errors='coerce') if pd.notna(latest['memory']) else 0.0
     status, advice, banner_type, latest_action = get_status_and_advice(latest['prediction'], cpu_val, mem_val)
     st.markdown(f"<div style='padding:1em; border-radius:8px; background-color:{'#d4edda' if banner_type=='success' else '#f8d7da'}; color:{'#155724' if banner_type=='success' else '#721c24'}; font-size:1.2em; margin-bottom:1em;'><b>{status}</b><br>{advice}</div>", unsafe_allow_html=True)
 
@@ -113,9 +113,13 @@ else:
     
     # Format the display
     if not show_df.empty:
+        # Convert CPU and memory to numeric, handling any non-numeric values
+        show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
+        show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
+        
         # Convert CPU to percentage and memory to MB for display
-        show_df['cpu_display'] = (show_df['cpu'] * 100).round(1).astype(str) + '%'
-        show_df['memory_display'] = (show_df['memory'] / (1024 * 1024)).round(1).astype(str) + 'MB'
+        show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
+        show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
         
         # Create display dataframe with formatted columns
         display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
