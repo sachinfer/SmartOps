@@ -577,12 +577,57 @@ def pod_explorer_page():
         )
         st.text_area(f"Pod Logs ({container if container else 'default'})", filtered_logs, height=400)
 
+# --- AI Recommendations / Pending AI Actions ---
+def ai_actions_section():
+    st.markdown("## 🤖 AI Recommendations (Pending Actions)")
+    try:
+        resp = requests.get("http://localhost:8000/ai_actions", timeout=5)
+        actions = resp.json().get("actions", [])
+    except Exception as e:
+        st.warning(f"Could not fetch AI actions: {e}")
+        actions = []
+    if not actions:
+        st.info("No pending AI actions.")
+        return
+    for action in actions:
+        with st.expander(f"Pod: {action['pod_name']} | Namespace: {action['namespace']}"):
+            st.write(f"**Reason:** {action['reason']}")
+            st.write(f"**Timestamp:** {action['timestamp']}")
+            confirm_btn = st.button(f"✅ Confirm Delete Pod {action['pod_name']}", key=f"confirm_{action['id']}")
+            if confirm_btn:
+                with st.spinner("Deleting pod..."):
+                    resp = requests.post("http://localhost:8000/confirm_ai_action", params={"action_id": action['id']})
+                    if resp.status_code == 200:
+                        st.success(f"Pod {action['pod_name']} deleted.")
+                    else:
+                        st.error(f"Delete failed: {resp.text}")
+
+# --- Model Retraining Button ---
+def retrain_model_section():
+    st.markdown("## 🧠 Retrain Anomaly Detection Model")
+    if st.button("🔄 Retrain Model", key="retrain_model_btn"):
+        with st.spinner("Retraining model... this may take a minute..."):
+            try:
+                resp = requests.post("http://localhost:8000/retrain_model", timeout=60)
+                if resp.status_code == 200:
+                    st.success("Model retrained and deployed!")
+                else:
+                    st.error(f"Retrain failed: {resp.text}")
+            except Exception as e:
+                st.error(f"Retrain error: {e}")
+
 # --- Sidebar navigation ---
 pages = {
     "Dashboard": dashboard_page,
     "Pod Explorer & Logs": pod_explorer_page
 }
 page = st.sidebar.radio("Navigate", list(pages.keys()))
+
+# Show AI actions and retrain button in sidebar for all pages
+with st.sidebar:
+    ai_actions_section()
+    retrain_model_section()
+
 pages[page]()
 # Footer
 st.markdown("---")

@@ -380,6 +380,10 @@ def main_anomaly_loop():
                         )
                         send_telegram_alert(alert_msg, raw=True)
                         logging.warning(f"ACTIONABLE ANOMALY - Pod: {pod_name}, Labels: {labels}, CPU: {cpu_percent:.1f}%, Memory: {memory_mb:.1f}MB")
+                        # AI action logging for stress pods
+                        if 'stress' in pod_name:
+                            reason = f"Anomaly detected: {message}, CPU={cpu_percent:.1f}%, Mem={memory_mb:.1f}MB"
+                            log_ai_action(pod_name, metrics.get('namespace', 'smartops'), reason)
                     else:
                         logging.info(f"Anomaly detected by model, but within normal band: Pod: {pod_name}, Labels: {labels}, CPU={cpu_percent:.1f}%, Mem={memory_mb:.1f}MB. No alert sent.")
                 else:

@@ -136,4 +136,64 @@ def describe_pod(namespace: str = Query(...), pod: str = Query(...)):
         pod_obj = v1.read_namespaced_pod(name=pod, namespace=namespace)
         return pod_obj.to_dict()
     except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/ai_actions")
+def list_ai_actions():
+    db_path = "/app/dashboard/data/ai_actions.db"
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    conn.execute('''CREATE TABLE IF NOT EXISTS ai_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        pod_name TEXT,
+        namespace TEXT,
+        reason TEXT,
+        status TEXT
+    )''')
+    actions = conn.execute("SELECT * FROM ai_actions WHERE status='pending' ORDER BY timestamp DESC").fetchall()
+    conn.close()
+    return {"actions": [dict(a) for a in actions]}
+
+@app.post("/confirm_ai_action")
+def confirm_ai_action(action_id: int = Query(...)):
+    db_path = "/app/dashboard/data/ai_actions.db"
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    action = conn.execute("SELECT * FROM ai_actions WHERE id=?", (action_id,)).fetchone()
+    if not action:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "Action not found"})
+    pod_name = action[2]
+    namespace = action[3]
+    # Delete the pod
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    try:
+        v1.delete_namespaced_pod(name=pod_name, namespace=namespace)
+        # Mark action as completed
+        conn.execute("UPDATE ai_actions SET status='completed' WHERE id=?", (action_id,))
+        conn.commit()
+        conn.close()
+        return {"result": "pod deleted", "pod": pod_name, "namespace": namespace}
+    except Exception as e:
+        conn.close()
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/retrain_model")
+def retrain_model():
+    import subprocess
+    try:
+        result = subprocess.run([
+            "python", "/app/train_model_from_real_data.py"
+        ], capture_output=True, text=True, timeout=120)
+        if result.returncode == 0:
+            return {"result": "Model retrained successfully", "output": result.stdout}
+        else:
+            return JSONResponse(status_code=500, content={"error": result.stderr})
+    except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)}) 
