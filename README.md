@@ -328,6 +328,44 @@ SmartOps now includes a powerful, interactive pod explorer directly in the Strea
 
 ---
 
+## 🤖 AI/ML Automation & Human-in-the-Loop Remediation
+
+SmartOps now includes advanced AI/ML features for Kubernetes self-healing and operator-in-the-loop automation:
+
+- **AI Recommendations (Pending Actions):**
+  - When the ML model detects an actionable anomaly (e.g., high CPU on a "stress" pod), it logs a pending AI action instead of taking action automatically.
+  - In the dashboard sidebar, you will see a list of pending AI actions (e.g., "Delete pod stress-cpu3").
+  - You can review the reason and confirm the action (delete the pod) with a single click.
+  - All actions are logged for auditability.
+
+- **AI Action History:**
+  - The dashboard sidebar includes a full history of all AI actions (pending, completed, failed), with timestamps, pod names, reasons, and status (color-coded).
+  - This provides a complete audit trail of all AI-driven recommendations and operator responses.
+
+- **Retrain Model Button:**
+  - The dashboard sidebar includes a "Retrain Model" button.
+  - When clicked, it triggers the backend to retrain the IsolationForest anomaly detection model using the latest data.
+  - Success or error messages are shown in the UI.
+
+- **Human-in-the-Loop Remediation:**
+  - AI never deletes pods automatically. Instead, it recommends actions for operator review and confirmation.
+  - This ensures safe, auditable, and explainable AI-driven operations.
+
+### How to Test the AI/ML Workflow
+
+1. **Trigger an Anomaly:**
+   - Deploy a pod with "stress" in its name (e.g., using a stress test YAML) that consumes high CPU.
+   - Wait for the anomaly loop to detect the anomaly.
+2. **Review AI Recommendations:**
+   - Open the dashboard sidebar and look for pending AI actions.
+   - Review the reason and confirm the action to delete the pod.
+3. **Check AI Action History:**
+   - All actions (pending, completed, failed) are visible in the AI Action History table in the sidebar.
+4. **Retrain the Model:**
+   - Click the "Retrain Model" button in the sidebar to retrain the anomaly detection model using the latest data.
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.

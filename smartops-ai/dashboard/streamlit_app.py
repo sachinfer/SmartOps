@@ -191,6 +191,22 @@ def dashboard_page():
     namespace_options = ['all'] + fetch_namespaces()
     selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
+    # Namespace stats (pods/services count)
+    @st.cache_data(ttl=30)
+    def fetch_namespace_stats(ns):
+        try:
+            url = f"http://localhost:8000/namespace_stats"
+            resp = requests.get(url, params={"namespace": ns}, timeout=5)
+            if resp.status_code == 200:
+                return resp.json()
+            else:
+                return {"pod_count": 0, "service_count": 0}
+        except Exception as e:
+            st.warning(f"Could not fetch namespace stats: {e}")
+            return {"pod_count": 0, "service_count": 0}
+    ns_stats = fetch_namespace_stats(selected_ns)
+    st.markdown(f"**Pods:** {ns_stats['pod_count']} | **Services:** {ns_stats['service_count']}")
+
     # Filter dataframe by namespace if applicable
     if has_namespace_column(df) and selected_ns != 'all':
         filtered_df = df[df['namespace'] == selected_ns].copy()
@@ -331,21 +347,61 @@ def dashboard_page():
         else:
             st.error(f"{anomaly_count} anomalies detected. Please review the recommended actions above.")
 
-    # Deployment events summary
+    # --- AI Action History (now in main dashboard) ---
+    st.markdown("## 📜 AI Action History")
+    try:
+        resp = requests.get("http://localhost:8000/ai_actions", params={"all": "true"}, timeout=5)
+        actions = resp.json().get("actions", [])
+    except Exception as e:
+        st.warning(f"Could not fetch AI action history: {e}")
+        actions = []
+    if not actions:
+        st.info("No AI actions in history.")
+    else:
+        import pandas as pd
+        df = pd.DataFrame(actions)
+        if not df.empty:
+            df = df.rename(columns={
+                "timestamp": "Timestamp",
+                "pod_name": "Pod Name",
+                "namespace": "Namespace",
+                "reason": "Reason",
+                "status": "Status"
+            })
+            # Summary counts
+            status_counts = df["Status"].value_counts().to_dict()
+            st.markdown(f"**Completed:** {status_counts.get('completed', 0)} | **Pending:** {status_counts.get('pending', 0)} | **Failed:** {status_counts.get('failed', 0)} | **Not Found:** {status_counts.get('not_found', 0)}")
+            # Color-code status
+            def color_status(val):
+                if val == "completed":
+                    return "background-color: #00b894; color: white;"
+                elif val == "pending":
+                    return "background-color: #fdcb6e; color: black;"
+                elif val == "failed":
+                    return "background-color: #d63031; color: white;"
+                elif val == "not_found":
+                    return "background-color: #636e72; color: white;"
+                return ""
+            st.dataframe(
+                df[["Timestamp", "Pod Name", "Namespace", "Reason", "Status"]]
+                .style.applymap(color_status, subset=["Status"]),
+                use_container_width=True
+            )
+
+    # --- Deployment Workflow Events Summary ---
     st.markdown("## 🚀 Deployment Workflow Events")
     try:
         db_path = "data/deployment_events.db"
         conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(deployment_events)")
-        columns = [column[1] for column in cursor.fetchall()]
-        if 'namespace' not in columns:
-            cursor.execute("ALTER TABLE deployment_events ADD COLUMN namespace TEXT DEFAULT 'smartops'")
-            conn.commit()
-            st.info("Updated deployment events table to include namespace column.")
         events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
         conn.close()
         if not events.empty:
+            # Count by status
+            status_counts = events["status"].value_counts().to_dict()
+            st.markdown(f"**Successful:** {status_counts.get('success', 0)} | **Failed:** {status_counts.get('failed', 0)} | **Started:** {status_counts.get('started', 0)}")
+            # Show the events table as before
+            # (existing event table code follows)
+            # Convert timestamps to IST
             def parse_deployment_timestamp(ts_str):
                 try:
                     if pd.isna(ts_str):
@@ -616,42 +672,6 @@ def retrain_model_section():
             except Exception as e:
                 st.error(f"Retrain error: {e}")
 
-def ai_action_history_section():
-    st.markdown("## 📜 AI Action History")
-    try:
-        resp = requests.get("http://localhost:8000/ai_actions", params={"all": "true"}, timeout=5)
-        actions = resp.json().get("actions", [])
-    except Exception as e:
-        st.warning(f"Could not fetch AI action history: {e}")
-        actions = []
-    if not actions:
-        st.info("No AI actions in history.")
-        return
-    import pandas as pd
-    df = pd.DataFrame(actions)
-    if not df.empty:
-        df = df.rename(columns={
-            "timestamp": "Timestamp",
-            "pod_name": "Pod Name",
-            "namespace": "Namespace",
-            "reason": "Reason",
-            "status": "Status"
-        })
-        # Color-code status
-        def color_status(val):
-            if val == "completed":
-                return "background-color: #00b894; color: white;"
-            elif val == "pending":
-                return "background-color: #fdcb6e; color: black;"
-            elif val == "failed":
-                return "background-color: #d63031; color: white;"
-            return ""
-        st.dataframe(
-            df[["Timestamp", "Pod Name", "Namespace", "Reason", "Status"]]
-            .style.applymap(color_status, subset=["Status"]),
-            use_container_width=True
-        )
-
 # --- Sidebar navigation ---
 pages = {
     "Dashboard": dashboard_page,
@@ -662,7 +682,6 @@ page = st.sidebar.radio("Navigate", list(pages.keys()))
 # Show AI actions and retrain button in sidebar for all pages
 with st.sidebar:
     ai_actions_section()
-    ai_action_history_section()
     retrain_model_section()
 
 pages[page]()
