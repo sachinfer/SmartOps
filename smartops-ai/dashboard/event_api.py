@@ -139,7 +139,7 @@ def describe_pod(namespace: str = Query(...), pod: str = Query(...)):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.get("/ai_actions")
-def list_ai_actions():
+def list_ai_actions(all: bool = Query(False, description="Return all actions if true, only pending if false")):
     db_path = "/app/dashboard/data/ai_actions.db"
     import sqlite3
     conn = sqlite3.connect(db_path)
@@ -152,7 +152,10 @@ def list_ai_actions():
         reason TEXT,
         status TEXT
     )''')
-    actions = conn.execute("SELECT * FROM ai_actions WHERE status='pending' ORDER BY timestamp DESC").fetchall()
+    if all:
+        actions = conn.execute("SELECT * FROM ai_actions ORDER BY timestamp DESC").fetchall()
+    else:
+        actions = conn.execute("SELECT * FROM ai_actions WHERE status='pending' ORDER BY timestamp DESC").fetchall()
     conn.close()
     return {"actions": [dict(a) for a in actions]}
 

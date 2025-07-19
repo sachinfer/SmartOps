@@ -616,6 +616,42 @@ def retrain_model_section():
             except Exception as e:
                 st.error(f"Retrain error: {e}")
 
+def ai_action_history_section():
+    st.markdown("## 📜 AI Action History")
+    try:
+        resp = requests.get("http://localhost:8000/ai_actions", params={"all": "true"}, timeout=5)
+        actions = resp.json().get("actions", [])
+    except Exception as e:
+        st.warning(f"Could not fetch AI action history: {e}")
+        actions = []
+    if not actions:
+        st.info("No AI actions in history.")
+        return
+    import pandas as pd
+    df = pd.DataFrame(actions)
+    if not df.empty:
+        df = df.rename(columns={
+            "timestamp": "Timestamp",
+            "pod_name": "Pod Name",
+            "namespace": "Namespace",
+            "reason": "Reason",
+            "status": "Status"
+        })
+        # Color-code status
+        def color_status(val):
+            if val == "completed":
+                return "background-color: #00b894; color: white;"
+            elif val == "pending":
+                return "background-color: #fdcb6e; color: black;"
+            elif val == "failed":
+                return "background-color: #d63031; color: white;"
+            return ""
+        st.dataframe(
+            df[["Timestamp", "Pod Name", "Namespace", "Reason", "Status"]]
+            .style.applymap(color_status, subset=["Status"]),
+            use_container_width=True
+        )
+
 # --- Sidebar navigation ---
 pages = {
     "Dashboard": dashboard_page,
@@ -626,6 +662,7 @@ page = st.sidebar.radio("Navigate", list(pages.keys()))
 # Show AI actions and retrain button in sidebar for all pages
 with st.sidebar:
     ai_actions_section()
+    ai_action_history_section()
     retrain_model_section()
 
 pages[page]()
