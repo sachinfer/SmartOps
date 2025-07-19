@@ -36,9 +36,11 @@ conn.execute("""
     CREATE TABLE IF NOT EXISTS anomalies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp TEXT,
-        cpu TEXT,
-        memory TEXT,
-        prediction TEXT
+        cpu REAL,
+        memory REAL,
+        prediction TEXT,
+        pod_name TEXT,
+        labels TEXT
     )
 """)
 conn.commit()
@@ -93,15 +95,9 @@ if filtered_df.empty:
 else:
     filtered_df['timestamp'] = pd.to_datetime(filtered_df['timestamp'])
     latest = filtered_df.iloc[-1]
-    # Try to parse CPU/memory as float, fallback to 0
-    try:
-        cpu_val = float(latest['cpu'])
-    except:
-        cpu_val = 0.0
-    try:
-        mem_val = float(latest['memory'])
-    except:
-        mem_val = 0.0
+    # Get CPU and memory values (they're already REAL type now)
+    cpu_val = latest['cpu'] if pd.notna(latest['cpu']) else 0.0
+    mem_val = latest['memory'] if pd.notna(latest['memory']) else 0.0
     status, advice, banner_type, latest_action = get_status_and_advice(latest['prediction'], cpu_val, mem_val)
     st.markdown(f"<div style='padding:1em; border-radius:8px; background-color:{'#d4edda' if banner_type=='success' else '#f8d7da'}; color:{'#155724' if banner_type=='success' else '#721c24'}; font-size:1.2em; margin-bottom:1em;'><b>{status}</b><br>{advice}</div>", unsafe_allow_html=True)
 
@@ -114,7 +110,31 @@ else:
         display_cols.append('labels')
     show_df = filtered_df[display_cols].copy()
     show_df = show_df.sort_values('timestamp', ascending=False).head(20)
-    st.dataframe(show_df, use_container_width=True)
+    
+    # Format the display
+    if not show_df.empty:
+        # Convert CPU to percentage and memory to MB for display
+        show_df['cpu_display'] = (show_df['cpu'] * 100).round(1).astype(str) + '%'
+        show_df['memory_display'] = (show_df['memory'] / (1024 * 1024)).round(1).astype(str) + 'MB'
+        
+        # Create display dataframe with formatted columns
+        display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
+        if 'pod_name' in show_df.columns:
+            display_df['pod_name'] = show_df['pod_name']
+        if 'labels' in show_df.columns:
+            display_df['labels'] = show_df['labels']
+        
+        # Rename columns for display
+        display_df = display_df.rename(columns={
+            'cpu_display': 'CPU',
+            'memory_display': 'Memory',
+            'pod_name': 'Pod Name',
+            'labels': 'Labels'
+        })
+        
+        st.dataframe(display_df, use_container_width=True)
+    else:
+        st.info("No anomalies detected in the recent data.")
 
     # Plain English summary
     st.subheader("📢 System Summary")
