@@ -189,6 +189,12 @@ def fetch_namespaces():
 namespace_options = ['all'] + fetch_namespaces()
 selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
+# Filter dataframe by namespace if applicable
+if has_namespace_column(df) and selected_ns != 'all':
+    filtered_df = df[df['namespace'] == selected_ns].copy()
+else:
+    filtered_df = df.copy()
+
 # Top Anomalies by CPU Usage (directly under namespace dropdown)
 st.markdown("## 🔥 Top Anomalies by CPU Usage")
 chart_df = filtered_df.copy()
