@@ -58,6 +58,7 @@ def list_pods(namespace: Optional[str] = Query(None, description="Namespace to f
     for pod in pods.items:
         restarts = sum([c.restart_count for c in pod.status.container_statuses or []])
         images = ', '.join([c.image for c in pod.spec.containers])
+        containers = [c.name for c in pod.spec.containers]
         pod_list.append({
             "name": pod.metadata.name,
             "namespace": pod.metadata.namespace,
@@ -65,7 +66,8 @@ def list_pods(namespace: Optional[str] = Query(None, description="Namespace to f
             "node": getattr(pod.spec, 'node_name', ''),
             "start_time": str(pod.status.start_time) if pod.status.start_time else '',
             "restarts": restarts,
-            "images": images
+            "images": images,
+            "containers": containers
         })
     return {"pods": pod_list}
 
