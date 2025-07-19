@@ -381,6 +381,8 @@ def dashboard_page():
                     return "background-color: #d63031; color: white;"
                 elif val == "not_found":
                     return "background-color: #636e72; color: white;"
+                elif val == "ignored":
+                    return "background-color: #b2bec3; color: black;"
                 return ""
             st.dataframe(
                 df[["Timestamp", "Pod Name", "Namespace", "Reason", "Status"]]
@@ -649,14 +651,39 @@ def ai_actions_section():
         with st.expander(f"Pod: {action['pod_name']} | Namespace: {action['namespace']}"):
             st.write(f"**Reason:** {action['reason']}")
             st.write(f"**Timestamp:** {action['timestamp']}")
-            confirm_btn = st.button(f"✅ Confirm Delete Pod {action['pod_name']}", key=f"confirm_{action['id']}")
+            col1, col2 = st.columns(2)
+            with col1:
+                confirm_btn = st.button(f"✅ Confirm Delete Pod {action['pod_name']}", key=f"confirm_{action['id']}")
+            with col2:
+                ignore_btn = st.button(f"🚫 Ignore", key=f"ignore_{action['id']}")
             if confirm_btn:
                 with st.spinner("Deleting pod..."):
                     resp = requests.post("http://localhost:8000/confirm_ai_action", params={"action_id": action['id']})
                     if resp.status_code == 200:
                         st.success(f"Pod {action['pod_name']} deleted.")
                     else:
-                        st.error(f"Delete failed: {resp.text}")
+                        try:
+                            data = resp.json()
+                            if data.get("status") == "not_found":
+                                st.info(data.get("error", "Pod not found."))
+                                # Show Ignore button for not_found
+                                if st.button(f"🚫 Ignore (mark as ignored)", key=f"ignore_notfound_{action['id']}"):
+                                    resp2 = requests.post("http://localhost:8000/ignore_ai_action", params={"action_id": action['id']})
+                                    if resp2.status_code == 200:
+                                        st.success("Action marked as ignored.")
+                                    else:
+                                        st.error(f"Ignore failed: {resp2.text}")
+                            else:
+                                st.error(f"Delete failed: {resp.text}")
+                        except Exception:
+                            st.error(f"Delete failed: {resp.text}")
+            if ignore_btn:
+                with st.spinner("Marking as ignored..."):
+                    resp = requests.post("http://localhost:8000/ignore_ai_action", params={"action_id": action['id']})
+                    if resp.status_code == 200:
+                        st.success("Action marked as ignored.")
+                    else:
+                        st.error(f"Ignore failed: {resp.text}")
 
 # --- Model Retraining Button ---
 def retrain_model_section():

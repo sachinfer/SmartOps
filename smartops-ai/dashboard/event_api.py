@@ -221,4 +221,18 @@ def retrain_model():
         else:
             return JSONResponse(status_code=500, content={"error": result.stderr})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)}) 
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/ignore_ai_action")
+def ignore_ai_action(action_id: int = Query(...)):
+    db_path = "/app/dashboard/data/ai_actions.db"
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    action = conn.execute("SELECT * FROM ai_actions WHERE id=?", (action_id,)).fetchone()
+    if not action:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "Action not found"})
+    conn.execute("UPDATE ai_actions SET status='ignored' WHERE id=?", (action_id,))
+    conn.commit()
+    conn.close()
+    return {"result": "action ignored", "action_id": action_id} 
