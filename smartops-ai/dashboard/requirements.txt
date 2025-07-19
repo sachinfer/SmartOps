@@ -12,3 +12,4 @@ joblib
 numpy
 plotly
 pytz
+kubernetes
