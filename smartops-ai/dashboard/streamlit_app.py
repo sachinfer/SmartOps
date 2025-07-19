@@ -168,8 +168,8 @@ def fetch_pods(namespace):
 def load_anomalies_df():
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
-df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-conn.close()
+        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+        conn.close()
         return df
     except Exception as e:
         st.warning(f"Could not load anomalies data: {e}")
