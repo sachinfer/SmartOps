@@ -97,15 +97,15 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-conn.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-        timestamp TEXT,
+            timestamp TEXT,
             status TEXT,
             message TEXT
-    )
-""")
-conn.commit()
-conn.close()
+        )
+    """)
+    conn.commit()
+    conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
 
@@ -562,9 +562,9 @@ def pod_explorer_page():
     # --- Pod Resource Graphs ---
     # Load anomalies data for pod resource usage
     pod_resource_df = pd.DataFrame()
-    if not fetch_anomalies_df().empty and pod:
-        if 'pod_name' in fetch_anomalies_df().columns:
-            pod_resource_df = fetch_anomalies_df()[fetch_anomalies_df()['pod_name'] == pod].copy()
+    if not load_anomalies_df().empty and pod:
+        if 'pod_name' in load_anomalies_df().columns:
+            pod_resource_df = load_anomalies_df()[load_anomalies_df()['pod_name'] == pod].copy()
     if not pod_resource_df.empty:
         pod_resource_df['timestamp'] = pd.to_datetime(pod_resource_df['timestamp'])
         pod_resource_df['cpu_numeric'] = pd.to_numeric(pod_resource_df['cpu'], errors='coerce').fillna(0)
