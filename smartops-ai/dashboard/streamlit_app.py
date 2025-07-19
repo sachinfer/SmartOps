@@ -97,15 +97,15 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-conn.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-        timestamp TEXT,
+            timestamp TEXT,
             status TEXT,
             message TEXT
-    )
-""")
-conn.commit()
-conn.close()
+        )
+    """)
+    conn.commit()
+    conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
 
@@ -758,8 +758,8 @@ def cluster_explorer_page():
     st.info("Only 'kubectl get', 'kubectl describe', and 'kubectl logs' commands are allowed.")
     if "kube_shell_history" not in st.session_state:
         st.session_state.kube_shell_history = []
-    shell_cmd = st.text_input("Shell", "kubectl get pods -n smartops")
-    if st.button("Run Shell Command"):
+    shell_cmd = st.text_input("kubectl >", "kubectl get pods -n smartops")
+    if st.button("Run Command"):
         # Only allow safe kubectl commands
         allowed = ["kubectl get", "kubectl describe", "kubectl logs"]
         if not any(shell_cmd.strip().startswith(a) for a in allowed):

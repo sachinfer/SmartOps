@@ -388,18 +388,3 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 
 ---
 
-## 🟡 Upcoming Tasks
-
-- [ ] Add alerting (Slack/email) for detected anomalies
-- [ ] Add support for additional ML models and compare metrics (ROC, Precision/Recall)
-- [ ] Enhance dashboard with more analytics (trend charts, pod-level drilldown)
-- [ ] Integrate with GCP Pub/Sub or Logging for advanced automation
-- [ ] Add simulated load generator for testing anomaly detection
-- [ ] Add user authentication to dashboard (optional)
-- [ ] Clean up and optimize Kubernetes manifests
-- [ ] Add more documentation and usage examples
-
-Next Steps (Optional)
-Tune thresholds or model sensitivity as needed for your environment.
-Add more “bad” data over time to improve the model.
-Use this workflow for real incident response and root cause analysis
