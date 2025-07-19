@@ -277,10 +277,32 @@ else:
     chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
     chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
     
-    # Convert timestamps to IST for charts
-    chart_df['timestamp_ist'] = chart_df['timestamp'].apply(lambda x: 
-        x.astimezone(IST) if x.tzinfo else pytz.utc.localize(x).astimezone(IST)
-    )
+    # Convert timestamps to IST for charts with robust parsing
+    def parse_anomaly_timestamp(ts):
+        try:
+            if pd.isna(ts):
+                return ts
+            if isinstance(ts, str):
+                # Handle ISO format without timezone
+                if 'T' in ts:
+                    dt = pd.to_datetime(ts, format='ISO8601')
+                    if dt.tzinfo is None:
+                        dt = pytz.utc.localize(dt)
+                    return dt.astimezone(IST)
+                else:
+                    dt = pd.to_datetime(ts)
+                    if dt.tzinfo is None:
+                        dt = pytz.utc.localize(dt)
+                    return dt.astimezone(IST)
+            else:
+                # Already a datetime object
+                if ts.tzinfo is None:
+                    ts = pytz.utc.localize(ts)
+                return ts.astimezone(IST)
+        except Exception:
+            return ts
+    
+    chart_df['timestamp_ist'] = chart_df['timestamp'].apply(parse_anomaly_timestamp)
     
     # Create subplots for CPU and Memory trends
     fig = make_subplots(
@@ -342,9 +364,31 @@ else:
     show_df = show_df.sort_values('timestamp', ascending=False).head(20)
     
     # Convert timestamps to IST
-    show_df['timestamp_ist'] = show_df['timestamp'].apply(lambda x: 
-        x.astimezone(IST) if x.tzinfo else pytz.utc.localize(x).astimezone(IST)
-    )
+    def parse_recent_timestamp(ts):
+        try:
+            if pd.isna(ts):
+                return ts
+            if isinstance(ts, str):
+                # Handle ISO format without timezone
+                if 'T' in ts:
+                    dt = pd.to_datetime(ts, format='ISO8601')
+                    if dt.tzinfo is None:
+                        dt = pytz.utc.localize(dt)
+                    return dt.astimezone(IST)
+                else:
+                    dt = pd.to_datetime(ts)
+                    if dt.tzinfo is None:
+                        dt = pytz.utc.localize(dt)
+                    return dt.astimezone(IST)
+            else:
+                # Already a datetime object
+                if ts.tzinfo is None:
+                    ts = pytz.utc.localize(ts)
+                return ts.astimezone(IST)
+        except Exception:
+            return ts
+    
+    show_df['timestamp_ist'] = show_df['timestamp'].apply(parse_recent_timestamp)
     show_df['timestamp_ist'] = show_df['timestamp_ist'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
     
     # Format the display
@@ -397,7 +441,28 @@ try:
     
     # Convert timestamps to IST
     if not events.empty:
-        events['timestamp'] = pd.to_datetime(events['timestamp'])
+        # Handle different timestamp formats
+        def parse_timestamp(ts_str):
+            try:
+                # Try parsing as ISO format first
+                if 'T' in str(ts_str):
+                    # Handle ISO format without timezone
+                    dt = pd.to_datetime(ts_str, format='ISO8601')
+                    # Assume UTC if no timezone info
+                    if dt.tzinfo is None:
+                        dt = pytz.utc.localize(dt)
+                    return dt
+                else:
+                    # Handle other formats
+                    dt = pd.to_datetime(ts_str)
+                    if dt.tzinfo is None:
+                        dt = pytz.utc.localize(dt)
+                    return dt
+            except Exception:
+                # Fallback to simple parsing
+                return pd.to_datetime(ts_str)
+        
+        events['timestamp'] = events['timestamp'].apply(parse_timestamp)
         events['timestamp_ist'] = events['timestamp'].apply(lambda x: 
             x.astimezone(IST) if x.tzinfo else pytz.utc.localize(x).astimezone(IST)
         )
