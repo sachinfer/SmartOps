@@ -13,6 +13,7 @@ spec:
       labels:
         app: smartops-dashboard
     spec:
+      serviceAccountName: dashboard-metrics-reader
       containers:
       - name: dashboard
         image: smartops-dashboard:latest
