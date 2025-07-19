@@ -15,5 +15,5 @@ spec:
     spec:
       containers:
       - name: monitor
-        image: gcr.io/icbt-465109/smartops-anomaly:latest
-        command: ["python", "-u", "app/monitor_pod_status.py"] 
+        image: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
+        command: ["python", "-u", "monitor_pod_status.py"] 
