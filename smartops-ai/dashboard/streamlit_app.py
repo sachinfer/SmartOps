@@ -710,10 +710,56 @@ def retrain_model_section():
             except Exception as e:
                 st.error(f"Retrain error: {e}")
 
+# --- Cluster Explorer Page ---
+def cluster_explorer_page():
+    st.title("🔍 Cluster Explorer")
+    st.write("Run safe kubectl-like queries on your cluster.")
+    resource_types = ["pods", "services", "deployments", "nodes"]
+    resource = st.selectbox("Resource Type", resource_types, index=0)
+    all_ns = st.checkbox("All Namespaces", value=True)
+    if st.button("Fetch"):
+        with st.spinner("Fetching data..."):
+            try:
+                resp = requests.get(
+                    "http://localhost:8000/kubectl_get",
+                    params={"resource_type": resource, "all_namespaces": str(all_ns).lower()},
+                    timeout=15
+                )
+                items = resp.json().get("items", [])
+                if not items:
+                    st.info("No results found.")
+                else:
+                    import pandas as pd
+                    df = pd.DataFrame(items)
+                    st.dataframe(df, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error fetching data: {e}")
+    st.markdown("---")
+    st.markdown("### ⚠️ Raw Kubectl Command (Dev Only)")
+    st.warning("This feature is for dev environments only. Use with caution!")
+    raw_cmd = st.text_input("kubectl command (after 'kubectl')", "get pods -A")
+    if st.button("Run kubectl command"):
+        with st.spinner("Running kubectl..."):
+            try:
+                resp = requests.post(
+                    "http://localhost:8000/kubectl_raw",
+                    params={"command": raw_cmd},
+                    timeout=30
+                )
+                data = resp.json()
+                st.code(data.get("stdout", ""), language="shell")
+                if data.get("stderr"):
+                    st.error(data["stderr"])
+                if data.get("returncode", 0) != 0:
+                    st.warning(f"kubectl exited with code {data.get('returncode')}")
+            except Exception as e:
+                st.error(f"Error running kubectl: {e}")
+
 # --- Sidebar navigation ---
 pages = {
     "Dashboard": dashboard_page,
-    "Pod Explorer & Logs": pod_explorer_page
+    "Pod Explorer & Logs": pod_explorer_page,
+    "Cluster Explorer": cluster_explorer_page
 }
 page = st.sidebar.radio("Navigate", list(pages.keys()))
 

@@ -235,4 +235,81 @@ def ignore_ai_action(action_id: int = Query(...)):
     conn.execute("UPDATE ai_actions SET status='ignored' WHERE id=?", (action_id,))
     conn.commit()
     conn.close()
-    return {"result": "action ignored", "action_id": action_id} 
+    return {"result": "action ignored", "action_id": action_id}
+
+@app.get("/kubectl_get")
+def kubectl_get(resource_type: str = Query(..., description="Resource type: pods, services, deployments, nodes"), all_namespaces: bool = Query(False)):
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    apps_v1 = client.AppsV1Api()
+    items = []
+    if resource_type == "pods":
+        if all_namespaces:
+            pods = v1.list_pod_for_all_namespaces().items
+        else:
+            pods = v1.list_namespaced_pod("default").items
+        for pod in pods:
+            items.append({
+                "name": pod.metadata.name,
+                "namespace": pod.metadata.namespace,
+                "status": pod.status.phase,
+                "node": getattr(pod.spec, 'node_name', ''),
+                "start_time": str(pod.status.start_time) if pod.status.start_time else ''
+            })
+    elif resource_type == "services":
+        if all_namespaces:
+            svcs = v1.list_service_for_all_namespaces().items
+        else:
+            svcs = v1.list_namespaced_service("default").items
+        for svc in svcs:
+            items.append({
+                "name": svc.metadata.name,
+                "namespace": svc.metadata.namespace,
+                "type": svc.spec.type,
+                "cluster_ip": svc.spec.cluster_ip,
+                "ports": str(svc.spec.ports)
+            })
+    elif resource_type == "deployments":
+        if all_namespaces:
+            deps = apps_v1.list_deployment_for_all_namespaces().items
+        else:
+            deps = apps_v1.list_namespaced_deployment("default").items
+        for dep in deps:
+            items.append({
+                "name": dep.metadata.name,
+                "namespace": dep.metadata.namespace,
+                "replicas": dep.status.replicas,
+                "available": dep.status.available_replicas,
+                "updated": dep.status.updated_replicas
+            })
+    elif resource_type == "nodes":
+        nodes = v1.list_node().items
+        for node in nodes:
+            items.append({
+                "name": node.metadata.name,
+                "status": node.status.conditions[-1].type if node.status.conditions else '',
+                "addresses": str([a.address for a in node.status.addresses])
+            })
+    else:
+        return JSONResponse(status_code=400, content={"error": "Unsupported resource type"})
+    return {"items": items}
+
+@app.post("/kubectl_raw")
+def kubectl_raw(command: str = Query(..., description="kubectl command after 'kubectl' (e.g., 'get pods -A')")):
+    # WARNING: This is only for dev environments! Do NOT use in production!
+    if os.environ.get("ENV", "dev") != "dev":
+        return JSONResponse(status_code=403, content={"error": "Raw kubectl commands are only allowed in dev environments."})
+    import subprocess
+    try:
+        full_cmd = ["kubectl"] + command.split()
+        result = subprocess.run(full_cmd, capture_output=True, text=True, timeout=30)
+        return {
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.returncode
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)}) 
