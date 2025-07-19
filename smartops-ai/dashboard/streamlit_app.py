@@ -266,10 +266,17 @@ def toggle_show_pods():
 with col4:
     pods_data = fetch_pods(selected_ns)
     available_pods_count = len(pods_data)
-    # Use a styled button as the card
-    if st.button(f'🟦 Available Pods: {available_pods_count}', key='show_pods_btn'):
+    # Use a styled button as the card, matching the others
+    card_html = f"""
+    <div class="metric-card" style="cursor:pointer;" onclick="window.parent.postMessage('togglePods', '*');">
+        <h3>🛰️ Available Pods</h3>
+        <h2>{available_pods_count}</h2>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
+    # Use a hidden button for Streamlit to catch the click
+    if st.button("", key="hidden_show_pods", help="Show pods table"):
         toggle_show_pods()
-    # Optionally, you can style this further with st.markdown if you want a fancier card look
 
 if st.session_state.get('show_pods', False):
     st.markdown('### 🟦 All Available Pods')
