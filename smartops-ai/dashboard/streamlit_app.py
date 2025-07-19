@@ -392,7 +392,14 @@ def dashboard_page():
         if not events.empty:
             # Count by status
             status_counts = events["status"].value_counts().to_dict()
-            st.markdown(f"## 🚀 Deployment Workflow Events (Successful: {status_counts.get('success', 0)} | Failed: {status_counts.get('failed', 0)} | Started: {status_counts.get('started', 0)})")
+            st.markdown(f"""
+            <div style='display: flex; align-items: center; gap: 1rem;'>
+                <span style='font-size:2rem; font-weight:bold;'>🚀 Deployment Workflow Events</span>
+                <span style='background:#00b894; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Successful: {status_counts.get('success', 0)}</span>
+                <span style='background:#d63031; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Failed: {status_counts.get('failed', 0)}</span>
+                <span style='background:#fdcb6e; color:#222; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Started: {status_counts.get('started', 0)}</span>
+            </div>
+            """, unsafe_allow_html=True)
             # (existing event table code follows)
             # Convert timestamps to IST
             def parse_deployment_timestamp(ts_str):
@@ -421,7 +428,14 @@ def dashboard_page():
             events = events.rename(columns={'timestamp_ist': 'Timestamp (IST)', 'status': 'Status', 'message': 'Message', 'namespace': 'Namespace'})
             st.dataframe(events[['Timestamp (IST)', 'Status', 'Message', 'Namespace']], use_container_width=True)
         else:
-            st.markdown("## 🚀 Deployment Workflow Events (Successful: 0 | Failed: 0 | Started: 0)")
+            st.markdown("""
+            <div style='display: flex; align-items: center; gap: 1rem;'>
+                <span style='font-size:2rem; font-weight:bold;'>🚀 Deployment Workflow Events</span>
+                <span style='background:#00b894; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Successful: 0</span>
+                <span style='background:#d63031; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Failed: 0</span>
+                <span style='background:#fdcb6e; color:#222; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Started: 0</span>
+            </div>
+            """, unsafe_allow_html=True)
             st.info("No deployment events found.")
     except Exception as e:
         st.warning(f"Could not load deployment events: {e}")
