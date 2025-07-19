@@ -228,10 +228,28 @@ with col3:
         </div>
         """, unsafe_allow_html=True)
 
+# Helper to fetch pods from FastAPI backend
+@st.cache_data(ttl=30)
+def fetch_pods(namespace):
+    try:
+        url = f"http://localhost:8000/pods"
+        params = {}
+        if namespace and namespace != 'all':
+            params['namespace'] = namespace
+        resp = requests.get(url, params=params, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('pods', [])
+        else:
+            return []
+    except Exception as e:
+        st.warning(f"Could not fetch pods: {e}")
+        return []
+
+def toggle_show_pods():
+    st.session_state['show_pods'] = not st.session_state.get('show_pods', False)
+
 with col4:
-    if st.button('🟦 Available Pods', key='show_pods'):
-        st.session_state['show_pods'] = not st.session_state.get('show_pods', False)
-    # Fetch real pod count from backend
+    st.button('🟦 Available Pods', key='show_pods_btn', on_click=toggle_show_pods)
     pods_data = fetch_pods(selected_ns)
     available_pods_count = len(pods_data)
     st.markdown(f"""
@@ -245,7 +263,12 @@ with col4:
 if st.session_state.get('show_pods', False):
     st.markdown('### 🟦 All Available Pods')
     pods_df = pd.DataFrame(pods_data)
-    st.dataframe(pods_df, use_container_width=True)
+    # Reorder columns for better display
+    display_cols = [
+        'name', 'namespace', 'status', 'node', 'start_time', 'restarts', 'images'
+    ]
+    display_cols = [col for col in display_cols if col in pods_df.columns]
+    st.dataframe(pods_df[display_cols], use_container_width=True)
 
 if filtered_df.empty:
     st.markdown("""
@@ -562,20 +585,3 @@ st.markdown("""
     <p>Built with ❤️ using Streamlit and AI/ML</p>
 </div>
 """, unsafe_allow_html=True) 
-
-# Helper to fetch pods from FastAPI backend
-@st.cache_data(ttl=30)
-def fetch_pods(namespace):
-    try:
-        url = f"http://localhost:8000/pods"
-        params = {}
-        if namespace and namespace != 'all':
-            params['namespace'] = namespace
-        resp = requests.get(url, params=params, timeout=5)
-        if resp.status_code == 200:
-            return resp.json().get('pods', [])
-        else:
-            return []
-    except Exception as e:
-        st.warning(f"Could not fetch pods: {e}")
-        return [] 
