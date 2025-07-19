@@ -453,7 +453,33 @@ try:
     
     # Convert timestamps to IST
     if not events.empty:
-        events['timestamp'] = pd.to_datetime(events['timestamp'])
+        # Handle different timestamp formats
+        def parse_deployment_timestamp(ts_str):
+            try:
+                if pd.isna(ts_str):
+                    return ts_str
+                if isinstance(ts_str, str):
+                    # Handle ISO format without timezone
+                    if 'T' in ts_str:
+                        dt = pd.to_datetime(ts_str, format='ISO8601')
+                        if dt.tzinfo is None:
+                            dt = pytz.utc.localize(dt)
+                        return dt
+                    else:
+                        dt = pd.to_datetime(ts_str)
+                        if dt.tzinfo is None:
+                            dt = pytz.utc.localize(dt)
+                        return dt
+                else:
+                    # Already a datetime object
+                    if ts_str.tzinfo is None:
+                        ts_str = pytz.utc.localize(ts_str)
+                    return ts_str
+            except Exception:
+                # Fallback to simple parsing
+                return pd.to_datetime(ts_str)
+        
+        events['timestamp'] = events['timestamp'].apply(parse_deployment_timestamp)
         events['timestamp_ist'] = events['timestamp'].apply(lambda x: 
             x.astimezone(IST) if x.tzinfo else pytz.utc.localize(x).astimezone(IST)
         )
