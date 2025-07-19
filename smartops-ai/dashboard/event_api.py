@@ -138,6 +138,22 @@ def describe_pod(namespace: str = Query(...), pod: str = Query(...)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.get("/namespace_stats")
+def namespace_stats(namespace: str = Query(...)):
+    try:
+        config.load_incluster_config()
+    except Exception:
+        config.load_kube_config()
+    v1 = client.CoreV1Api()
+    # Count pods
+    if namespace == 'all':
+        pod_count = len(v1.list_pod_for_all_namespaces().items)
+        svc_count = len(v1.list_service_for_all_namespaces().items)
+    else:
+        pod_count = len(v1.list_namespaced_pod(namespace=namespace).items)
+        svc_count = len(v1.list_namespaced_service(namespace=namespace).items)
+    return {"pod_count": pod_count, "service_count": svc_count}
+
 @app.get("/ai_actions")
 def list_ai_actions(all: bool = Query(False, description="Return all actions if true, only pending if false")):
     db_path = "/app/dashboard/data/ai_actions.db"
@@ -184,6 +200,12 @@ def confirm_ai_action(action_id: int = Query(...)):
         conn.close()
         return {"result": "pod deleted", "pod": pod_name, "namespace": namespace}
     except Exception as e:
+        # If pod not found, mark as not_found and return friendly message
+        if 'NotFound' in str(e) or 'not found' in str(e):
+            conn.execute("UPDATE ai_actions SET status='not_found' WHERE id=?", (action_id,))
+            conn.commit()
+            conn.close()
+            return JSONResponse(status_code=404, content={"error": f"Pod {pod_name} not found. It may have already been deleted or replaced.", "status": "not_found"})
         conn.close()
         return JSONResponse(status_code=500, content={"error": str(e)})
 
