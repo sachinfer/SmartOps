@@ -63,10 +63,19 @@ def check_deployments(namespace="smartops"):
         deployments = apps_v1.list_namespaced_deployment(namespace=namespace)
         pods = v1.list_namespaced_pod(namespace=namespace)
         pod_list = list(pods.items)
+        
+        print(f"Found {len(pod_list)} total pods in namespace {namespace}")
+        for pod in pod_list:
+            print(f"Pod: {pod.metadata.name}, Status: {pod.status.phase}, Labels: {pod.metadata.labels}")
+        
         for deploy in deployments.items:
             deploy_name = deploy.metadata.name
             expected_replicas = deploy.spec.replicas
             selector = deploy.spec.selector.match_labels
+            print(f"\nChecking deployment: {deploy_name}")
+            print(f"Expected replicas: {expected_replicas}")
+            print(f"Label selector: {selector}")
+            
             running_pods = [
                 pod for pod in pod_list
                 if pod.status.phase == "Running" and pod.metadata.labels is not None and all(
@@ -74,6 +83,10 @@ def check_deployments(namespace="smartops"):
                 )
             ]
             running_count = len(running_pods)
+            print(f"Found {running_count} running pods matching selector:")
+            for pod in running_pods:
+                print(f"  - {pod.metadata.name} (labels: {pod.metadata.labels})")
+            
             is_unhealthy = running_count < expected_replicas
             last_state = last_status.get(deploy_name, "healthy")
             current_state = "unhealthy" if is_unhealthy else "healthy"
