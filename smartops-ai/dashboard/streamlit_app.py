@@ -97,15 +97,15 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-    conn.execute("""
+conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-            timestamp TEXT,
+        timestamp TEXT,
             status TEXT,
             message TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+    )
+""")
+conn.commit()
+conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
 
@@ -190,7 +190,7 @@ def dashboard_page():
 
     # Fetch namespaces for dropdown
     namespace_options = ['all'] + fetch_namespaces()
-    selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
+selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
 
     # Namespace stats (pods/services count)
     @st.cache_data(ttl=30)
@@ -213,11 +213,11 @@ def dashboard_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # Filter dataframe by namespace if applicable
-    if has_namespace_column(df) and selected_ns != 'all':
-        filtered_df = df[df['namespace'] == selected_ns].copy()
-    else:
-        filtered_df = df.copy()
+# Filter dataframe by namespace if applicable
+if has_namespace_column(df) and selected_ns != 'all':
+    filtered_df = df[df['namespace'] == selected_ns].copy()
+else:
+    filtered_df = df.copy()
 
     # Top Anomalies by CPU Usage
     st.markdown("## 🔥 Top Anomalies by CPU Usage")
@@ -752,21 +752,24 @@ def cluster_explorer_page():
             except Exception as e:
                 st.error(f"Error fetching data: {e}")
 
+    # --- Kubernetes Shell ---
     st.markdown("---")
-    st.markdown("### ⚠️ Raw Kubectl Command (Dev Only)")
-    st.warning("This feature is for dev environments only. Use with caution! Only 'get', 'describe', 'logs' are allowed.")
-    if "kubectl_history" not in st.session_state:
-        st.session_state.kubectl_history = []
-    raw_cmd = st.text_input("kubectl command (after 'kubectl')", "get pods -A")
-    if st.button("Run kubectl command"):
-        # Restrict to safe commands
-        allowed = ["get", "describe", "logs"]
-        if not any(raw_cmd.strip().startswith(a) for a in allowed):
-            st.error("Only 'get', 'describe', 'logs' commands are allowed.")
+    st.markdown("### 🖥️ Kubernetes Shell")
+    st.info("Only 'kubectl get', 'kubectl describe', and 'kubectl logs' commands are allowed.")
+    if "kube_shell_history" not in st.session_state:
+        st.session_state.kube_shell_history = []
+    shell_cmd = st.text_input("Shell", "kubectl get pods -n smartops")
+    if st.button("Run Shell Command"):
+        # Only allow safe kubectl commands
+        allowed = ["kubectl get", "kubectl describe", "kubectl logs"]
+        if not any(shell_cmd.strip().startswith(a) for a in allowed):
+            st.error("Only 'kubectl get', 'kubectl describe', and 'kubectl logs' commands are allowed.")
         else:
-            st.session_state.kubectl_history.insert(0, raw_cmd)
+            st.session_state.kube_shell_history.insert(0, shell_cmd)
             with st.spinner("Running kubectl..."):
                 try:
+                    # Remove 'kubectl' prefix for backend
+                    raw_cmd = shell_cmd.strip()[len("kubectl "):]
                     resp = requests.post(
                         "http://localhost:8000/kubectl_raw",
                         params={"command": raw_cmd},
@@ -774,7 +777,7 @@ def cluster_explorer_page():
                     )
                     data = resp.json()
                     # If 'get', try to parse as table
-                    if raw_cmd.strip().startswith("get") and data.get("stdout"):
+                    if shell_cmd.strip().startswith("kubectl get") and data.get("stdout"):
                         import pandas as pd
                         lines = data["stdout"].strip().splitlines()
                         if len(lines) > 1:
@@ -796,11 +799,11 @@ def cluster_explorer_page():
                 except Exception as e:
                     st.error(f"Error running kubectl: {e}")
     # Command history
-    if st.session_state.kubectl_history:
-        st.markdown("#### Command History")
-        for cmd in st.session_state.kubectl_history[:10]:
-            if st.button(f"▶️ {cmd}", key=f"history_{cmd}"):
-                st.session_state["raw_cmd"] = cmd
+    if st.session_state.kube_shell_history:
+        st.markdown("#### Shell Command History")
+        for cmd in st.session_state.kube_shell_history[:10]:
+            if st.button(f"▶️ {cmd}", key=f"shell_history_{cmd}"):
+                st.session_state["shell_cmd"] = cmd
                 st.experimental_rerun()
 
 # --- Sidebar navigation ---
