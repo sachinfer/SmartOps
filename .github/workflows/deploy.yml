@@ -160,10 +160,11 @@ jobs:
         run: |
           curl -X POST "http://34.31.86.225:8000/log_event" \
             -H "Content-Type: application/json" \
-            -d '{"status": "success", "message": "Deployment completed successfully", "namespace": "smartops"}'
+            -d '{"status": "success", "message": "SmartOps AI platform deployment completed successfully - App, Anomaly Detection, Dashboard, and Monitor services deployed", "namespace": "smartops"}'
+          
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="✅ *Production deployment completed successfully in namespace `smartops`!*" \
+            -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://34.31.86.225)" \
             -d parse_mode=Markdown
 
       - name: Notify Telegram - Deployment Failed
