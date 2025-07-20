@@ -745,9 +745,16 @@ def kubernetes_shell_page():
         st.session_state.kube_shell_history = []
     if "last_command_output" not in st.session_state:
         st.session_state.last_command_output = ""
+    if "selected_history_cmd" not in st.session_state:
+        st.session_state.selected_history_cmd = ""
     
-    # Command input
-    shell_cmd = st.text_input("kubectl >", "kubectl get pods -A", key="shell_input")
+    # Command input - use selected history command if available
+    default_cmd = st.session_state.selected_history_cmd if st.session_state.selected_history_cmd else "kubectl get pods -A"
+    shell_cmd = st.text_input("kubectl >", default_cmd, key="shell_input")
+    
+    # Clear the selected history command after using it
+    if st.session_state.selected_history_cmd:
+        st.session_state.selected_history_cmd = ""
     
     col1, col2 = st.columns([1, 4])
     with col1:
@@ -836,7 +843,7 @@ def kubernetes_shell_page():
             col1, col2 = st.columns([1, 4])
             with col1:
                 if st.button(f"▶️", key=f"shell_history_{i}"):
-                    st.session_state["shell_input"] = cmd
+                    st.session_state.selected_history_cmd = cmd
                     st.experimental_rerun()
             with col2:
                 st.code(cmd, language="shell")
