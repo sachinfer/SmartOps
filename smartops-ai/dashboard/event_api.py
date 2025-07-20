@@ -302,15 +302,152 @@ def kubectl_raw(command: str = Query(..., description="kubectl command after 'ku
     # WARNING: This is only for dev environments! Do NOT use in production!
     if os.environ.get("ENV", "dev") != "dev":
         return JSONResponse(status_code=403, content={"error": "Raw kubectl commands are only allowed in dev environments."})
-    import subprocess
+    
     try:
-        full_cmd = ["kubectl"] + command.split()
-        result = subprocess.run(full_cmd, capture_output=True, text=True, timeout=30)
-        return {
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode
-        }
+        # Parse the command
+        parts = command.strip().split()
+        if not parts:
+            return JSONResponse(status_code=400, content={"error": "Empty command"})
+        
+        # Load Kubernetes config
+        try:
+            config.load_incluster_config()
+        except Exception:
+            config.load_kube_config()
+        
+        # Handle different kubectl commands
+        if parts[0] == "get":
+            return handle_kubectl_get(parts[1:])
+        elif parts[0] == "describe":
+            return handle_kubectl_describe(parts[1:])
+        elif parts[0] == "logs":
+            return handle_kubectl_logs(parts[1:])
+        else:
+            return JSONResponse(status_code=400, content={"error": f"Unsupported command: {parts[0]}"})
+            
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+def handle_kubectl_get(args):
+    """Handle kubectl get commands using Python client"""
+    try:
+        v1 = client.CoreV1Api()
+        apps_v1 = client.AppsV1Api()
+        
+        if not args:
+            return JSONResponse(status_code=400, content={"error": "No resource type specified"})
+        
+        resource_type = args[0]
+        all_namespaces = "-A" in args or "--all-namespaces" in args
+        
+        if resource_type == "pods":
+            if all_namespaces:
+                items = v1.list_pod_for_all_namespaces().items
+            else:
+                items = v1.list_namespaced_pod("default").items
+            
+            output_lines = ["NAME\tNAMESPACE\tSTATUS\tNODE\tSTART_TIME"]
+            for pod in items:
+                start_time = str(pod.status.start_time) if pod.status.start_time else ""
+                node = getattr(pod.spec, 'node_name', '')
+                output_lines.append(f"{pod.metadata.name}\t{pod.metadata.namespace}\t{pod.status.phase}\t{node}\t{start_time}")
+            
+            return {"stdout": "\n".join(output_lines), "stderr": "", "returncode": 0}
+            
+        elif resource_type == "services":
+            if all_namespaces:
+                items = v1.list_service_for_all_namespaces().items
+            else:
+                items = v1.list_namespaced_service("default").items
+            
+            output_lines = ["NAME\tNAMESPACE\tTYPE\tCLUSTER-IP\tPORTS"]
+            for svc in items:
+                ports = str(svc.spec.ports) if svc.spec.ports else ""
+                output_lines.append(f"{svc.metadata.name}\t{svc.metadata.namespace}\t{svc.spec.type}\t{svc.spec.cluster_ip}\t{ports}")
+            
+            return {"stdout": "\n".join(output_lines), "stderr": "", "returncode": 0}
+            
+        elif resource_type == "deployments":
+            if all_namespaces:
+                items = apps_v1.list_deployment_for_all_namespaces().items
+            else:
+                items = apps_v1.list_namespaced_deployment("default").items
+            
+            output_lines = ["NAME\tNAMESPACE\tREPLICAS\tAVAILABLE\tUPDATED"]
+            for dep in items:
+                output_lines.append(f"{dep.metadata.name}\t{dep.metadata.namespace}\t{dep.status.replicas}\t{dep.status.available_replicas}\t{dep.status.updated_replicas}")
+            
+            return {"stdout": "\n".join(output_lines), "stderr": "", "returncode": 0}
+            
+        elif resource_type == "nodes":
+            items = v1.list_node().items
+            output_lines = ["NAME\tSTATUS\tADDRESSES"]
+            for node in items:
+                status = node.status.conditions[-1].type if node.status.conditions else ""
+                addresses = ", ".join([a.address for a in node.status.addresses])
+                output_lines.append(f"{node.metadata.name}\t{status}\t{addresses}")
+            
+            return {"stdout": "\n".join(output_lines), "stderr": "", "returncode": 0}
+            
+        else:
+            return JSONResponse(status_code=400, content={"error": f"Unsupported resource type: {resource_type}"})
+            
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+def handle_kubectl_describe(args):
+    """Handle kubectl describe commands using Python client"""
+    try:
+        v1 = client.CoreV1Api()
+        apps_v1 = client.AppsV1Api()
+        
+        if not args:
+            return JSONResponse(status_code=400, content={"error": "No resource specified"})
+        
+        resource_type = args[0]
+        resource_name = args[1] if len(args) > 1 else None
+        namespace = args[2] if len(args) > 2 else "default"
+        
+        if resource_type == "pod":
+            if not resource_name:
+                return JSONResponse(status_code=400, content={"error": "Pod name required"})
+            pod = v1.read_namespaced_pod(name=resource_name, namespace=namespace)
+            # Convert to YAML-like format
+            output = f"Name:         {pod.metadata.name}\n"
+            output += f"Namespace:    {pod.metadata.namespace}\n"
+            output += f"Status:       {pod.status.phase}\n"
+            output += f"Node:         {getattr(pod.spec, 'node_name', '')}\n"
+            output += f"Start Time:   {pod.status.start_time}\n"
+            return {"stdout": output, "stderr": "", "returncode": 0}
+            
+        else:
+            return JSONResponse(status_code=400, content={"error": f"Unsupported resource type for describe: {resource_type}"})
+            
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+def handle_kubectl_logs(args):
+    """Handle kubectl logs commands using Python client"""
+    try:
+        v1 = client.CoreV1Api()
+        
+        if not args:
+            return JSONResponse(status_code=400, content={"error": "Pod name required"})
+        
+        pod_name = args[0]
+        namespace = "default"
+        container = None
+        
+        # Parse additional arguments
+        for i, arg in enumerate(args[1:], 1):
+            if arg == "-n" and i + 1 < len(args):
+                namespace = args[i + 1]
+            elif arg == "-c" and i + 1 < len(args):
+                container = args[i + 1]
+        
+        logs = v1.read_namespaced_pod_log(name=pod_name, namespace=namespace, container=container)
+        return {"stdout": logs, "stderr": "", "returncode": 0}
+        
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
