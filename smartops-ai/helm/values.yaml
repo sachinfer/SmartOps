@@ -1,0 +1,20 @@
+replicaCount: 1
+
+image:
+  repository: your-docker-repo/smartops
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+
+telegram:
+  botToken: ""
+  chatId: ""
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {} 

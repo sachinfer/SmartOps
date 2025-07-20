@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smartops.fullname" . }}
+  labels:
+    app: {{ include "smartops.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "smartops.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "smartops.name" . }}
+    spec:
+      containers:
+        - name: smartops
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: TELEGRAM_BOT_TOKEN
+              value: "{{ .Values.telegram.botToken }}"
+            - name: TELEGRAM_CHAT_ID
+              value: "{{ .Values.telegram.chatId }}"
+          ports:
+            - containerPort: 8501
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }} 

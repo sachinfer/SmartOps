@@ -1,0 +1,5 @@
+apiVersion: v2
+name: smartops
+version: 0.1.0
+description: SmartOps - AI-Driven DevOps Automation & Monitoring Platform
+appVersion: "1.0" 
