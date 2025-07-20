@@ -252,6 +252,15 @@ def dashboard_page():
         box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
     }
     
+    /* Smaller Button Styling */
+    .stButton > button {
+        padding: 0.3rem 0.8rem !important;
+        font-size: 0.9rem !important;
+        height: auto !important;
+        min-height: 32px !important;
+        border-radius: 6px !important;
+    }
+    
     /* Stats Cards */
     .stats-container {
         display: flex;
@@ -330,7 +339,6 @@ def dashboard_page():
     
     /* Charts Container */
     .charts-container {
-        background: white;
         border-radius: 15px;
         padding: 2rem;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -373,18 +381,46 @@ def dashboard_page():
     # Create a container for the namespace selector
     ns_container = st.container()
     with ns_container:
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            selected_ns = st.selectbox(
-                'Select Namespace',
-                namespace_options,
-                index=0,
-                help="Choose a namespace to filter data, or 'all' to view everything"
-            )
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🔄 Refresh Data", type="primary"):
-                st.rerun()
+        selected_ns = st.selectbox(
+            'Select Namespace',
+            namespace_options,
+            index=0,
+            help="Choose a namespace to filter data, or 'all' to view everything"
+        )
+
+    # Display selected namespace with visual indicator
+    if selected_ns == 'all':
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        ">
+            🌐 Currently Viewing: <strong>ALL NAMESPACES</strong>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        ">
+            🎯 Currently Viewing: <strong>{selected_ns.upper()}</strong> Namespace
+        </div>
+        """, unsafe_allow_html=True)
 
     # Namespace stats with modern cards
     ns_stats = fetch_namespace_stats(selected_ns)
