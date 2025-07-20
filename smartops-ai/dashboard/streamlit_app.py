@@ -208,10 +208,141 @@ def get_status_and_advice(latest_pred: str, cpu: float, memory: float) -> Tuple[
 # --- Dashboard Page ---
 def dashboard_page():
     import pandas as pd
-    # Main header with gradient
+    
+    # Modern CSS styling
     st.markdown("""
-    <div class="main-header">
-        <h1>🚀 SmartOps AI Anomaly Detection Dashboard</h1>
+    <style>
+    /* Modern Dashboard Styling */
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+        text-align: center;
+        color: white;
+    }
+    .dashboard-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+    .dashboard-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+    
+    /* Enhanced Selectbox Styling */
+    .stSelectbox > div > div {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        border: 2px solid #3498db;
+        border-radius: 10px;
+        padding: 8px 12px;
+        color: white;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .stSelectbox > div > div:hover {
+        border-color: #5dade2;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+    .stSelectbox > div > div:focus {
+        border-color: #2980b9;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    /* Stats Cards */
+    .stats-container {
+        display: flex;
+        gap: 1.5rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0, 184, 148, 0.2);
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card.services {
+        background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
+        box-shadow: 0 8px 25px rgba(9, 132, 227, 0.2);
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .stat-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* Section Headers */
+    .section-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        margin: 2rem 0 1rem 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Data Tables */
+    .stDataFrame {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Alert Banners */
+    .alert-banner {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);
+    }
+    .success-banner {
+        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(0, 184, 148, 0.2);
+    }
+    
+    /* Charts Container */
+    .charts-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        margin: 2rem 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Modern Header
+    st.markdown("""
+    <div class="dashboard-header">
+        <h1>🚀 SmartOps AI Dashboard</h1>
         <p>Real-time Kubernetes monitoring with AI-powered anomaly detection</p>
     </div>
     """, unsafe_allow_html=True)
@@ -232,18 +363,41 @@ def dashboard_page():
     conn.commit()
     df = pd.read_sql_query("SELECT * FROM anomalies", conn)
     conn.close()
-    # Now df is always defined before any use
 
+    # Enhanced Namespace Selection
+    st.markdown('<div class="section-header">📊 Namespace Overview</div>', unsafe_allow_html=True)
+    
     # Fetch namespaces for dropdown
     namespace_options = ['all'] + fetch_namespaces()
-    selected_ns = st.selectbox('Select Namespace', namespace_options, index=0)
+    
+    # Create a container for the namespace selector
+    ns_container = st.container()
+    with ns_container:
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            selected_ns = st.selectbox(
+                'Select Namespace',
+                namespace_options,
+                index=0,
+                help="Choose a namespace to filter data, or 'all' to view everything"
+            )
+        with col2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🔄 Refresh Data", type="primary"):
+                st.experimental_rerun()
 
-    # Namespace stats (pods/services count)
+    # Namespace stats with modern cards
     ns_stats = fetch_namespace_stats(selected_ns)
     st.markdown(f"""
-    <div style='display: flex; gap: 1.5rem; margin-bottom: 1.5rem;'>
-        <span style='background:#00b894; color:white; border-radius:8px; padding:0.4em 1.2em; font-size:1.2rem; font-weight:bold;'>Pods: {ns_stats['pod_count']}</span>
-        <span style='background:#0984e3; color:white; border-radius:8px; padding:0.4em 1.2em; font-size:1.2rem; font-weight:bold;'>Services: {ns_stats['service_count']}</span>
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number">{ns_stats['pod_count']}</div>
+            <div class="stat-label">Pods</div>
+        </div>
+        <div class="stat-card services">
+            <div class="stat-number">{ns_stats['service_count']}</div>
+            <div class="stat-label">Services</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -253,46 +407,55 @@ def dashboard_page():
     else:
         filtered_df = df.copy()
 
-    # Top Anomalies by CPU Usage
-    st.markdown("## 🔥 Top Anomalies by CPU Usage")
-    chart_df = filtered_df.copy()
-    chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
-    chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
-    chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
-    chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
-    top_cpu_df = chart_df.nlargest(5, 'cpu_percent')[['timestamp', 'pod_name', 'cpu_percent', 'memory_mb', 'prediction']]
-    top_cpu_df['cpu_percent'] = top_cpu_df['cpu_percent'].round(1).astype(str) + '%'
-    top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
-    top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
-    st.dataframe(top_cpu_df, use_container_width=True)
+    # Top Anomalies Section
+    st.markdown('<div class="section-header">🔥 Top Anomalies by CPU Usage</div>', unsafe_allow_html=True)
+    
+    if not filtered_df.empty:
+        chart_df = filtered_df.copy()
+        chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
+        chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+        chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
+        chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
+        top_cpu_df = chart_df.nlargest(5, 'cpu_percent')[['timestamp', 'pod_name', 'cpu_percent', 'memory_mb', 'prediction']]
+        top_cpu_df['cpu_percent'] = top_cpu_df['cpu_percent'].round(1).astype(str) + '%'
+        top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
+        top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
+        st.dataframe(top_cpu_df, use_container_width=True)
+    else:
+        st.info("No anomaly data available for the selected namespace.")
 
-    # Recent Anomalies
-    st.markdown("## 🕒 Recent Anomalies")
-    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
-    if 'pod_name' in filtered_df.columns:
-        display_cols.append('pod_name')
-    if 'labels' in filtered_df.columns:
-        display_cols.append('labels')
-    show_df = filtered_df[display_cols].copy()
-    show_df = show_df.sort_values('timestamp', ascending=False).head(20)
-    show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
-    show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
-    show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
-    show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
-    display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
-    if 'pod_name' in show_df.columns:
-        display_df['pod_name'] = show_df['pod_name']
-    if 'labels' in show_df.columns:
-        display_df['labels'] = show_df['labels']
-    display_df = display_df.rename(columns={
-        'timestamp': 'Timestamp',
-        'cpu_display': 'CPU',
-        'memory_display': 'Memory',
-        'pod_name': 'Pod Name',
-        'labels': 'Labels'
-    })
-    st.dataframe(display_df, use_container_width=True)
+    # Recent Anomalies Section
+    st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
+    
+    if not filtered_df.empty:
+        display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+        if 'pod_name' in filtered_df.columns:
+            display_cols.append('pod_name')
+        if 'labels' in filtered_df.columns:
+            display_cols.append('labels')
+        show_df = filtered_df[display_cols].copy()
+        show_df = show_df.sort_values('timestamp', ascending=False).head(20)
+        show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
+        show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
+        show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
+        show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
+        display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
+        if 'pod_name' in show_df.columns:
+            display_df['pod_name'] = show_df['pod_name']
+        if 'labels' in show_df.columns:
+            display_df['labels'] = show_df['labels']
+        display_df = display_df.rename(columns={
+            'timestamp': 'Timestamp',
+            'cpu_display': 'CPU',
+            'memory_display': 'Memory',
+            'pod_name': 'Pod Name',
+            'labels': 'Labels'
+        })
+        st.dataframe(display_df, use_container_width=True)
+    else:
+        st.info("No recent anomalies found.")
 
+    # Status Banner
     if filtered_df.empty:
         st.markdown("""
         <div class="success-banner">
@@ -306,6 +469,7 @@ def dashboard_page():
         cpu_val = pd.to_numeric(latest['cpu'], errors='coerce') if pd.notna(latest['cpu']) else 0.0
         mem_val = pd.to_numeric(latest['memory'], errors='coerce') if pd.notna(latest['memory']) else 0.0
         status, advice, banner_type, latest_action = get_status_and_advice(latest['prediction'], cpu_val, mem_val)
+        
         if banner_type == 'error':
             st.markdown(f"""
             <div class="alert-banner">
@@ -321,13 +485,15 @@ def dashboard_page():
             </div>
             """, unsafe_allow_html=True)
 
-        # Charts section
-        st.markdown("## 📈 Analytics Dashboard")
+        # Analytics Dashboard Section
+        st.markdown('<div class="section-header">📈 Analytics Dashboard</div>', unsafe_allow_html=True)
+        
         chart_df = filtered_df.copy()
         chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
         chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
         chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
         chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
+        
         def parse_anomaly_timestamp(ts):
             try:
                 if pd.isna(ts):
@@ -349,13 +515,19 @@ def dashboard_page():
                     return ts.astimezone(IST)
             except Exception:
                 return ts
+        
         chart_df['timestamp_ist'] = chart_df['timestamp'].apply(parse_anomaly_timestamp)
+        
+        # Charts in a modern container
+        st.markdown('<div class="charts-container">', unsafe_allow_html=True)
+        
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=('CPU Usage Over Time (IST)', 'Memory Usage Over Time (IST)', 'CPU Distribution', 'Memory Distribution'),
             specs=[[{"secondary_y": False}, {"secondary_y": False}],
                    [{"secondary_y": False}, {"secondary_y": False}]]
         )
+        
         fig.add_trace(
             go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['cpu_percent'], 
                       mode='lines+markers', name='CPU %', line=dict(color='#667eea')),
@@ -376,17 +548,29 @@ def dashboard_page():
                         marker_color='#764ba2', opacity=0.7),
             row=2, col=2
         )
-        fig.update_layout(height=600, showlegend=False, title_text="Resource Usage Analytics")
+        
+        fig.update_layout(
+            height=600, 
+            showlegend=False, 
+            title_text="Resource Usage Analytics",
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#2c3e50')
+        )
+        
         st.plotly_chart(fig, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- AI Action History (now in main dashboard) ---
-    st.markdown("## 📜 AI Action History")
+    # AI Action History Section
+    st.markdown('<div class="section-header">📜 AI Action History</div>', unsafe_allow_html=True)
+    
     try:
         resp = requests.get("http://localhost:8000/ai_actions", params={"all": "true"}, timeout=5)
         actions = resp.json().get("actions", [])
     except Exception as e:
         st.warning(f"Could not fetch AI action history: {e}")
         actions = []
+    
     if not actions:
         st.info("No AI actions in history.")
     else:
@@ -403,6 +587,7 @@ def dashboard_page():
             # Summary counts
             status_counts = actions_df["Status"].value_counts().to_dict()
             st.markdown(f"**Completed:** {status_counts.get('completed', 0)} | **Pending:** {status_counts.get('pending', 0)} | **Failed:** {status_counts.get('failed', 0)} | **Not Found:** {status_counts.get('not_found', 0)}")
+            
             # Color-code status
             def color_status(val):
                 if val == "completed":
@@ -410,17 +595,13 @@ def dashboard_page():
                 elif val == "pending":
                     return "background-color: #fdcb6e; color: black;"
                 elif val == "failed":
-                    return "background-color: #d63031; color: white;"
+                    return "background-color: #e74c3c; color: white;"
                 elif val == "not_found":
-                    return "background-color: #636e72; color: white;"
-                elif val == "ignored":
-                    return "background-color: #b2bec3; color: black;"
-                return ""
-            st.dataframe(
-                actions_df[["Timestamp", "Pod Name", "Namespace", "Reason", "Status"]]
-                .style.applymap(color_status, subset=["Status"]),
-                use_container_width=True
-            )
+                    return "background-color: #95a5a6; color: white;"
+                else:
+                    return ""
+            
+            st.dataframe(actions_df.style.applymap(color_status, subset=['Status']), use_container_width=True)
 
     # --- Deployment Workflow Events Summary ---
     try:
