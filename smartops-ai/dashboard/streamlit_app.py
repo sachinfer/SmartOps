@@ -97,14 +97,14 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-    conn.execute("""
+conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-            timestamp TEXT,
+        timestamp TEXT,
             status TEXT,
             message TEXT
-        )
-    """)
-    conn.commit()
+    )
+""")
+conn.commit()
     conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
@@ -168,8 +168,8 @@ def fetch_pods(namespace):
 def load_anomalies_df():
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
-        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-        conn.close()
+df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+conn.close()
         return df
     except Exception as e:
         st.warning(f"Could not load anomalies data: {e}")
@@ -437,11 +437,11 @@ def dashboard_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # Filter dataframe by namespace if applicable
-    if has_namespace_column(df) and selected_ns != 'all':
-        filtered_df = df[df['namespace'] == selected_ns].copy()
-    else:
-        filtered_df = df.copy()
+# Filter dataframe by namespace if applicable
+if has_namespace_column(df) and selected_ns != 'all':
+    filtered_df = df[df['namespace'] == selected_ns].copy()
+else:
+    filtered_df = df.copy()
 
     # Top Anomalies Section
     st.markdown('<div class="section-header">🔥 Top Anomalies by CPU Usage</div>', unsafe_allow_html=True)
@@ -457,20 +457,20 @@ def dashboard_page():
         top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
         top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
         st.dataframe(top_cpu_df, use_container_width=True)
-    else:
+else:
         st.info("No anomaly data available for the selected namespace.")
 
     # Recent Anomalies Section
     st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
     
     if not filtered_df.empty:
-        display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
-        if 'pod_name' in filtered_df.columns:
-            display_cols.append('pod_name')
-        if 'labels' in filtered_df.columns:
-            display_cols.append('labels')
-        show_df = filtered_df[display_cols].copy()
-        show_df = show_df.sort_values('timestamp', ascending=False).head(20)
+    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+    if 'pod_name' in filtered_df.columns:
+        display_cols.append('pod_name')
+    if 'labels' in filtered_df.columns:
+        display_cols.append('labels')
+    show_df = filtered_df[display_cols].copy()
+    show_df = show_df.sort_values('timestamp', ascending=False).head(20)
         show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
         show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
         show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
@@ -481,12 +481,12 @@ def dashboard_page():
         if 'labels' in show_df.columns:
             display_df['labels'] = show_df['labels']
         display_df = display_df.rename(columns={
-            'timestamp': 'Timestamp',
+        'timestamp': 'Timestamp',
             'cpu_display': 'CPU',
             'memory_display': 'Memory',
-            'pod_name': 'Pod Name',
-            'labels': 'Labels'
-        })
+        'pod_name': 'Pod Name',
+        'labels': 'Labels'
+    })
         st.dataframe(display_df, use_container_width=True)
     else:
         st.info("No recent anomalies found.")
