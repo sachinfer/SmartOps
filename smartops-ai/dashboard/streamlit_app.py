@@ -384,7 +384,7 @@ def dashboard_page():
         with col2:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🔄 Refresh Data", type="primary"):
-                st.experimental_rerun()
+                st.rerun()
 
     # Namespace stats with modern cards
     ns_stats = fetch_namespace_stats(selected_ns)
@@ -990,7 +990,7 @@ def kubernetes_shell_page():
                 execute_kubectl_command(st.session_state.current_command)
                 st.session_state.current_command = ""
                 st.session_state.history_index = -1
-                st.experimental_rerun()
+                st.rerun()
         
         # Command input with placeholder
         shell_cmd = st.text_input(
@@ -1014,7 +1014,7 @@ def kubernetes_shell_page():
                 if st.session_state.history_index < len(st.session_state.kube_shell_history) - 1:
                     st.session_state.history_index += 1
                     st.session_state.current_command = st.session_state.kube_shell_history[-(st.session_state.history_index + 1)]
-                    st.experimental_rerun()
+                    st.rerun()
         with hist_cols[1]:
             if st.button("↓ Next", key="hist_down"):
                 if st.session_state.history_index > 0:
@@ -1024,17 +1024,17 @@ def kubernetes_shell_page():
                 elif st.session_state.history_index == 0:
                     st.session_state.history_index = -1
                     st.session_state.current_command = ""
-                    st.experimental_rerun()
+                    st.rerun()
         with hist_cols[2]:
             if st.button("🔄 Clear History", key="clear_hist"):
                 st.session_state.kube_shell_history = []
                 st.session_state.history_index = -1
                 st.session_state.current_command = ""
-                st.experimental_rerun()
+                st.rerun()
         with hist_cols[3]:
             if st.button("📋 Show History", key="show_hist"):
                 st.session_state.show_history = not st.session_state.get("show_history", False)
-                st.experimental_rerun()
+                st.rerun()
     
     # Display command history if requested
     if st.session_state.get("show_history", False) and st.session_state.kube_shell_history:
@@ -1048,7 +1048,7 @@ def kubernetes_shell_page():
             with col3:
                 if st.button(f"▶️", key=f"hist_exec_{i}"):
                     st.session_state.current_command = cmd
-                    st.experimental_rerun()
+                    st.rerun()
     
     # Display last command output
     if st.session_state.last_command_output:
