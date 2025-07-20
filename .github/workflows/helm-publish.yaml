@@ -6,6 +6,7 @@ on:
       - 'smartops-ai/helm/**'
     branches:
       - main
+      - v1
   workflow_dispatch:
 
 jobs:
