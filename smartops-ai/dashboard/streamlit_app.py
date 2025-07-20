@@ -97,14 +97,14 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-conn.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-        timestamp TEXT,
+            timestamp TEXT,
             status TEXT,
             message TEXT
-    )
-""")
-conn.commit()
+        )
+    """)
+    conn.commit()
     conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
@@ -168,8 +168,8 @@ def fetch_pods(namespace):
 def load_anomalies_df():
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
-df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-conn.close()
+        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+        conn.close()
         return df
     except Exception as e:
         st.warning(f"Could not load anomalies data: {e}")
