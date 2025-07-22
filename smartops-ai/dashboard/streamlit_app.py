@@ -1274,10 +1274,8 @@ with st.sidebar:
         <div class='subtitle'>AI Kubernetes Platform</div>
     </div>
     """, unsafe_allow_html=True)
-
-# (Optional) You can keep ai_actions_section() and retrain_model_section() if you want them on the dashboard sidebar only
-# ai_actions_section()
-# retrain_model_section()
+    ai_actions_section()
+    retrain_model_section()
 
 # Footer
 st.markdown("---")
