@@ -1,16 +1,54 @@
 from fastapi import FastAPI, Request, Query
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3
 from datetime import datetime
 import os
 import pytz
 from typing import List, Optional
-from fastapi.responses import JSONResponse
 
 # Kubernetes client
 from kubernetes import client, config
 
 app = FastAPI()
+
+# Allow CORS for local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Simulated HPA data (replace with real DB/API integration)
+hpa_data = [
+    {"pod": "app-1", "cpu_avg": 0.45, "mem_avg": 0.60, "min_replicas": 1, "max_replicas": 5},
+    {"pod": "app-2", "cpu_avg": 0.80, "mem_avg": 0.70, "min_replicas": 2, "max_replicas": 10},
+    {"pod": "app-3", "cpu_avg": 0.30, "mem_avg": 0.25, "min_replicas": 1, "max_replicas": 3},
+]
+
+class HPAUpdateRequest(BaseModel):
+    pod: str
+    min_replicas: int
+    max_replicas: int
+
+@app.get("/hpa_status")
+async def get_hpa_status():
+    # In real use, fetch from K8s API or DB
+    return {"hpa": hpa_data}
+
+@app.post("/update_hpa")
+async def update_hpa(req: HPAUpdateRequest):
+    # In real use, update K8s HPA via API
+    for hpa in hpa_data:
+        if hpa["pod"] == req.pod:
+            hpa["min_replicas"] = req.min_replicas
+            hpa["max_replicas"] = req.max_replicas
+            return {"status": "success", "msg": f"HPA updated for {req.pod}"}
+    return JSONResponse(status_code=404, content={"status": "error", "msg": "Pod not found"})
+
 DB_PATH = "data/deployment_events.db"
 
 class Event(BaseModel):
@@ -466,3 +504,31 @@ def kubectl_namespaces():
 def kubectl_resource_types():
     # Only allow safe resource types
     return {"resource_types": ["pods", "services", "deployments", "nodes", "events"]} 
+
+# Simulated incident data (replace with real DB/API integration)
+incident_data = [
+    {"timestamp": "2024-05-01 10:00:00", "namespace": "default", "app": "app-1", "type": "CPU Spike", "details": "CPU > 90% for 5m", "root_cause": "Traffic surge", "impact": "Slow response", "remediation": "Scaled up replicas"},
+    {"timestamp": "2024-05-01 11:30:00", "namespace": "default", "app": "app-2", "type": "Pod Crash", "details": "OOMKilled", "root_cause": "Memory leak", "impact": "Pod restart", "remediation": "Fixed memory leak"},
+    {"timestamp": "2024-05-02 09:15:00", "namespace": "smartops", "app": "app-3", "type": "Alert Sent", "details": "Telegram alert", "root_cause": "Manual scale down", "impact": "Reduced capacity", "remediation": "Restored replicas"},
+]
+
+class PostmortemReport(BaseModel):
+    timestamp: str
+    namespace: str
+    app: str
+    type: str
+    details: str
+    root_cause: str
+    impact: str
+    remediation: str
+    report: str
+
+@app.get("/incidents")
+async def get_incidents():
+    return {"incidents": incident_data}
+
+@app.post("/postmortem")
+async def save_postmortem(report: PostmortemReport):
+    # In real use, save to DB
+    incident_data.append(report.dict())
+    return {"status": "success", "msg": "Postmortem report saved."} 

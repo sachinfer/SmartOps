@@ -366,6 +366,33 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 
 ---
 
+## 🆕 Advanced Dashboard Pages
+
+### ⚖️ Auto-Scaling Recommendations & Control
+- **What:** Uses AI to analyze CPU/memory usage trends and recommend optimal Horizontal Pod Autoscaler (HPA) settings for your workloads.
+- **Features:**
+  - View current usage and HPA settings for all pods.
+  - Get AI-driven recommendations for min/max replicas.
+  - Apply recommended HPA changes directly from the dashboard (calls backend API).
+
+### 🕒 Incident Timeline & Postmortem Report Generator
+- **What:** Auto-generates a timeline of incidents (anomalies, pod crashes, alerts) and lets you export postmortem PDF reports.
+- **Features:**
+  - Filter incidents by namespace or app.
+  - View a timeline and audit trail of all incidents.
+  - Generate and download postmortem PDF reports with root cause, impact, and remediation.
+  - Save postmortem reports to the audit trail (calls backend API).
+
+### 🔗 Service Dependency Map (Real-Time)
+- **What:** Visualizes service-to-service communication using Kubernetes network flows or service mesh (e.g., Istio, Linkerd).
+- **Features:**
+  - Dynamic dependency graph of your microservices architecture.
+  - Interactive visualization (with pyvis) and static fallback (networkx/matplotlib).
+  - Helps identify cascading failures and bottlenecks.
+  - Fetches real data from backend API if available, otherwise uses simulated data.
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
