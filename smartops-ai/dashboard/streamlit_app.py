@@ -10,14 +10,8 @@ import pytz
 import requests
 import time
 
-def auto_refresh(interval_sec=60):
-    if "last_refresh" not in st.session_state:
-        st.session_state["last_refresh"] = time.time()
-    if time.time() - st.session_state["last_refresh"] > interval_sec:
-        st.session_state["last_refresh"] = time.time()
-        st.experimental_rerun()
-
-auto_refresh(60)
+# Remove global auto_refresh(60)
+# Only use auto-refresh in log-related pages/functions
 
 # Page config with modern theme
 st.set_page_config(
