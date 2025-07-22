@@ -1274,8 +1274,18 @@ with st.sidebar:
         <div class='subtitle'>AI Kubernetes Platform</div>
     </div>
     """, unsafe_allow_html=True)
+    st.title("🏠 Dashboard")
+    st.markdown("## SmartOps AI Dashboard")
+    st.write("Welcome to the SmartOps AI-Driven DevOps Automation & Monitoring Platform.")
     ai_actions_section()
     retrain_model_section()
+
+# Namespace selection dropdown
+namespaces = fetch_namespaces() if 'fetch_namespaces' in globals() else []
+if namespaces:
+    selected_ns = st.selectbox("Select Namespace", ["all"] + namespaces, key="dashboard_ns_select")
+else:
+    selected_ns = "all"
 
 # Footer
 st.markdown("---")
