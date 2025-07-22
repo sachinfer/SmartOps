@@ -13,3 +13,4 @@ numpy
 plotly
 pytz
 kubernetes
+streamlit-extras

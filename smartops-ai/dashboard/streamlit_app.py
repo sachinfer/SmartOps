@@ -8,6 +8,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pytz
 import requests
+from streamlit_extras.st_autorefresh import st_autorefresh
+from streamlit_extras.confirm_dialog import confirm_dialog
 
 # Page config with modern theme
 st.set_page_config(
@@ -97,24 +99,20 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-conn.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-        timestamp TEXT,
+            timestamp TEXT,
             status TEXT,
             message TEXT
-    )
-""")
-conn.commit()
+        )
+    """)
+    conn.commit()
     conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
 
 # Optional: Auto-refresh every 60 seconds
-try:
-    from streamlit_autorefresh import st_autorefresh
-    st_autorefresh(interval=60 * 1000)
-except ImportError:
-    pass
+st_autorefresh(interval=60 * 1000)
 
 # Top-level cached functions
 @st.cache_data(ttl=30)
@@ -168,8 +166,8 @@ def fetch_pods(namespace):
 def load_anomalies_df():
     try:
         conn = sqlite3.connect("/app/dashboard/data/data.db")
-df = pd.read_sql_query("SELECT * FROM anomalies", conn)
-conn.close()
+        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+        conn.close()
         return df
     except Exception as e:
         st.warning(f"Could not load anomalies data: {e}")
@@ -752,7 +750,7 @@ def pod_explorer_page():
     if pod:
         with action_col1:
             if st.button("🔄 Restart Pod", key="restart_pod"):
-                if st.confirm("Are you sure you want to restart this pod? It will be deleted and recreated by the deployment."):
+                if confirm_dialog("Are you sure you want to restart this pod? It will be deleted and recreated by the deployment."):
                     resp = requests.post("http://localhost:8000/restart_pod", params={"namespace": namespace, "pod": pod})
                     if resp.status_code == 200:
                         pod_action_result.success("Pod restart requested.")
@@ -760,7 +758,7 @@ def pod_explorer_page():
                         pod_action_result.error(f"Restart failed: {resp.text}")
         with action_col2:
             if st.button("🗑️ Delete Pod", key="delete_pod"):
-                if st.confirm("Are you sure you want to delete this pod? It may not be recreated if not managed by a controller."):
+                if confirm_dialog("Are you sure you want to delete this pod? It may not be recreated if not managed by a controller."):
                     resp = requests.post("http://localhost:8000/delete_pod", params={"namespace": namespace, "pod": pod})
                     if resp.status_code == 200:
                         pod_action_result.success("Pod deleted.")
