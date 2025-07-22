@@ -1274,21 +1274,11 @@ with st.sidebar:
         <div class='subtitle'>AI Kubernetes Platform</div>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown("<div class='sidebar-nav'>", unsafe_allow_html=True)
-    page = st.radio(
-        "",
-        [f"{sidebar_icons[p]} {p}" for p in pages.keys()],
-        index=list(pages.keys()).index("Dashboard"),
-        key="nav_radio"
-    )
-    page = page.split(' ', 1)[1]
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("<div class='sidebar-section'>", unsafe_allow_html=True)
-    ai_actions_section()
-    retrain_model_section()
-    st.markdown("</div>", unsafe_allow_html=True)
 
-pages[page]()
+# (Optional) You can keep ai_actions_section() and retrain_model_section() if you want them on the dashboard sidebar only
+# ai_actions_section()
+# retrain_model_section()
+
 # Footer
 st.markdown("---")
 st.markdown("""
