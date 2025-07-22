@@ -8,8 +8,16 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pytz
 import requests
-from streamlit_extras.st_autorefresh import st_autorefresh
-from streamlit_extras.confirm_dialog import confirm_dialog
+import time
+
+def auto_refresh(interval_sec=60):
+    if "last_refresh" not in st.session_state:
+        st.session_state["last_refresh"] = time.time()
+    if time.time() - st.session_state["last_refresh"] > interval_sec:
+        st.session_state["last_refresh"] = time.time()
+        st.experimental_rerun()
+
+auto_refresh(60)
 
 # Page config with modern theme
 st.set_page_config(
@@ -110,9 +118,6 @@ try:
     conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
-
-# Optional: Auto-refresh every 60 seconds
-st_autorefresh(interval=60 * 1000)
 
 # Top-level cached functions
 @st.cache_data(ttl=30)
@@ -436,6 +441,7 @@ def dashboard_page():
     """, unsafe_allow_html=True)
 
 # Filter dataframe by namespace if applicable
+df = load_anomalies_df()
 if has_namespace_column(df) and selected_ns != 'all':
     filtered_df = df[df['namespace'] == selected_ns].copy()
 else:
@@ -455,20 +461,20 @@ else:
         top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
         top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
         st.dataframe(top_cpu_df, use_container_width=True)
-else:
+    else:
         st.info("No anomaly data available for the selected namespace.")
 
     # Recent Anomalies Section
     st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
     
     if not filtered_df.empty:
-    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
-    if 'pod_name' in filtered_df.columns:
-        display_cols.append('pod_name')
-    if 'labels' in filtered_df.columns:
-        display_cols.append('labels')
-    show_df = filtered_df[display_cols].copy()
-    show_df = show_df.sort_values('timestamp', ascending=False).head(20)
+        display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+        if 'pod_name' in filtered_df.columns:
+            display_cols.append('pod_name')
+        if 'labels' in filtered_df.columns:
+            display_cols.append('labels')
+        show_df = filtered_df[display_cols].copy()
+        show_df = show_df.sort_values('timestamp', ascending=False).head(20)
         show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
         show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
         show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
@@ -479,12 +485,12 @@ else:
         if 'labels' in show_df.columns:
             display_df['labels'] = show_df['labels']
         display_df = display_df.rename(columns={
-        'timestamp': 'Timestamp',
+            'timestamp': 'Timestamp',
             'cpu_display': 'CPU',
             'memory_display': 'Memory',
-        'pod_name': 'Pod Name',
-        'labels': 'Labels'
-    })
+            'pod_name': 'Pod Name',
+            'labels': 'Labels'
+        })
         st.dataframe(display_df, use_container_width=True)
     else:
         st.info("No recent anomalies found.")
@@ -731,10 +737,15 @@ def pod_explorer_page():
     refresh = st.button("🔄 Refresh Logs")
 
     # Live log streaming toggle
-    auto_refresh = st.checkbox("Live Log Streaming (auto-refresh every 5s)", value=False)
-    if auto_refresh:
-        from streamlit_autorefresh import st_autorefresh
-        st_autorefresh(interval=5000, key="log_autorefresh")
+    auto_refresh_checkbox = st.checkbox("Live Log Streaming (auto-refresh every 5s)", value=False)
+    if auto_refresh_checkbox:
+        def log_auto_refresh(interval_sec=5):
+            if "log_last_refresh" not in st.session_state:
+                st.session_state["log_last_refresh"] = time.time()
+            if time.time() - st.session_state["log_last_refresh"] > interval_sec:
+                st.session_state["log_last_refresh"] = time.time()
+                st.experimental_rerun()
+        log_auto_refresh(5)
 
     # Log search/filter UI
     col1, col2 = st.columns([2,1])
@@ -750,7 +761,12 @@ def pod_explorer_page():
     if pod:
         with action_col1:
             if st.button("🔄 Restart Pod", key="restart_pod"):
-                if confirm_dialog("Are you sure you want to restart this pod? It will be deleted and recreated by the deployment."):
+                confirm = st.radio(
+                    "Are you sure you want to restart this pod? It will be deleted and recreated by the deployment.",
+                    ["No", "Yes"],
+                    key="confirm_restart"
+                )
+                if confirm == "Yes":
                     resp = requests.post("http://localhost:8000/restart_pod", params={"namespace": namespace, "pod": pod})
                     if resp.status_code == 200:
                         pod_action_result.success("Pod restart requested.")
@@ -758,7 +774,12 @@ def pod_explorer_page():
                         pod_action_result.error(f"Restart failed: {resp.text}")
         with action_col2:
             if st.button("🗑️ Delete Pod", key="delete_pod"):
-                if confirm_dialog("Are you sure you want to delete this pod? It may not be recreated if not managed by a controller."):
+                confirm = st.radio(
+                    "Are you sure you want to delete this pod? It may not be recreated if not managed by a controller.",
+                    ["No", "Yes"],
+                    key="confirm_delete"
+                )
+                if confirm == "Yes":
                     resp = requests.post("http://localhost:8000/delete_pod", params={"namespace": namespace, "pod": pod})
                     if resp.status_code == 200:
                         pod_action_result.success("Pod deleted.")
