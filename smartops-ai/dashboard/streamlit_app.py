@@ -455,20 +455,20 @@ else:
         top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
         top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
         st.dataframe(top_cpu_df, use_container_width=True)
-    else:
+else:
         st.info("No anomaly data available for the selected namespace.")
 
     # Recent Anomalies Section
     st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
     
     if not filtered_df.empty:
-        display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
-        if 'pod_name' in filtered_df.columns:
-            display_cols.append('pod_name')
-        if 'labels' in filtered_df.columns:
-            display_cols.append('labels')
-        show_df = filtered_df[display_cols].copy()
-        show_df = show_df.sort_values('timestamp', ascending=False).head(20)
+    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+    if 'pod_name' in filtered_df.columns:
+        display_cols.append('pod_name')
+    if 'labels' in filtered_df.columns:
+        display_cols.append('labels')
+    show_df = filtered_df[display_cols].copy()
+    show_df = show_df.sort_values('timestamp', ascending=False).head(20)
         show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
         show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
         show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
@@ -479,12 +479,12 @@ else:
         if 'labels' in show_df.columns:
             display_df['labels'] = show_df['labels']
         display_df = display_df.rename(columns={
-            'timestamp': 'Timestamp',
+        'timestamp': 'Timestamp',
             'cpu_display': 'CPU',
             'memory_display': 'Memory',
-            'pod_name': 'Pod Name',
-            'labels': 'Labels'
-        })
+        'pod_name': 'Pod Name',
+        'labels': 'Labels'
+    })
         st.dataframe(display_df, use_container_width=True)
     else:
         st.info("No recent anomalies found.")
@@ -694,499 +694,14 @@ else:
     except Exception as e:
         st.warning(f"Could not load deployment events: {e}")
 
-# --- Pod Explorer & Logs Page ---
-def pod_explorer_page():
-    st.title("🛰️ Pod Explorer & Logs")
-    st.write("Explore pods and view their logs in real time.")
-
-    namespaces = fetch_namespaces()
-    if not namespaces:
-        st.warning("No namespaces found.")
-        return
-    namespace = st.selectbox("Select Namespace", namespaces)
-
-    pods = fetch_pods(namespace)
-    if not pods:
-        st.warning("No pods found in this namespace.")
-        return
-
-    # Show pod table with details
-    pod_table = pd.DataFrame(pods)
-    st.markdown("### Available Pods")
-    st.dataframe(pod_table[["name", "status", "node", "restarts", "images", "containers"]], use_container_width=True)
-
-    pod_names = [pod["name"] for pod in pods]
-    pod = st.selectbox("Select Pod", pod_names)
-    selected_pod = next((p for p in pods if p["name"] == pod), None)
-
-    container = None
-    if selected_pod:
-        containers = selected_pod.get("containers", [])
-        if len(containers) > 1:
-            container = st.selectbox("Select Container", containers)
-        elif len(containers) == 1:
-            container = containers[0]
-
-    # Add a refresh button
-    refresh = st.button("🔄 Refresh Logs")
-
-    # Live log streaming toggle
-    auto_refresh_checkbox = st.checkbox("Live Log Streaming (auto-refresh every 5s)", value=False)
-    if auto_refresh_checkbox:
-        def log_auto_refresh(interval_sec=5):
-            if "log_last_refresh" not in st.session_state:
-                st.session_state["log_last_refresh"] = time.time()
-            if time.time() - st.session_state["log_last_refresh"] > interval_sec:
-                st.session_state["log_last_refresh"] = time.time()
-                st.experimental_rerun()
-        log_auto_refresh(5)
-
-    # Log search/filter UI
-    col1, col2 = st.columns([2,1])
-    with col1:
-        log_search = st.text_input("Search logs (keyword)", "")
-    with col2:
-        time_filter = st.selectbox("Time Range", ["All", "Last 5m", "Last 1h", "Last 24h"])
-
-    # Pod actions UI
-    st.markdown("### Pod Actions")
-    action_col1, action_col2, action_col3 = st.columns(3)
-    pod_action_result = st.empty()
-    if pod:
-        with action_col1:
-            if st.button("🔄 Restart Pod", key="restart_pod"):
-                confirm = st.radio(
-                    "Are you sure you want to restart this pod? It will be deleted and recreated by the deployment.",
-                    ["No", "Yes"],
-                    key="confirm_restart"
-                )
-                if confirm == "Yes":
-                    resp = requests.post("http://localhost:8000/restart_pod", params={"namespace": namespace, "pod": pod})
-                    if resp.status_code == 200:
-                        pod_action_result.success("Pod restart requested.")
-                    else:
-                        pod_action_result.error(f"Restart failed: {resp.text}")
-        with action_col2:
-            if st.button("🗑️ Delete Pod", key="delete_pod"):
-                confirm = st.radio(
-                    "Are you sure you want to delete this pod? It may not be recreated if not managed by a controller.",
-                    ["No", "Yes"],
-                    key="confirm_delete"
-                )
-                if confirm == "Yes":
-                    resp = requests.post("http://localhost:8000/delete_pod", params={"namespace": namespace, "pod": pod})
-                    if resp.status_code == 200:
-                        pod_action_result.success("Pod deleted.")
-                    else:
-                        pod_action_result.error(f"Delete failed: {resp.text}")
-        with action_col3:
-            if st.button("🔍 Describe Pod", key="describe_pod"):
-                resp = requests.get("http://localhost:8000/describe_pod", params={"namespace": namespace, "pod": pod})
-                if resp.status_code == 200:
-                    pod_desc = resp.json()
-                    with st.expander("Pod Description (JSON)"):
-                        import json
-                        st.json(pod_desc)
-                else:
-                    pod_action_result.error(f"Describe failed: {resp.text}")
-
-    # --- Pod Resource Graphs ---
-    # Load anomalies data for pod resource usage
-    pod_resource_df = pd.DataFrame()
-    if not load_anomalies_df().empty and pod:
-        if 'pod_name' in load_anomalies_df().columns:
-            pod_resource_df = load_anomalies_df()[load_anomalies_df()['pod_name'] == pod].copy()
-    if not pod_resource_df.empty:
-        pod_resource_df['timestamp'] = pd.to_datetime(pod_resource_df['timestamp'])
-        pod_resource_df['cpu_numeric'] = pd.to_numeric(pod_resource_df['cpu'], errors='coerce').fillna(0)
-        pod_resource_df['cpu_percent'] = pod_resource_df['cpu_numeric'] * 100
-        pod_resource_df['memory_numeric'] = pd.to_numeric(pod_resource_df['memory'], errors='coerce').fillna(0)
-        pod_resource_df['memory_mb'] = pod_resource_df['memory_numeric'] / (1024 * 1024)
-        # Convert timestamps to IST
-        import pytz
-        IST = pytz.timezone('Asia/Kolkata')
-        pod_resource_df['timestamp_ist'] = pod_resource_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(IST)
-        import plotly.graph_objects as go
-        st.markdown("### Pod Resource Usage (CPU & Memory)")
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=pod_resource_df['timestamp_ist'], y=pod_resource_df['cpu_percent'], mode='lines+markers', name='CPU %', line=dict(color='#667eea')))
-        fig.add_trace(go.Scatter(x=pod_resource_df['timestamp_ist'], y=pod_resource_df['memory_mb'], mode='lines+markers', name='Memory MB', line=dict(color='#764ba2')))
-        fig.update_layout(title=f"Resource Usage for {pod}", xaxis_title="Time (IST)", yaxis_title="Usage", legend_title="Metric", height=350)
-        st.plotly_chart(fig, use_container_width=True)
-    elif pod:
-        st.info("No resource data available for this pod.")
-
-    if pod:
-        url = f"http://localhost:8000/logs"
-        params = {"namespace": namespace, "pod": pod}
-        if container:
-            params["container"] = container
-        logs = ""
-        error = None
-        if refresh or True:  # Always fetch logs on first render and on refresh
-            try:
-                resp = requests.get(url, params=params, timeout=10)
-                data = resp.json()
-                logs = data.get("logs", "")
-                error = data.get("error", None)
-            except Exception as e:
-                error = str(e)
-        if error:
-            st.error(f"Error fetching logs: {error}")
-        # --- Log filtering ---
-        filtered_logs = logs
-        if logs:
-            log_lines = logs.splitlines()
-            # Time filter (assume log lines start with ISO timestamp or RFC3339)
-            import re, datetime
-            now = datetime.datetime.utcnow()
-            def line_in_time(line):
-                if time_filter == "All":
-                    return True
-                match = re.match(r"^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})", line)
-                if not match:
-                    return True  # If no timestamp, include
-                try:
-                    ts = match.group(1).replace('T', ' ')
-                    ts = datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-                except Exception:
-                    return True
-                delta = now - ts
-                if time_filter == "Last 5m":
-                    return delta.total_seconds() <= 300
-                elif time_filter == "Last 1h":
-                    return delta.total_seconds() <= 3600
-                elif time_filter == "Last 24h":
-                    return delta.total_seconds() <= 86400
-                return True
-            filtered_lines = [l for l in log_lines if line_in_time(l)]
-            # Keyword filter
-            if log_search:
-                filtered_lines = [l for l in filtered_lines if log_search.lower() in l.lower()]
-            filtered_logs = "\n".join(filtered_lines)
-        # Download button
-        st.download_button(
-            label="⬇️ Download Logs as .txt",
-            data=filtered_logs,
-            file_name=f"{pod}_{container if container else 'default'}_logs.txt",
-            mime="text/plain"
-        )
-        st.text_area(f"Pod Logs ({container if container else 'default'})", filtered_logs, height=400)
-
-# --- AI Recommendations / Pending AI Actions ---
-def ai_actions_section():
-    st.markdown("## 🤖 AI Recommendations (Pending Actions)")
-    try:
-        resp = requests.get("http://localhost:8000/ai_actions", timeout=5)
-        actions = resp.json().get("actions", [])
-    except Exception as e:
-        st.warning(f"Could not fetch AI actions: {e}")
-        actions = []
-    if not actions:
-        st.info("No pending AI actions.")
-        return
-    for action in actions:
-        with st.expander(f"Pod: {action['pod_name']} | Namespace: {action['namespace']}"):
-            st.write(f"**Reason:** {action['reason']}")
-            st.write(f"**Timestamp:** {action['timestamp']}")
-            col1, col2 = st.columns(2)
-            with col1:
-                confirm_btn = st.button(f"✅ Confirm Delete Pod {action['pod_name']}", key=f"confirm_{action['id']}")
-            with col2:
-                ignore_btn = st.button(f"🚫 Ignore", key=f"ignore_{action['id']}")
-            if confirm_btn:
-                with st.spinner("Deleting pod..."):
-                    resp = requests.post("http://localhost:8000/confirm_ai_action", params={"action_id": action['id']})
-                    if resp.status_code == 200:
-                        st.success(f"Pod {action['pod_name']} deleted.")
-                    else:
-                        try:
-                            data = resp.json()
-                            if data.get("status") == "not_found":
-                                st.info(data.get("error", "Pod not found."))
-                                # Show Ignore button for not_found
-                                if st.button(f"🚫 Ignore (mark as ignored)", key=f"ignore_notfound_{action['id']}"):
-                                    resp2 = requests.post("http://localhost:8000/ignore_ai_action", params={"action_id": action['id']})
-                                    if resp2.status_code == 200:
-                                        st.success("Action marked as ignored.")
-                                    else:
-                                        st.error(f"Ignore failed: {resp2.text}")
-                            else:
-                                st.error(f"Delete failed: {resp.text}")
-                        except Exception:
-                            st.error(f"Delete failed: {resp.text}")
-            if ignore_btn:
-                with st.spinner("Marking as ignored..."):
-                    resp = requests.post("http://localhost:8000/ignore_ai_action", params={"action_id": action['id']})
-                    if resp.status_code == 200:
-                        st.success("Action marked as ignored.")
-                    else:
-                        st.error(f"Ignore failed: {resp.text}")
-
-# --- Model Retraining Button ---
-def retrain_model_section():
-    st.markdown("## 🧠 Retrain Anomaly Detection Model")
-    if st.button("🔄 Retrain Model", key="retrain_model_btn"):
-        with st.spinner("Retraining model... this may take a minute..."):
-            try:
-                resp = requests.post("http://localhost:8000/retrain_model", timeout=60)
-                if resp.status_code == 200:
-                    st.success("Model retrained and deployed!")
-                else:
-                    st.error(f"Retrain failed: {resp.text}")
-            except Exception as e:
-                st.error(f"Retrain error: {e}")
-
-# --- Cluster Explorer Page ---
-def cluster_explorer_page():
-    st.title("🔍 Cluster Explorer")
-    st.write("Run safe kubectl-like queries on your cluster.")
-
-    # Fetch resource types and namespaces for autocomplete
-    resource_types = fetch_resource_types()
-    namespaces = fetch_namespaces()
-
-    # UI for resource type and namespace
-    resource = st.selectbox("Resource Type", resource_types, index=0)
-    ns = st.selectbox("Namespace", ["All"] + namespaces, index=0)
-    all_ns = ns == "All"
-    if st.button("Fetch"):
-        with st.spinner("Fetching data..."):
-            try:
-                params = {"resource_type": resource, "all_namespaces": str(all_ns).lower()}
-                resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
-                items = resp.json().get("items", [])
-                if not items:
-                    st.info("No results found.")
-                else:
-                    import pandas as pd
-                    df = pd.DataFrame(items)
-                    st.dataframe(df, use_container_width=True)
-            except Exception as e:
-                st.error(f"Error fetching data: {e}")
-
-# --- Kubernetes Shell Page ---
-def kubernetes_shell_page():
-    st.title("🖥️ Kubernetes Shell")
-    st.info("Only 'kubectl get', 'kubectl describe', and 'kubectl logs' commands are allowed.")
-    
-    # Initialize session state for shell history and current command
-    if "kube_shell_history" not in st.session_state:
-        st.session_state.kube_shell_history = []
-    if "last_command_output" not in st.session_state:
-        st.session_state.last_command_output = ""
-    if "current_command" not in st.session_state:
-        st.session_state.current_command = ""
-    if "history_index" not in st.session_state:
-        st.session_state.history_index = -1
-    
-    # Terminal-like interface
-    st.markdown("""
-    <style>
-    .terminal-container {
-        background-color: #1e1e1e;
-        border-radius: 8px;
-        padding: 20px;
-        font-family: 'Courier New', monospace;
-        color: #00ff00;
-        border: 1px solid #333;
-        margin: 10px 0;
-    }
-    .terminal-prompt {
-        color: #00ff00;
-        font-weight: bold;
-    }
-    .terminal-input {
-        background: transparent;
-        border: none;
-        color: #00ff00;
-        font-family: 'Courier New', monospace;
-        font-size: 14px;
-        outline: none;
-        width: 100%;
-    }
-    .terminal-output {
-        color: #ffffff;
-        white-space: pre-wrap;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        background-color: #2d2d2d;
-        padding: 10px;
-        border-radius: 4px;
-        margin: 10px 0;
-        max-height: 400px;
-        overflow-y: auto;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Command input with history navigation
-    col1, col2 = st.columns([1, 20])
-    with col1:
-        st.markdown('<div class="terminal-prompt">$</div>', unsafe_allow_html=True)
-    with col2:
-        # Create a unique key for the command input
-        cmd_key = f"shell_cmd_{len(st.session_state.kube_shell_history)}"
-        
-        # Handle command submission
-        if st.button("⏎ Execute", key="execute_btn"):
-            if st.session_state.current_command.strip():
-                # Add to history
-                if st.session_state.current_command not in st.session_state.kube_shell_history:
-                    st.session_state.kube_shell_history.append(st.session_state.current_command)
-                
-                # Execute command
-                execute_kubectl_command(st.session_state.current_command)
-                st.session_state.current_command = ""
-                st.session_state.history_index = -1
-                st.rerun()
-        
-        # Command input with placeholder
-        shell_cmd = st.text_input(
-            "kubectl >", 
-            value=st.session_state.current_command,
-            key=cmd_key,
-            placeholder="Type kubectl command here...",
-            help="Use ↑↓ arrows to navigate history, Enter to execute"
-        )
-        
-        # Update current command
-        if shell_cmd != st.session_state.current_command:
-            st.session_state.current_command = shell_cmd
-    
-    # History navigation buttons
-    if st.session_state.kube_shell_history:
-        st.markdown("**📜 Command History Navigation:**")
-        hist_cols = st.columns(5)
-        with hist_cols[0]:
-            if st.button("↑ Previous", key="hist_up"):
-                if st.session_state.history_index < len(st.session_state.kube_shell_history) - 1:
-                    st.session_state.history_index += 1
-                    st.session_state.current_command = st.session_state.kube_shell_history[-(st.session_state.history_index + 1)]
-                    st.rerun()
-        with hist_cols[1]:
-            if st.button("↓ Next", key="hist_down"):
-                if st.session_state.history_index > 0:
-                    st.session_state.history_index -= 1
-                    st.session_state.current_command = st.session_state.kube_shell_history[-(st.session_state.history_index + 1)]
-                    st.experimental_rerun()
-                elif st.session_state.history_index == 0:
-                    st.session_state.history_index = -1
-                    st.session_state.current_command = ""
-                    st.rerun()
-        with hist_cols[2]:
-            if st.button("🔄 Clear History", key="clear_hist"):
-                st.session_state.kube_shell_history = []
-                st.session_state.history_index = -1
-                st.session_state.current_command = ""
-                st.rerun()
-        with hist_cols[3]:
-            if st.button("📋 Show History", key="show_hist"):
-                st.session_state.show_history = not st.session_state.get("show_history", False)
-                st.rerun()
-    
-    # Display command history if requested
-    if st.session_state.get("show_history", False) and st.session_state.kube_shell_history:
-        st.markdown("#### 📜 Full Command History")
-        for i, cmd in enumerate(reversed(st.session_state.kube_shell_history)):
-            col1, col2, col3 = st.columns([1, 4, 1])
-            with col1:
-                st.markdown(f"`{len(st.session_state.kube_shell_history) - i}`")
-            with col2:
-                st.code(cmd, language="shell")
-            with col3:
-                if st.button(f"▶️", key=f"hist_exec_{i}"):
-                    st.session_state.current_command = cmd
-                    st.rerun()
-    
-    # Display last command output
-    if st.session_state.last_command_output:
-        st.markdown("#### 📋 Last Command Output")
-        output = st.session_state.last_command_output
-        st.markdown(f"**Command:** `{output['command']}`")
-        
-        if output['stdout']:
-            st.markdown("**Output:**")
-            st.markdown(f'<div class="terminal-output">{output["stdout"]}</div>', unsafe_allow_html=True)
-        
-        if output['stderr']:
-            st.markdown("**Errors:**")
-            st.error(output['stderr'])
-        
-        if output['returncode'] != 0:
-            st.warning(f"⚠️ kubectl exited with code {output['returncode']}")
-
-def execute_kubectl_command(shell_cmd):
-    """Execute kubectl command and store results"""
-    # Only allow safe kubectl commands
-    allowed = ["kubectl get", "kubectl describe", "kubectl logs"]
-    if not any(shell_cmd.strip().startswith(a) for a in allowed):
-        st.error("Only 'kubectl get', 'kubectl describe', and 'kubectl logs' commands are allowed.")
-        return
-    
-    with st.spinner("Running kubectl..."):
-        try:
-            # Remove 'kubectl' prefix for backend
-            raw_cmd = shell_cmd.strip()[len("kubectl "):]
-            resp = requests.post(
-                "http://localhost:8000/kubectl_raw",
-                params={"command": raw_cmd},
-                timeout=30
-            )
-            
-            if resp.status_code == 200:
-                data = resp.json()
-                stdout = data.get("stdout", "")
-                stderr = data.get("stderr", "")
-                returncode = data.get("returncode", 0)
-                
-                # Store output in session state
-                st.session_state.last_command_output = {
-                    "stdout": stdout,
-                    "stderr": stderr,
-                    "returncode": returncode,
-                    "command": shell_cmd
-                }
-                
-                # Display output
-                if stdout:
-                    st.success("✅ Command executed successfully!")
-                    # If 'get', try to parse as table
-                    if shell_cmd.strip().startswith("kubectl get") and stdout.strip():
-                        import pandas as pd
-                        lines = stdout.strip().splitlines()
-                        if len(lines) > 1:
-                            header = lines[0].split()
-                            rows = [l.split() for l in lines[1:] if l.strip()]
-                            try:
-                                df = pd.DataFrame(rows, columns=header)
-                                st.dataframe(df, use_container_width=True)
-                            except Exception:
-                                st.code(stdout, language="shell")
-                        else:
-                            st.code(stdout, language="shell")
-                    else:
-                        st.code(stdout, language="shell")
-                
-                if stderr:
-                    st.error(f"⚠️ stderr: {stderr}")
-                
-                if returncode != 0:
-                    st.warning(f"⚠️ kubectl exited with code {returncode}")
-                    
-            else:
-                st.error(f"❌ API Error: {resp.status_code} - {resp.text}")
-                
-        except Exception as e:
-            st.error(f"❌ Error running kubectl: {e}")
-
 # --- Sidebar navigation ---
-pages = {
-    "Dashboard": dashboard_page,
-    "Pod Explorer & Logs": pod_explorer_page,
-    "Cluster Explorer": cluster_explorer_page,
-    "Kubernetes Shell": kubernetes_shell_page
-}
+# --- Commented out: Unwanted or now-multipage logic ---
+# pages = {
+#     "Dashboard": dashboard_page,
+#     "Pod Explorer & Logs": pod_explorer_page,
+#     "Cluster Explorer": cluster_explorer_page,
+#     "Kubernetes Shell": kubernetes_shell_page
+# }
 # --- Enhanced Sidebar navigation ---
 st.markdown("""
 <style>
@@ -1274,11 +789,14 @@ with st.sidebar:
         <div class='subtitle'>AI Kubernetes Platform</div>
     </div>
     """, unsafe_allow_html=True)
-    st.title("🏠 Dashboard")
-    st.markdown("## SmartOps AI Dashboard")
-    st.write("Welcome to the SmartOps AI-Driven DevOps Automation & Monitoring Platform.")
-    ai_actions_section()
-    retrain_model_section()
+    # --- Commented out: Unwanted or now-multipage logic ---
+    # ai_actions_section()
+    # retrain_model_section()
+
+# Main page title and description
+st.title("🏠 Dashboard")
+st.markdown("## SmartOps AI Dashboard")
+st.write("Welcome to the SmartOps AI-Driven DevOps Automation & Monitoring Platform.")
 
 # Namespace selection dropdown
 namespaces = fetch_namespaces() if 'fetch_namespaces' in globals() else []
