@@ -101,14 +101,14 @@ st.markdown("""
 try:
     db_path = "data/deployment_events.db"
     conn = sqlite3.connect(db_path)
-conn.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS deployment_events (
-        timestamp TEXT,
+            timestamp TEXT,
             status TEXT,
             message TEXT
-    )
-""")
-conn.commit()
+        )
+    """)
+    conn.commit()
     conn.close()
 except Exception as e:
     st.warning(f"Could not initialize deployment_events table: {e}")
