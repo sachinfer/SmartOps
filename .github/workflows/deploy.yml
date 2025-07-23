@@ -6,7 +6,7 @@ on:
       - main
       - gcp
       # - gcp2
-      - dash
+      # - dash
   workflow_dispatch:
 
 jobs:
