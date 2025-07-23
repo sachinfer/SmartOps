@@ -462,13 +462,13 @@ else:
     st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
     
     if not filtered_df.empty:
-    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
-    if 'pod_name' in filtered_df.columns:
-        display_cols.append('pod_name')
-    if 'labels' in filtered_df.columns:
-        display_cols.append('labels')
-    show_df = filtered_df[display_cols].copy()
-    show_df = show_df.sort_values('timestamp', ascending=False).head(20)
+        display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+        if 'pod_name' in filtered_df.columns:
+            display_cols.append('pod_name')
+        if 'labels' in filtered_df.columns:
+            display_cols.append('labels')
+        show_df = filtered_df[display_cols].copy()
+        show_df = show_df.sort_values('timestamp', ascending=False).head(20)
         show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
         show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
         show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
@@ -479,12 +479,12 @@ else:
         if 'labels' in show_df.columns:
             display_df['labels'] = show_df['labels']
         display_df = display_df.rename(columns={
-        'timestamp': 'Timestamp',
+            'timestamp': 'Timestamp',
             'cpu_display': 'CPU',
             'memory_display': 'Memory',
-        'pod_name': 'Pod Name',
-        'labels': 'Labels'
-    })
+            'pod_name': 'Pod Name',
+            'labels': 'Labels'
+        })
         st.dataframe(display_df, use_container_width=True)
     else:
         st.info("No recent anomalies found.")
