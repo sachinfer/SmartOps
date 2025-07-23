@@ -13,6 +13,18 @@ import time
 # Remove global auto_refresh(60)
 # Only use auto-refresh in log-related pages/functions
 
+# Main page title and description
+st.title("🏠 Dashboard")
+st.markdown("## SmartOps AI Dashboard")
+st.write("Welcome to the SmartOps AI-Driven DevOps Automation & Monitoring Platform.")
+
+# Namespace selection dropdown
+namespaces = fetch_namespaces() if 'fetch_namespaces' in globals() else []
+if namespaces:
+    selected_ns = st.selectbox("Select Namespace", ["all"] + namespaces, key="dashboard_ns_select")
+else:
+    selected_ns = "all"
+
 # Page config with modern theme
 st.set_page_config(
     page_title="SmartOps AI Dashboard", 
