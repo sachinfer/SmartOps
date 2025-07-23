@@ -5,8 +5,8 @@ on:
     branches:
       - main
       - gcp
-      # - gcp2
-      # - dash
+      - gcp2
+      - dash
   workflow_dispatch:
 
 jobs:
