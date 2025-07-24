@@ -532,3 +532,18 @@ async def save_postmortem(report: PostmortemReport):
     # In real use, save to DB
     incident_data.append(report.dict())
     return {"status": "success", "msg": "Postmortem report saved."} 
+
+@app.get("/service_dependencies")
+async def get_service_dependencies():
+    # Simulated data; replace with real service mesh/network flow data
+    return {
+        "edges": [
+            ["frontend", "backend"],
+            ["backend", "database"],
+            ["frontend", "auth"],
+            ["auth", "database"],
+            ["worker", "database"],
+            ["worker", "cache"],
+            ["frontend", "worker"],
+        ]
+    } 
