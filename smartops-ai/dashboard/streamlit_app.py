@@ -639,62 +639,29 @@ with st.expander('📈 Analytics Dashboard', expanded=False):
             
             st.dataframe(actions_df.style.applymap(color_status, subset=['Status']), use_container_width=True)
 
-    # --- Deployment Workflow Events Summary ---
-    try:
-        db_path = "data/deployment_events.db"
-        conn = sqlite3.connect(db_path)
-        events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
-        conn.close()
-        if not events.empty:
-            # Count by status
-            status_counts = events["status"].value_counts().to_dict()
-            st.markdown(f"""
-            <div style='display: flex; align-items: center; gap: 1rem;'>
-                <span style='font-size:2rem; font-weight:bold;'>🚀 Deployment Workflow Events</span>
-                <span style='background:#00b894; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Successful: {status_counts.get('success', 0)}</span>
-                <span style='background:#d63031; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Failed: {status_counts.get('failed', 0)}</span>
-                <span style='background:#fdcb6e; color:#222; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Started: {status_counts.get('started', 0)}</span>
-            </div>
-            """, unsafe_allow_html=True)
-            # (existing event table code follows)
-            # Convert timestamps to IST
-            def parse_deployment_timestamp(ts_str):
-                try:
-                    if pd.isna(ts_str):
-                        return ts_str
-                    if isinstance(ts_str, str):
-                        if 'T' in ts_str:
-                            dt = pd.to_datetime(ts_str, format='ISO8601')
-                            if dt.tzinfo is None:
-                                dt = pytz.utc.localize(dt)
-                            return dt
-                        else:
-                            dt = pd.to_datetime(ts_str)
-                            if dt.tzinfo is None:
-                                dt = pytz.utc.localize(dt)
-                            return dt
-                    else:
-                        if ts_str.tzinfo is None:
-                            ts_str = pytz.utc.localize(ts_str)
-                        return ts_str
-                except Exception:
-                    return pd.to_datetime(ts_str)
-            events['timestamp_ist'] = events['timestamp'].apply(parse_deployment_timestamp)
-            events['timestamp_ist'] = events['timestamp_ist'].apply(lambda x: x.astimezone(IST) if hasattr(x, 'astimezone') else x)
-            events = events.rename(columns={'timestamp_ist': 'Timestamp (IST)', 'status': 'Status', 'message': 'Message', 'namespace': 'Namespace'})
-            st.dataframe(events[['Timestamp (IST)', 'Status', 'Message', 'Namespace']], use_container_width=True)
-        else:
-            st.markdown("""
-            <div style='display: flex; align-items: center; gap: 1rem;'>
-                <span style='font-size:2rem; font-weight:bold;'>🚀 Deployment Workflow Events</span>
-                <span style='background:#00b894; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Successful: 0</span>
-                <span style='background:#d63031; color:white; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Failed: 0</span>
-                <span style='background:#fdcb6e; color:#222; border-radius:8px; padding:0.3em 0.8em; font-weight:bold;'>Started: 0</span>
-            </div>
-            """, unsafe_allow_html=True)
-            st.info("No deployment events found.")
-    except Exception as e:
-        st.warning(f"Could not load deployment events: {e}")
+# --- Deployment Workflow Events Summary ---
+st.markdown('<div class="section-header">🚀 <span style="font-size:1.5rem;font-weight:bold;">Deployment Workflow Events</span></div>', unsafe_allow_html=True)
+try:
+    db_path = "data/deployment_events.db"
+    conn = sqlite3.connect(db_path)
+    events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
+    conn.close()
+    if not events.empty:
+        # Count by status
+        status_counts = events["status"].value_counts().to_dict()
+        st.markdown(f"""
+        <div style='display: flex; align-items: center; gap: 1rem;'>
+            <span style='background:#0984e3;color:white;padding:0.5rem 1.2rem;border-radius:8px;font-size:1.2rem;font-weight:bold;display:inline-block;'>Deployment Workflow Events</span>
+            <span style='background:#00b894;color:white;padding:0.3rem 1rem;border-radius:8px;font-size:1rem;'>Successful: {status_counts.get('success', 0)}</span>
+            <span style='background:#d63031;color:white;padding:0.3rem 1rem;border-radius:8px;font-size:1rem;'>Failed: {status_counts.get('failed', 0)}</span>
+            <span style='background:#fdcb6e;color:black;padding:0.3rem 1rem;border-radius:8px;font-size:1rem;'>Started: {status_counts.get('started', 0)}</span>
+        </div>
+        """, unsafe_allow_html=True)
+        st.dataframe(events, use_container_width=True)
+    else:
+        st.info("No deployment events found.")
+except Exception as e:
+    st.warning(f"Could not load deployment events: {e}")
 
 # --- Pod Explorer & Logs Page ---
 def pod_explorer_page():
@@ -1293,6 +1260,21 @@ else:
     selected_ns = "all"
 
 st.markdown("---")
+
+# Beautiful metric cards for pod and service count
+stats = fetch_namespace_stats(selected_ns)
+st.markdown("""
+<div style='display: flex; gap: 2rem; margin-top: 1.5rem; margin-bottom: 1.5rem;'>
+  <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 15px; color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 180px;'>
+    <div style='font-size: 2.5rem; font-weight: bold;'>{pods}</div>
+    <div style='font-size: 1.1rem;'>Pods</div>
+  </div>
+  <div style='background: linear-gradient(135deg, #00b894 0%, #00a085 100%); padding: 1.5rem; border-radius: 15px; color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 180px;'>
+    <div style='font-size: 2.5rem; font-weight: bold;'>{services}</div>
+    <div style='font-size: 1.1rem;'>Services</div>
+  </div>
+</div>
+""".format(pods=stats['pod_count'], services=stats['service_count']), unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
