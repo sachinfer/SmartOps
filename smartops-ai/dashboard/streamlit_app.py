@@ -519,81 +519,83 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        # Analytics Dashboard Section
-        st.markdown('<div class="section-header">📈 Analytics Dashboard</div>', unsafe_allow_html=True)
-        
-        chart_df = filtered_df.copy()
-        chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
-        chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
-        chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
-        chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
-        
-        def parse_anomaly_timestamp(ts):
-            try:
-                if pd.isna(ts):
-                    return ts
-                if isinstance(ts, str):
-                    if 'T' in ts:
-                        dt = pd.to_datetime(ts, format='ISO8601')
-                        if dt.tzinfo is None:
-                            dt = pytz.utc.localize(dt)
-                        return dt.astimezone(IST)
+@st.cache_data(ttl=60)
+def load_analytics_data(filtered_df):
+    chart_df = filtered_df.copy()
+    chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
+    chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+    chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
+    chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
+    return chart_df
+
+# --- Analytics Dashboard Section ---
+with st.expander('📈 Analytics Dashboard', expanded=False):
+    if st.button('Show Analytics'):
+        chart_df = load_analytics_data(filtered_df)
+        if not chart_df.empty:
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
+            def parse_anomaly_timestamp(ts):
+                try:
+                    if pd.isna(ts):
+                        return ts
+                    if isinstance(ts, str):
+                        if 'T' in ts:
+                            dt = pd.to_datetime(ts, format='ISO8601')
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            return dt.astimezone(IST)
+                        else:
+                            dt = pd.to_datetime(ts)
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            return dt.astimezone(IST)
                     else:
-                        dt = pd.to_datetime(ts)
-                        if dt.tzinfo is None:
-                            dt = pytz.utc.localize(dt)
-                        return dt.astimezone(IST)
-                else:
-                    if ts.tzinfo is None:
-                        ts = pytz.utc.localize(ts)
-                    return ts.astimezone(IST)
-            except Exception:
-                return ts
-        
-        chart_df['timestamp_ist'] = chart_df['timestamp'].apply(parse_anomaly_timestamp)
-        
-        # Charts in a modern container
-        st.markdown('<div class="charts-container">', unsafe_allow_html=True)
-        
-        fig = make_subplots(
-            rows=2, cols=2,
-            subplot_titles=('CPU Usage Over Time (IST)', 'Memory Usage Over Time (IST)', 'CPU Distribution', 'Memory Distribution'),
-            specs=[[{"secondary_y": False}, {"secondary_y": False}],
-                   [{"secondary_y": False}, {"secondary_y": False}]]
-        )
-        
-        fig.add_trace(
-            go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['cpu_percent'], 
-                      mode='lines+markers', name='CPU %', line=dict(color='#667eea')),
-            row=1, col=1
-        )
-        fig.add_trace(
-            go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['memory_mb'], 
-                      mode='lines+markers', name='Memory MB', line=dict(color='#764ba2')),
-            row=1, col=2
-        )
-        fig.add_trace(
-            go.Histogram(x=chart_df['cpu_percent'], name='CPU Distribution', 
-                        marker_color='#667eea', opacity=0.7),
-            row=2, col=1
-        )
-        fig.add_trace(
-            go.Histogram(x=chart_df['memory_mb'], name='Memory Distribution', 
-                        marker_color='#764ba2', opacity=0.7),
-            row=2, col=2
-        )
-        
-        fig.update_layout(
-            height=600, 
-            showlegend=False, 
-            title_text="Resource Usage Analytics",
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#2c3e50')
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+                        if ts.tzinfo is None:
+                            ts = pytz.utc.localize(ts)
+                        return ts.astimezone(IST)
+                except Exception:
+                    return ts
+            chart_df['timestamp_ist'] = chart_df['timestamp'].apply(parse_anomaly_timestamp)
+            st.markdown('<div class="charts-container">', unsafe_allow_html=True)
+            fig = make_subplots(
+                rows=2, cols=2,
+                subplot_titles=('CPU Usage Over Time (IST)', 'Memory Usage Over Time (IST)', 'CPU Distribution', 'Memory Distribution'),
+                specs=[[{"secondary_y": False}, {"secondary_y": False}],
+                       [{"secondary_y": False}, {"secondary_y": False}]]
+            )
+            fig.add_trace(
+                go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['cpu_percent'], 
+                          mode='lines+markers', name='CPU %', line=dict(color='#667eea')),
+                row=1, col=1
+            )
+            fig.add_trace(
+                go.Scatter(x=chart_df['timestamp_ist'], y=chart_df['memory_mb'], 
+                          mode='lines+markers', name='Memory MB', line=dict(color='#764ba2')),
+                row=1, col=2
+            )
+            fig.add_trace(
+                go.Histogram(x=chart_df['cpu_percent'], name='CPU Distribution', 
+                            marker_color='#667eea', opacity=0.7),
+                row=2, col=1
+            )
+            fig.add_trace(
+                go.Histogram(x=chart_df['memory_mb'], name='Memory Distribution', 
+                            marker_color='#764ba2', opacity=0.7),
+                row=2, col=2
+            )
+            fig.update_layout(
+                height=600, 
+                showlegend=False, 
+                title_text="Resource Usage Analytics",
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='#2c3e50')
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info('No analytics data available for the selected namespace.')
 
     # AI Action History Section
     st.markdown('<div class="section-header">📜 AI Action History</div>', unsafe_allow_html=True)
@@ -1266,6 +1268,7 @@ sidebar_icons = {
     "Cluster Explorer": "🔍",
     "Kubernetes Shell": "🖥️"
 }
+# Sidebar/logo code
 with st.sidebar:
     st.markdown("""
     <div class='sidebar-logo'>
@@ -1277,7 +1280,7 @@ with st.sidebar:
     ai_actions_section()
     retrain_model_section()
 
-# Main page title and description
+# Main page header (at the very top)
 st.title("🏠 Dashboard")
 st.markdown("## SmartOps AI Dashboard")
 st.write("Welcome to the SmartOps AI-Driven DevOps Automation & Monitoring Platform.")
@@ -1288,6 +1291,8 @@ if namespaces:
     selected_ns = st.selectbox("Select Namespace", ["all"] + namespaces, key="dashboard_ns_select")
 else:
     selected_ns = "all"
+
+st.markdown("---")
 
 # Footer
 st.markdown("---")
