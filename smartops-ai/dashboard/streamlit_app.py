@@ -1247,7 +1247,7 @@ with st.sidebar:
     ai_actions_section()
     retrain_model_section()
 
-# Main page header (at the very top)
+# Main page header and controls (at the very top)
 st.title("🏠 Dashboard")
 st.markdown("## SmartOps AI Dashboard")
 st.write("Welcome to the SmartOps AI-Driven DevOps Automation & Monitoring Platform.")
