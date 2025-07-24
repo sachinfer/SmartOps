@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
 import requests
+from sidebar_utils import show_sidebar
+
+with st.sidebar:
+    show_sidebar()
 
 st.title("⚖️ Auto-Scaling Recommendations & Control")
 st.write("""

@@ -9,6 +9,7 @@ from plotly.subplots import make_subplots
 import pytz
 import requests
 import time
+from sidebar_utils import show_sidebar
 
 # Remove global auto_refresh(60)
 # Only use auto-refresh in log-related pages/functions
@@ -1237,13 +1238,7 @@ sidebar_icons = {
 }
 # Sidebar/logo code
 with st.sidebar:
-    st.markdown("""
-    <div class='sidebar-logo'>
-        <span>🚀</span>
-        <span class='project'>SmartOps</span>
-        <div class='subtitle'>AI Kubernetes Platform</div>
-    </div>
-    """, unsafe_allow_html=True)
+    show_sidebar()
     ai_actions_section()
     retrain_model_section()
 
