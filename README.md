@@ -390,6 +390,23 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
   - Interactive visualization (with pyvis) and static fallback (networkx/matplotlib).
   - Helps identify cascading failures and bottlenecks.
   - Fetches real data from backend API if available, otherwise uses simulated data.
+  - **Live Data Integration:**
+    - You can connect this page to live service mesh or network flow data (e.g., Istio, Linkerd, Cilium).
+    - Example: Use Prometheus or Kiali APIs to fetch real-time service-to-service edges.
+    - The backend `/service_dependencies` endpoint can be updated to query your telemetry source and return edges like:
+      ```json
+      { "edges": [["frontend", "backend"], ["backend", "database"], ...] }
+      ```
+  - **Filtering:**
+    - The backend endpoint can accept query parameters (e.g., `?namespace=smartops`) to filter the graph by namespace or app.
+    - The Streamlit page can be updated to let users filter the dependency map interactively.
+  - **Customization:**
+    - Node coloring by namespace or app
+    - Edge thickness by traffic volume
+    - Tooltips with live metrics
+    - Auto-refresh for real-time updates
+
+**See the Service Dependency Map page for details and instructions on connecting to your live data source.**
 
 ---
 

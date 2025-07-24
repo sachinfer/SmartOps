@@ -3,6 +3,10 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 import requests
+from sidebar_utils import show_sidebar
+
+with st.sidebar:
+    show_sidebar()
 
 st.title("🔗 Service Dependency Map (Real-Time)")
 st.write("""

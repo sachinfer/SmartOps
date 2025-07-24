@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
+from sidebar_utils import show_sidebar
+
+with st.sidebar:
+    show_sidebar()
 
 st.title("🕒 Incident Timeline & Postmortem Report Generator")
 st.write("""

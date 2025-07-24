@@ -4,6 +4,10 @@ import requests
 import pytz
 import time
 import sqlite3
+from sidebar_utils import show_sidebar
+
+with st.sidebar:
+    show_sidebar()
 
 @st.cache_data(ttl=30)
 def fetch_namespaces():
