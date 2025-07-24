@@ -1284,3 +1284,15 @@ st.markdown("""
     <p>Built with ❤️ using Streamlit and AI/ML</p>
 </div>
 """, unsafe_allow_html=True) 
+
+# Custom CSS to reduce top margin/padding above the title
+st.markdown("""
+<style>
+section.main > div.block-container {
+    padding-top: 1.5rem !important;
+}
+h1, .stApp h1 {
+    margin-top: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True) 
