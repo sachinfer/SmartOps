@@ -67,6 +67,34 @@ def load_anomalies_df():
         st.warning(f"Could not load anomalies data: {e}")
         return pd.DataFrame()
 
+@st.cache_data(ttl=30)
+def fetch_cluster_metrics():
+    """Fetch cluster-wide CPU and RAM metrics"""
+    try:
+        url = "http://localhost:8000/cluster_metrics"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return {"cpu_usage": 0, "memory_usage": 0, "cpu_capacity": 1, "memory_capacity": 1}
+    except Exception as e:
+        st.warning(f"Could not fetch cluster metrics: {e}")
+        return {"cpu_usage": 0, "memory_usage": 0, "cpu_capacity": 1, "memory_capacity": 1}
+
+@st.cache_data(ttl=30)
+def fetch_node_metrics():
+    """Fetch node-level CPU and RAM metrics"""
+    try:
+        url = "http://localhost:8000/node_metrics"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get("nodes", [])
+        else:
+            return []
+    except Exception as e:
+        st.warning(f"Could not fetch node metrics: {e}")
+        return []
+
 def has_namespace_column(df):
     return 'namespace' in df.columns
 
@@ -246,4 +274,162 @@ else:
         <h3>✅ No Data Available</h3>
         <p>No anomalies detected. All systems are running smoothly!</p>
     </div>
-    """, unsafe_allow_html=True) 
+    """, unsafe_allow_html=True)
+
+# Cluster CPU and RAM Visualization
+st.markdown('<div class="section-header">📊 Cluster CPU & RAM Visualization</div>', unsafe_allow_html=True)
+
+# Fetch cluster metrics
+cluster_metrics = fetch_cluster_metrics()
+node_metrics = fetch_node_metrics()
+
+# Create two columns for cluster overview
+col1, col2 = st.columns(2)
+
+with col1:
+    # Cluster CPU Usage Gauge
+    cpu_usage_percent = (cluster_metrics['cpu_usage'] / cluster_metrics['cpu_capacity']) * 100 if cluster_metrics['cpu_capacity'] > 0 else 0
+    fig_cpu = go.Figure(go.Indicator(
+        mode = "gauge+number+delta",
+        value = cpu_usage_percent,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': "Cluster CPU Usage (%)"},
+        delta = {'reference': 80},
+        gauge = {
+            'axis': {'range': [None, 100]},
+            'bar': {'color': "darkblue"},
+            'steps': [
+                {'range': [0, 50], 'color': "lightgray"},
+                {'range': [50, 80], 'color': "yellow"},
+                {'range': [80, 100], 'color': "red"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': 90
+            }
+        }
+    ))
+    fig_cpu.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20))
+    st.plotly_chart(fig_cpu, use_container_width=True)
+
+with col2:
+    # Cluster RAM Usage Gauge
+    memory_usage_percent = (cluster_metrics['memory_usage'] / cluster_metrics['memory_capacity']) * 100 if cluster_metrics['memory_capacity'] > 0 else 0
+    fig_memory = go.Figure(go.Indicator(
+        mode = "gauge+number+delta",
+        value = memory_usage_percent,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': "Cluster RAM Usage (%)"},
+        delta = {'reference': 80},
+        gauge = {
+            'axis': {'range': [None, 100]},
+            'bar': {'color': "darkgreen"},
+            'steps': [
+                {'range': [0, 50], 'color': "lightgray"},
+                {'range': [50, 80], 'color': "yellow"},
+                {'range': [80, 100], 'color': "red"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': 90
+            }
+        }
+    ))
+    fig_memory.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20))
+    st.plotly_chart(fig_memory, use_container_width=True)
+
+# Node-level metrics table
+if node_metrics:
+    st.markdown('<div class="section-header">🖥️ Node-Level Resource Usage</div>', unsafe_allow_html=True)
+    
+    # Create node metrics dataframe
+    node_data = []
+    for node in node_metrics:
+        node_data.append({
+            'Node Name': node.get('name', 'Unknown'),
+            'CPU Usage (%)': round((node.get('cpu_usage', 0) / node.get('cpu_capacity', 1)) * 100, 1),
+            'Memory Usage (%)': round((node.get('memory_usage', 0) / node.get('memory_capacity', 1)) * 100, 1),
+            'CPU Cores': node.get('cpu_capacity', 0),
+            'Memory (GB)': round(node.get('memory_capacity', 0) / (1024**3), 1),
+            'Status': node.get('status', 'Unknown')
+        })
+    
+    node_df = pd.DataFrame(node_data)
+    
+    # Color code the usage percentages
+    def color_usage(val):
+        if val > 80:
+            return 'background-color: #ff6b6b; color: white;'
+        elif val > 60:
+            return 'background-color: #fdcb6e; color: black;'
+        else:
+            return 'background-color: #00b894; color: white;'
+    
+    st.dataframe(
+        node_df.style.applymap(color_usage, subset=['CPU Usage (%)', 'Memory Usage (%)']),
+        use_container_width=True
+    )
+
+# Historical resource usage trends (if anomaly data is available)
+if not df.empty:
+    st.markdown('<div class="section-header">📈 Resource Usage Trends</div>', unsafe_allow_html=True)
+    
+    # Prepare data for trends
+    chart_df = df.copy()
+    chart_df['timestamp'] = pd.to_datetime(chart_df['timestamp'])
+    chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
+    chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+    chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
+    chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
+    
+    # Convert timestamps to IST
+    chart_df['timestamp_ist'] = chart_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(IST)
+    
+    # Create trend chart
+    fig_trends = make_subplots(
+        rows=2, cols=1,
+        subplot_titles=('CPU Usage Trend (IST)', 'Memory Usage Trend (IST)'),
+        vertical_spacing=0.1
+    )
+    
+    fig_trends.add_trace(
+        go.Scatter(
+            x=chart_df['timestamp_ist'], 
+            y=chart_df['cpu_percent'],
+            mode='lines+markers',
+            name='CPU %',
+            line=dict(color='#667eea', width=2),
+            marker=dict(size=4)
+        ),
+        row=1, col=1
+    )
+    
+    fig_trends.add_trace(
+        go.Scatter(
+            x=chart_df['timestamp_ist'], 
+            y=chart_df['memory_mb'],
+            mode='lines+markers',
+            name='Memory MB',
+            line=dict(color='#764ba2', width=2),
+            marker=dict(size=4)
+        ),
+        row=2, col=1
+    )
+    
+    fig_trends.update_layout(
+        height=500,
+        showlegend=False,
+        title_text="Resource Usage Trends Over Time",
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#2c3e50')
+    )
+    
+    fig_trends.update_xaxes(title_text="Time (IST)", row=1, col=1)
+    fig_trends.update_xaxes(title_text="Time (IST)", row=2, col=1)
+    fig_trends.update_yaxes(title_text="CPU Usage (%)", row=1, col=1)
+    fig_trends.update_yaxes(title_text="Memory Usage (MB)", row=2, col=1)
+    
+    st.plotly_chart(fig_trends, use_container_width=True) 
