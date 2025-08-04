@@ -1242,43 +1242,18 @@ with st.sidebar:
     ai_actions_section()
     retrain_model_section()
 
-# Main page header and controls (at the very top)
-st.title("🏠 Dashboard")
-st.markdown("## SmartOps AI Dashboard")
-st.write("Welcome to the SmartOps AI-Driven DevOps Automation & Monitoring Platform.")
+# Page navigation
+st.markdown("<div class='sidebar-section-title'>📄 Pages</div>", unsafe_allow_html=True)
+page = st.sidebar.selectbox(
+    "Select Page",
+    list(pages.keys()),
+    index=0,
+    format_func=lambda x: f"{sidebar_icons.get(x, '📄')} {x}"
+)
+st.markdown("<div class='sidebar-divider'></div>", unsafe_allow_html=True)
 
-# Namespace selection dropdown
-namespaces = fetch_namespaces() if 'fetch_namespaces' in globals() else []
-if namespaces:
-    selected_ns = st.selectbox("Select Namespace", ["all"] + namespaces, key="dashboard_ns_select")
-else:
-    selected_ns = "all"
-
-st.markdown("---")
-
-# Beautiful metric cards for pod and service count
-stats = fetch_namespace_stats(selected_ns)
-st.markdown("""
-<div style='display: flex; gap: 2rem; margin-top: 1.5rem; margin-bottom: 1.5rem;'>
-  <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 15px; color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 180px;'>
-    <div style='font-size: 2.5rem; font-weight: bold;'>{pods}</div>
-    <div style='font-size: 1.1rem;'>Pods</div>
-  </div>
-  <div style='background: linear-gradient(135deg, #00b894 0%, #00a085 100%); padding: 1.5rem; border-radius: 15px; color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 180px;'>
-    <div style='font-size: 2.5rem; font-weight: bold;'>{services}</div>
-    <div style='font-size: 1.1rem;'>Services</div>
-  </div>
-</div>
-""".format(pods=stats['pod_count'], services=stats['service_count']), unsafe_allow_html=True)
-
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center; color: #666; padding: 2rem;">
-    <p>🚀 Powered by SmartOps AI | Real-time Kubernetes Monitoring</p>
-    <p>Built with ❤️ using Streamlit and AI/ML</p>
-</div>
-""", unsafe_allow_html=True) 
+# Display the selected page
+pages[page]()
 
 # Custom CSS to reduce top margin/padding above the title
 st.markdown("""
@@ -1288,6 +1263,17 @@ section.main > div.block-container {
 }
 h1, .stApp h1 {
     margin-top: 0 !important;
+}
+.sidebar-section-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+    margin: 1.5rem 0 0.5rem 0;
+    letter-spacing: 1px;
+}
+.sidebar-divider {
+    border-top: 1px solid #dfe6e9;
+    margin: 1.2rem 0;
 }
 </style>
 """, unsafe_allow_html=True) 
