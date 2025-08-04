@@ -35,9 +35,11 @@ def show_sidebar():
     </div>
     """, unsafe_allow_html=True)
 
-    # Navigation section (Streamlit handles the links)
+    # Navigation section
     st.markdown("<div class='sidebar-section-title'>🧭 Navigation</div>", unsafe_allow_html=True)
     st.markdown("<div class='sidebar-divider'></div>", unsafe_allow_html=True)
+    
+    # Navigation will be handled by the main app with selectbox
 
     # AI Controls section (these are your custom controls)
     st.markdown("<div class='sidebar-section-title'>🤖 AI Controls</div>", unsafe_allow_html=True)
