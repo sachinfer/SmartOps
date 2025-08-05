@@ -95,6 +95,37 @@ def fetch_node_metrics():
         st.warning(f"Could not fetch node metrics: {e}")
         return []
 
+@st.cache_data(ttl=30)
+def fetch_pods(namespace):
+    """Fetch pods for a specific namespace"""
+    try:
+        url = f"http://localhost:8000/pods"
+        resp = requests.get(url, params={"namespace": namespace}, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get("pods", [])
+        else:
+            return []
+    except Exception as e:
+        st.warning(f"Could not fetch pods: {e}")
+        return []
+
+@st.cache_data(ttl=30)
+def fetch_pod_logs(namespace, pod_name, container=None):
+    """Fetch logs for a specific pod"""
+    try:
+        url = f"http://localhost:8000/logs"
+        params = {"namespace": namespace, "pod": pod_name}
+        if container:
+            params["container"] = container
+        resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code == 200:
+            return resp.json().get("logs", "")
+        else:
+            return ""
+    except Exception as e:
+        st.warning(f"Could not fetch logs: {e}")
+        return ""
+
 def has_namespace_column(df):
     return 'namespace' in df.columns
 
@@ -378,14 +409,39 @@ if not df.empty:
     
     # Prepare data for trends
     chart_df = df.copy()
-    chart_df['timestamp'] = pd.to_datetime(chart_df['timestamp'])
+    # Handle different timestamp formats more flexibly
+    try:
+        chart_df['timestamp'] = pd.to_datetime(chart_df['timestamp'], format='mixed', errors='coerce')
+    except:
+        # Fallback to more flexible parsing
+        chart_df['timestamp'] = pd.to_datetime(chart_df['timestamp'], errors='coerce')
+    
     chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
     chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
     chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
     chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
     
-    # Convert timestamps to IST
-    chart_df['timestamp_ist'] = chart_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(IST)
+    # Convert timestamps to IST with error handling
+    try:
+        # Remove any rows with invalid timestamps
+        chart_df = chart_df.dropna(subset=['timestamp'])
+        if not chart_df.empty:
+            # Handle timezone conversion
+            if chart_df['timestamp'].dt.tz is None:
+                chart_df['timestamp_ist'] = chart_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(IST)
+            else:
+                chart_df['timestamp_ist'] = chart_df['timestamp'].dt.tz_convert(IST)
+        else:
+            st.warning("No valid timestamp data found for trends chart.")
+            st.stop()
+    except Exception as e:
+        st.warning(f"Error processing timestamps: {e}")
+        st.stop()
+    
+    # Validate data before creating chart
+    if chart_df.empty or len(chart_df) < 2:
+        st.warning("Insufficient data for trends chart. Need at least 2 data points.")
+        st.stop()
     
     # Create trend chart
     fig_trends = make_subplots(
@@ -432,4 +488,127 @@ if not df.empty:
     fig_trends.update_yaxes(title_text="CPU Usage (%)", row=1, col=1)
     fig_trends.update_yaxes(title_text="Memory Usage (MB)", row=2, col=1)
     
-    st.plotly_chart(fig_trends, use_container_width=True) 
+    st.plotly_chart(fig_trends, use_container_width=True)
+
+# Pod Explorer & Logs Section
+st.markdown('<div class="section-header">🛰️ Pod Explorer & Logs</div>', unsafe_allow_html=True)
+st.write("Explore pods and view their logs in real time.")
+
+# Pod Explorer namespace selection
+pod_namespace_options = fetch_namespaces()
+if not pod_namespace_options:
+    st.warning("No namespaces found.")
+else:
+    pod_namespace = st.selectbox("Select Namespace", pod_namespace_options, key="pod_explorer_ns")
+    
+    # Fetch pods for selected namespace
+    pods = fetch_pods(pod_namespace)
+    if not pods:
+        st.warning("No pods found in this namespace.")
+    else:
+        # Show pod table with details
+        pod_table = pd.DataFrame(pods)
+        st.markdown("### Available Pods")
+        
+        # Select columns to display
+        display_columns = ["name", "status", "node", "restarts", "images", "containers"]
+        available_columns = [col for col in display_columns if col in pod_table.columns]
+        
+        if available_columns:
+            st.dataframe(pod_table[available_columns], use_container_width=True)
+        
+        # Pod selection for logs
+        pod_names = [pod["name"] for pod in pods]
+        selected_pod = st.selectbox("Select Pod for Logs", pod_names, key="pod_selector")
+        
+        if selected_pod:
+            # Get selected pod details
+            pod_details = next((p for p in pods if p["name"] == selected_pod), None)
+            
+            if pod_details:
+                # Container selection
+                containers = pod_details.get("containers", [])
+                selected_container = None
+                if len(containers) > 1:
+                    selected_container = st.selectbox("Select Container", containers, key="container_selector")
+                elif len(containers) == 1:
+                    selected_container = containers[0]
+                
+                # Log controls
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    log_search = st.text_input("Search logs (keyword)", key="log_search")
+                with col2:
+                    time_filter = st.selectbox("Time Range", ["All", "Last 5m", "Last 1h", "Last 24h"], key="time_filter")
+                
+                # Refresh button
+                refresh_logs = st.button("🔄 Refresh Logs", key="refresh_logs")
+                
+                # Fetch and display logs
+                if refresh_logs or st.session_state.get("auto_refresh", False):
+                    with st.spinner("Fetching logs..."):
+                        logs = fetch_pod_logs(pod_namespace, selected_pod, selected_container)
+                        
+                        if logs:
+                            # Log filtering
+                            filtered_logs = logs
+                            log_lines = logs.splitlines()
+                            
+                            # Time filter
+                            if time_filter != "All":
+                                import re
+                                now = datetime.utcnow()
+                                def line_in_time(line):
+                                    if time_filter == "All":
+                                        return True
+                                    match = re.match(r"^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})", line)
+                                    if not match:
+                                        return True
+                                    try:
+                                        ts = match.group(1).replace('T', ' ')
+                                        ts = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                                    except Exception:
+                                        return True
+                                    delta = now - ts
+                                    if time_filter == "Last 5m":
+                                        return delta.total_seconds() <= 300
+                                    elif time_filter == "Last 1h":
+                                        return delta.total_seconds() <= 3600
+                                    elif time_filter == "Last 24h":
+                                        return delta.total_seconds() <= 86400
+                                    return True
+                                
+                                filtered_lines = [l for l in log_lines if line_in_time(l)]
+                                
+                                # Keyword filter
+                                if log_search:
+                                    filtered_lines = [l for l in filtered_lines if log_search.lower() in l.lower()]
+                                
+                                filtered_logs = "\n".join(filtered_lines)
+                            
+                            # Download button
+                            st.download_button(
+                                label="⬇️ Download Logs as .txt",
+                                data=filtered_logs,
+                                file_name=f"{selected_pod}_{selected_container if selected_container else 'default'}_logs.txt",
+                                mime="text/plain"
+                            )
+                            
+                            # Display logs
+                            st.text_area(
+                                f"Pod Logs ({selected_container if selected_container else 'default'})",
+                                filtered_logs,
+                                height=400,
+                                key="log_display"
+                            )
+                        else:
+                            st.info("No logs available for this pod.")
+                
+                # Auto-refresh toggle
+                auto_refresh = st.checkbox("Live Log Streaming (auto-refresh every 5s)", key="auto_refresh")
+                if auto_refresh:
+                    st.session_state["auto_refresh"] = True
+                    time.sleep(5)
+                    st.experimental_rerun()
+                else:
+                    st.session_state["auto_refresh"] = False 
