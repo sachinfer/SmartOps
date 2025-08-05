@@ -16,7 +16,7 @@ spec:
       serviceAccountName: anomaly-metrics-reader  # ✅ Enable metrics access
       containers:
         - name: fastapi
-          image: gcr.io/icbt-465109/smartops-anomaly:latest  # ← Replace with your image name if different
+          image: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-anomaly:latest  # ← Using Artifact Registry
           command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
           ports:
             - containerPort: 8000
@@ -29,7 +29,7 @@ spec:
             - name: dashboard-data
               mountPath: /app/dashboard/data
         - name: anomaly-loop
-          image: gcr.io/icbt-465109/smartops-anomaly:latest  # ← Use the same image
+          image: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-anomaly:latest  # ← Using Artifact Registry
           command: ["python", "app/anomaly_loop.py"]
           env:
             - name: MY_POD_NAMESPACE
