@@ -120,7 +120,7 @@ jobs:
       - name: Ensure data directory exists
         run: mkdir -p smartops-ai/dashboard/data
 
-             - name: Log Deployment Started (to dashboard API)
+       - name: Log Deployment Started (to dashboard API)
          run: |
             # Check if dashboard pod exists before trying to wait for it
             if kubectl get pods -l app=smartops-dashboard -n smartops 2>/dev/null | grep -q .; then
