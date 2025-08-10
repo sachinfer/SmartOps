@@ -13,7 +13,8 @@ apps_v1 = client.AppsV1Api()
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fBf5tqjh4c"
 TELEGRAM_CHAT_ID = "-1002761935159"
 STATUS_FILE = "monitor_status.json"
-DASHBOARD_URL = "http://34.31.86.225"
+# Get dashboard URL from environment variable or use service discovery
+DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "http://smartops-dashboard-service.smartops.svc.cluster.local:8000")
 DASHBOARD_EVENT_API = f"{DASHBOARD_URL}:8000/log_event"
 
 # Log event to dashboard API

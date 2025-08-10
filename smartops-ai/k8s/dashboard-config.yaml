@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-config
+  namespace: smartops
+data:
+  # Dashboard service URLs
+  DASHBOARD_INTERNAL_URL: "http://smartops-dashboard-service.smartops.svc.cluster.local:8000"
+  DASHBOARD_STREAMLIT_URL: "http://smartops-dashboard-service.smartops.svc.cluster.local:8501"
+  
+  # Event API endpoints
+  EVENT_API_ENDPOINT: "/log_event"
+  HPA_API_ENDPOINT: "/hpa_status"
+  
+  # Service discovery
+  NAMESPACE: "smartops"
+  CLUSTER_DOMAIN: "cluster.local"

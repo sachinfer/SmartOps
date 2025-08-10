@@ -121,9 +121,24 @@ jobs:
         run: mkdir -p smartops-ai/dashboard/data
       - name: Log Deployment Started (to dashboard API)
         run: |
-          curl -X POST "http://34.31.86.225:8000/log_event" \
+          # Wait for dashboard service to be ready
+          kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
+          
+          # Get the external IP of the dashboard service
+          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          
+          if [ -n "$DASHBOARD_IP" ]; then
+            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
+              -H "Content-Type: application/json" \
+              -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}'
+          else
+            echo "Dashboard service external IP not available yet, skipping event log"
+          fi
+          
+          # Also log to internal service for redundancy
+          kubectl exec -n smartops deployment/smartops-dashboard -- curl -X POST "http://localhost:8000/log_event" \
             -H "Content-Type: application/json" \
-            -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}'
+            -d '{"status": "started", "message": "Deployment started (internal)", "namespace": "smartops"}' || echo "Internal logging failed"
 
       # - name: Notify Telegram - Deployment Started
       #   run: |
@@ -135,6 +150,9 @@ jobs:
       - name: Deploy to GKE
         run: |
           kubectl get ns smartops || kubectl create ns smartops
+
+          # Deploy ConfigMap for dashboard configuration
+          kubectl apply -f smartops-ai/k8s/dashboard-config.yaml -n smartops
 
           # # Deploy ServiceAccount and RBAC for Anomaly Service
           # kubectl apply -f smartops-ai/k8s/anomaly-metrics-reader.yaml -n smartops
@@ -158,21 +176,32 @@ jobs:
       - name: Notify Telegram - Deployment Success
         if: success()
         run: |
-          curl -X POST "http://34.31.86.225:8000/log_event" \
-            -H "Content-Type: application/json" \
-            -d '{"status": "success", "message": "SmartOps AI platform deployment completed successfully - App, Anomaly Detection, Dashboard, and Monitor services deployed", "namespace": "smartops"}'
+          # Get the external IP of the dashboard service
+          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          
+          if [ -n "$DASHBOARD_IP" ]; then
+            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
+              -H "Content-Type: application/json" \
+              -d '{"status": "success", "message": "SmartOps AI platform deployment completed successfully - App, Anomaly Detection, Dashboard, and Monitor services deployed", "namespace": "smartops"}'
+          fi
           
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://34.31.86.225)" \
+            -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://$DASHBOARD_IP)" \
             -d parse_mode=Markdown
 
       - name: Notify Telegram - Deployment Failed
         if: failure()
         run: |
-          curl -X POST "http://34.31.86.225:8000/log_event" \
-            -H "Content-Type: application/json" \
-            -d '{"status": "failed", "message": "Deployment failed", "namespace": "smartops"}'
+          # Get the external IP of the dashboard service
+          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          
+          if [ -n "$DASHBOARD_IP" ]; then
+            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
+              -H "Content-Type: application/json" \
+              -d '{"status": "failed", "message": "Deployment failed", "namespace": "smartops"}'
+          fi
+          
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="❌ *Production deployment failed in namespace `smartops`!*" \

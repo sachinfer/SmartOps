@@ -42,6 +42,11 @@ spec:
                   fieldPath: metadata.name
             - name: MY_CONTAINER_NAME
               value: fastapi
+            - name: DASHBOARD_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: dashboard-config
+                  key: DASHBOARD_INTERNAL_URL
           volumeMounts:
             - name: dashboard-data
               mountPath: /app/dashboard/data
