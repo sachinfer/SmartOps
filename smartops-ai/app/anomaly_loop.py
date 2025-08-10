@@ -20,7 +20,8 @@ FETCH_INTERVAL_SECONDS = 60  # 1 min
 
 TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fz0WVdAx7iwtBf5tqjh4c"
 TELEGRAM_CHAT_ID = "-1002761935159"  # Use your group chat ID (negative number) for group alerts
-DASHBOARD_URL = "http://34.31.86.225"  # Update with your dashboard URL
+# Get dashboard URL from environment variable or use service discovery
+DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "http://smartops-dashboard-service.smartops.svc.cluster.local:8000")
 
 def parse_cpu(cpu_str):
     # Convert Kubernetes CPU string (e.g., '123456n', '5m') to float (cores)
