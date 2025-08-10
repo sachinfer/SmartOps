@@ -69,10 +69,17 @@ st.markdown("""
         border-radius: 15px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         border-left: 4px solid #667eea;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
     }
     .feature-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #667eea;
+    }
+    .feature-card:active {
+        transform: translateY(-2px);
     }
     .feature-icon {
         font-size: 2rem;
@@ -88,8 +95,17 @@ st.markdown("""
         color: #666;
         line-height: 1.5;
     }
+    .clickable-card {
+        cursor: pointer;
+        user-select: none;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# Function to handle card clicks
+def handle_card_click(page_name):
+    st.session_state.selected_page = page_name
+    st.rerun()
 
 # Main content
 st.markdown("""
@@ -107,7 +123,7 @@ with st.sidebar:
 st.markdown("""
 ## 🎯 Quick Navigation
 
-Use the sidebar to navigate between different sections of the SmartOps AI platform:
+Click on any card below to navigate to the corresponding section, or use the sidebar for navigation:
 
 - **🏠 Overview** - System overview and basic statistics
 - **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
@@ -121,51 +137,107 @@ Use the sidebar to navigate between different sections of the SmartOps AI platfo
 Each page is designed to provide focused functionality for specific aspects of Kubernetes monitoring and management.
 """)
 
-# Feature cards
+# Feature cards with clickable functionality
+col1, col2 = st.columns(2)
+
+with col1:
+    # First row - 4 cards
+    if st.button("🏠 Overview Dashboard", key="overview", use_container_width=True, help="Click to go to Overview page"):
+        st.switch_page("pages/1_Overview.py")
+    
+    if st.button("🔥 Anomaly Detection", key="anomaly", use_container_width=True, help="Click to go to Anomaly Detection page"):
+        st.switch_page("pages/4_Anomaly_Detection.py")
+    
+    if st.button("📈 Analytics", key="analytics", use_container_width=True, help="Click to go to Analytics page"):
+        st.switch_page("pages/7_Analytics.py")
+    
+    if st.button("🤖 AI Actions", key="ai_actions", use_container_width=True, help="Click to go to AI Actions page"):
+        st.switch_page("pages/8_AI_Actions.py")
+
+with col2:
+    # Second row - 4 cards
+    if st.button("🚀 Deployments", key="deployments", use_container_width=True, help="Click to go to Deployments page"):
+        st.switch_page("pages/9_Deployments.py")
+    
+    if st.button("🛰️ Pod Explorer & Logs", key="pod_explorer", use_container_width=True, help="Click to go to Pod Explorer page"):
+        st.switch_page("pages/2_Pod Explorer & Logs.py")
+    
+    if st.button("🔍 Cluster Explorer", key="cluster_explorer", use_container_width=True, help="Click to go to Cluster Explorer page"):
+        st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
+    
+    if st.button("🖥️ Kubernetes Shell", key="k8s_shell", use_container_width=True, help="Click to go to Kubernetes Shell page"):
+        st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
+
+# Alternative: Feature cards with HTML styling (if buttons don't work well)
 st.markdown("""
 <div class="feature-grid">
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'overview_click', value: true}, '*')">
         <div class="feature-icon">🏠</div>
         <div class="feature-title">Overview Dashboard</div>
         <div class="feature-desc">Real-time system overview with pod and service statistics, namespace monitoring, and system health status.</div>
     </div>
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'anomaly_click', value: true}, '*')">
         <div class="feature-icon">🔥</div>
         <div class="feature-title">Anomaly Detection</div>
         <div class="feature-desc">AI-powered anomaly detection with top anomalies by CPU usage and recent anomaly tracking.</div>
     </div>
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'analytics_click', value: true}, '*')">
         <div class="feature-icon">📈</div>
         <div class="feature-title">Analytics</div>
         <div class="feature-desc">Resource usage analytics with interactive charts showing CPU and memory trends over time.</div>
     </div>
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'ai_actions_click', value: true}, '*')">
         <div class="feature-icon">🤖</div>
         <div class="feature-title">AI Actions</div>
         <div class="feature-desc">AI recommendations and action history with model retraining capabilities.</div>
     </div>
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'deployments_click', value: true}, '*')">
         <div class="feature-icon">🚀</div>
         <div class="feature-title">Deployments</div>
         <div class="feature-desc">Deployment workflow events tracking with success/failure statistics and metrics.</div>
     </div>
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'pod_explorer_click', value: true}, '*')">
         <div class="feature-icon">🛰️</div>
         <div class="feature-title">Pod Explorer</div>
         <div class="feature-desc">Pod management with real-time log viewing, filtering, and pod actions (restart, delete, describe).</div>
     </div>
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'cluster_explorer_click', value: true}, '*')">
         <div class="feature-icon">🔍</div>
         <div class="feature-title">Cluster Explorer</div>
         <div class="feature-desc">Safe kubectl-like queries for exploring cluster resources across namespaces.</div>
     </div>
-    <div class="feature-card">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'k8s_shell_click', value: true}, '*')">
         <div class="feature-icon">🖥️</div>
         <div class="feature-title">Kubernetes Shell</div>
         <div class="feature-desc">Interactive kubectl command interface with command history and safe execution.</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Handle clicks from HTML cards
+if st.button("🏠 Overview Dashboard", key="overview_click", use_container_width=True):
+    st.switch_page("pages/1_Overview.py")
+
+if st.button("🔥 Anomaly Detection", key="anomaly_click", use_container_width=True):
+    st.switch_page("pages/4_Anomaly_Detection.py")
+
+if st.button("📈 Analytics", key="analytics_click", use_container_width=True):
+    st.switch_page("pages/7_Analytics.py")
+
+if st.button("🤖 AI Actions", key="ai_actions_click", use_container_width=True):
+    st.switch_page("pages/8_AI_Actions.py")
+
+if st.button("🚀 Deployments", key="deployments_click", use_container_width=True):
+    st.switch_page("pages/9_Deployments.py")
+
+if st.button("🛰️ Pod Explorer & Logs", key="pod_explorer_click", use_container_width=True):
+    st.switch_page("pages/2_Pod Explorer & Logs.py")
+
+if st.button("🔍 Cluster Explorer", key="cluster_explorer_click", use_container_width=True):
+    st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
+
+if st.button("🖥️ Kubernetes Shell", key="k8s_shell_click", use_container_width=True):
+    st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
 
 st.markdown("---")
 
