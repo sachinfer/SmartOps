@@ -21,7 +21,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-#added new telegram
+      #added new telegram
       - name: Notify Telegram - Deployment Started
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
@@ -120,8 +120,8 @@ jobs:
       - name: Ensure data directory exists
         run: mkdir -p smartops-ai/dashboard/data
 
-       - name: Log Deployment Started (to dashboard API)
-         run: |
+      - name: Log Deployment Started (to dashboard API)
+        run: |
             # Check if dashboard pod exists before trying to wait for it
             if kubectl get pods -l app=smartops-dashboard -n smartops 2>/dev/null | grep -q .; then
               # Wait for dashboard service to be ready
