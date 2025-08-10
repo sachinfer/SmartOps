@@ -119,26 +119,32 @@ jobs:
 
       - name: Ensure data directory exists
         run: mkdir -p smartops-ai/dashboard/data
+
       - name: Log Deployment Started (to dashboard API)
-        run: |
-          # Wait for dashboard service to be ready
-          kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
-          
-          # Get the external IP of the dashboard service
-          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          
-          if [ -n "$DASHBOARD_IP" ]; then
-            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-              -H "Content-Type: application/json" \
-              -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}'
-          else
-            echo "Dashboard service external IP not available yet, skipping event log"
-          fi
-          
-          # Also log to internal service for redundancy
-          kubectl exec -n smartops deployment/smartops-dashboard -- curl -X POST "http://localhost:8000/log_event" \
-            -H "Content-Type: application/json" \
-            -d '{"status": "started", "message": "Deployment started (internal)", "namespace": "smartops"}' || echo "Internal logging failed"
+          run: |
+            # Check if dashboard pod exists before trying to wait for it
+            if kubectl get pods -l app=smartops-dashboard -n smartops 2>/dev/null | grep -q .; then
+              # Wait for dashboard service to be ready
+              kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
+              
+              # Get the external IP of the dashboard service
+              DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+              
+              if [ -n "$DASHBOARD_IP" ]; then
+                curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
+                  -H "Content-Type: application/json" \
+                  -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}'
+              else
+                echo "Dashboard service external IP not available yet, skipping event log"
+              fi
+              
+              # Also log to internal service for redundancy
+              kubectl exec -n smartops deployment/smartops-dashboard -- curl -X POST "http://localhost:8000/log_event" \
+                -H "Content-Type: application/json" \
+                -d '{"status": "started", "message": "Deployment started (internal)", "namespace": "smartops"}' || echo "Internal logging failed"
+            else
+              echo "Dashboard pod not found yet, skipping event log (will be created during deployment)"
+            fi
 
       # - name: Notify Telegram - Deployment Started
       #   run: |
