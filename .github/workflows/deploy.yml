@@ -84,7 +84,7 @@ jobs:
     - name: Configure Kubeconfig
       run: |
         echo "Setting up kubectl with project: ${{ secrets.GCP_PROJECT_ID }}"
-        gcloud container clusters get-credentials smartops-cluster --region us-central1 --project ${{ secrets.GCP_PROJECT_ID }}
+        gcloud container clusters get-credentials smartops-cluster --zone us-central1-a --project ${{ secrets.GCP_PROJECT_ID }}
 
     - name: Set Image Tags
       run: |
