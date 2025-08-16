@@ -99,8 +99,6 @@ jobs:
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
-      with:
-        install_components: 'gke-gcloud-auth-plugin'
 
     - name: Set up kubectl
       uses: azure/setup-kubectl@v3
@@ -138,6 +136,17 @@ jobs:
         # Fallback: Set up kubectl with direct service account authentication
         echo "Setting up fallback kubectl authentication..."
         export GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json
+        
+        # Try to install gke-gcloud-auth-plugin manually if needed
+        echo "Attempting to install gke-gcloud-auth-plugin..."
+        if ! command -v gke-gcloud-auth-plugin > /dev/null 2>&1; then
+          echo "gke-gcloud-auth-plugin not found, attempting manual installation..."
+          if gcloud components install gke-gcloud-auth-plugin --quiet; then
+            echo "✅ gke-gcloud-auth-plugin installed successfully!"
+          else
+            echo "⚠️ gke-gcloud-auth-plugin installation failed, using fallback method..."
+          fi
+        fi
         
         # Create kubeconfig manually if needed
         if ! kubectl get nodes > /dev/null 2>&1; then
