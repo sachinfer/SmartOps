@@ -181,38 +181,200 @@ jobs:
             ${{ env.APP_TAG }}
         continue-on-error: false
 
-      - name: Build & Push Anomaly Service Image
+      - name: Build & Push Anomaly Image
         uses: docker/build-push-action@v5
         with:
-          context: ./smartops-ai
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
-            ${{ env.ANOMALY_TAG }}
-        continue-on-error: false
+          context: ./smartops-ai/app
+          file: ./smartops-ai/app/Dockerfile
+          push: false
+          tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          outputs: type=docker,dest=/tmp/anomaly-image.tar
+
+      - name: Test Google Cloud Connectivity (Anomaly)
+        run: |
+          echo "Testing Google Cloud connectivity for anomaly push..."
+          for i in {1..3}; do
+            echo "Attempt $i: Testing DNS resolution..."
+            if nslookup oauth2.googleapis.com && nslookup us-docker.pkg.dev; then
+              echo "DNS resolution successful"
+              break
+            fi
+            echo "DNS resolution failed, retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          for i in {1..3}; do
+            echo "Attempt $i: Testing HTTPS connectivity..."
+            if curl -I --connect-timeout 10 --max-time 30 https://oauth2.googleapis.com; then
+              echo "HTTPS connectivity successful"
+              break
+            fi
+            echo "HTTPS connectivity failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+      - name: Push Anomaly Image (with retry)
+        run: |
+          echo "Pushing anomaly image to Google Artifact Registry..."
+          
+          # Load the image from tar
+          docker load < /tmp/anomaly-image.tar
+          
+          # Retry push with exponential backoff
+          for attempt in {1..5}; do
+            echo "Push attempt $attempt..."
+            
+            if docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest; then
+              echo "Anomaly image pushed successfully!"
+              break
+            else
+              echo "Push failed on attempt $attempt"
+              if [ $attempt -lt 5 ]; then
+                wait_time=$((2 ** $attempt))
+                echo "Waiting $wait_time seconds before retry..."
+                sleep $wait_time
+              else
+                echo "All push attempts failed"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Cleanup Temporary Files
+        run: |
+          echo "Cleaning up temporary image files..."
+          rm -f /tmp/*-image.tar
+          echo "Cleanup completed"
 
       - name: Build & Push Dashboard Image
         uses: docker/build-push-action@v5
         with:
           context: ./smartops-ai/dashboard
           file: ./smartops-ai/dashboard/Dockerfile
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
-            ${{ env.DASHBOARD_TAG }}
+          push: false
+          tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
           platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           provenance: false
-        continue-on-error: false
+          outputs: type=docker,dest=/tmp/dashboard-image.tar
+
+      - name: Test Google Cloud Connectivity (Dashboard)
+        run: |
+          echo "Testing Google Cloud connectivity for dashboard push..."
+          for i in {1..3}; do
+            echo "Attempt $i: Testing DNS resolution..."
+            if nslookup oauth2.googleapis.com && nslookup us-docker.pkg.dev; then
+              echo "DNS resolution successful"
+              break
+            fi
+            echo "DNS resolution failed, retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          for i in {1..3}; do
+            echo "Attempt $i: Testing HTTPS connectivity..."
+            if curl -I --connect-timeout 10 --max-time 30 https://oauth2.googleapis.com; then
+              echo "HTTPS connectivity successful"
+              break
+            fi
+            echo "HTTPS connectivity failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+      - name: Push Dashboard Image (with retry)
+        run: |
+          echo "Pushing dashboard image to Google Artifact Registry..."
+          
+          # Load the image from tar
+          docker load < /tmp/dashboard-image.tar
+          
+          # Retry push with exponential backoff
+          for attempt in {1..5}; do
+            echo "Push attempt $attempt..."
+            
+            if docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest; then
+              echo "Dashboard image pushed successfully!"
+              break
+            else
+              echo "Push failed on attempt $attempt"
+              if [ $attempt -lt 5 ]; then
+                wait_time=$((2 ** $attempt))
+                echo "Waiting $wait_time seconds before retry..."
+                sleep $wait_time
+              else
+                echo "All push attempts failed"
+                exit 1
+              fi
+            fi
+          done
 
       - name: Build & Push Monitor Image
         uses: docker/build-push-action@v5
         with:
           context: ./smartops-ai/app
           file: ./smartops-ai/app/Dockerfile.monitor
-          push: true
-          tags: |
-            us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
-        continue-on-error: false
+          push: false
+          tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          outputs: type=docker,dest=/tmp/monitor-image.tar
+
+      - name: Test Google Cloud Connectivity (Monitor)
+        run: |
+          echo "Testing Google Cloud connectivity for monitor push..."
+          for i in {1..3}; do
+            echo "Attempt $i: Testing DNS resolution..."
+            if nslookup oauth2.googleapis.com && nslookup us-docker.pkg.dev; then
+              echo "DNS resolution successful"
+              break
+            fi
+            echo "DNS resolution failed, retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          for i in {1..3}; do
+            echo "Attempt $i: Testing HTTPS connectivity..."
+            if curl -I --connect-timeout 10 --max-time 30 https://oauth2.googleapis.com; then
+              echo "HTTPS connectivity successful"
+              break
+            fi
+            echo "HTTPS connectivity failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+      - name: Push Monitor Image (with retry)
+        run: |
+          echo "Pushing monitor image to Google Artifact Registry..."
+          
+          # Load the image from tar
+          docker load < /tmp/monitor-image.tar
+          
+          # Retry push with exponential backoff
+          for attempt in {1..5}; do
+            echo "Push attempt $attempt..."
+            
+            if docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest; then
+              echo "Monitor image pushed successfully!"
+              break
+            else
+              echo "Push failed on attempt $attempt"
+              if [ $attempt -lt 5 ]; then
+                wait_time=$((2 ** $attempt))
+                echo "Waiting $wait_time seconds before retry..."
+                sleep $wait_time
+              else
+                echo "All push attempts failed"
+                exit 1
+              fi
+            fi
+          done
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
