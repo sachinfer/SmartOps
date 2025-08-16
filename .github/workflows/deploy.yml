@@ -146,7 +146,12 @@ jobs:
     - name: Checkout Helm Charts Repository
       run: |
         echo "📥 Cloning helm-charts repository for updates..."
-        git clone --depth 1 ${{ env.HELM_CHARTS_REPO }} helm-charts
+        # Configure git to use the user's actual credentials
+        git config --global user.name "sachinfer"
+        git config --global user.email "sachinnavoda74@gmail.com"
+        
+        # Clone using the token in the URL
+        git clone https://x-access-token:${{ secrets.HELM_CHARTS_TOKEN }}@github.com/sachinfer/helm-charts.git helm-charts
         echo "✅ Helm charts repository cloned successfully"
 
     - name: Create Helm Charts Structure
@@ -313,12 +318,17 @@ jobs:
     - name: Commit and Push to Helm Charts
       run: |
         cd helm-charts
-        git config user.name "SmartOps Bot"
-        git config user.email "bot@smartops.ai"
         
+        # Configure git user (already done globally, but ensure it's set)
+        git config user.name "sachinfer"
+        git config user.email "sachinnavoda74@gmail.com"
+        
+        # Add and commit changes
         git add .
         git commit -m "🤖 Auto-update helm charts with new image tags: ${{ env.SHORT_SHA }}"
-        git push origin main
+        
+        # Push using the token authentication
+        git push https://x-access-token:${{ secrets.HELM_CHARTS_TOKEN }}@github.com/sachinfer/helm-charts.git main
         
         echo "✅ Helm charts repository updated successfully!"
 
