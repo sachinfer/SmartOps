@@ -189,8 +189,6 @@ jobs:
           push: false
           tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: false
           outputs: type=docker,dest=/tmp/anomaly-image.tar
 
@@ -258,8 +256,6 @@ jobs:
           push: false
           tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: false
           outputs: type=docker,dest=/tmp/dashboard-image.tar
 
@@ -321,8 +317,6 @@ jobs:
           push: false
           tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: false
           outputs: type=docker,dest=/tmp/monitor-image.tar
 
