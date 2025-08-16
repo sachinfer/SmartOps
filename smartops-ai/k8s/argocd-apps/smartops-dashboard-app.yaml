@@ -8,11 +8,26 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/sachinfer/SmartOps.git
-    targetRevision: Plotly-Dash
-    path: smartops-ai/k8s
-    directory:
-      include: "smartops-dashboard-deployment.yaml"
+    repoURL: https://github.com/sachinfer/helm-charts
+    targetRevision: main
+    path: smartops/dashboard
+    helm:
+      values: |
+        image:
+          repository: us-docker.pkg.dev/sachinfer/smartops-repo/smartops-dashboard
+          tag: latest
+          pullPolicy: Always
+        service:
+          type: LoadBalancer
+          port: 8000
+        ingress:
+          enabled: true
+          className: nginx
+          hosts:
+            - host: smartops-dashboard.local
+              paths:
+                - path: /
+                  pathType: Prefix
   destination:
     server: https://kubernetes.default.svc
     namespace: smartops
@@ -24,4 +39,10 @@ spec:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
   revisionHistoryLimit: 10

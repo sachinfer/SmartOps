@@ -8,11 +8,29 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/sachinfer/SmartOps.git
-    targetRevision: Plotly-Dash
-    path: smartops-ai/k8s
-    directory:
-      include: "smartops-anomaly-deployment.yaml"
+    repoURL: https://github.com/sachinfer/helm-charts
+    targetRevision: main
+    path: smartops/anomaly
+    helm:
+      values: |
+        image:
+          repository: us-docker.pkg.dev/sachinfer/smartops-repo/smartops-anomaly
+          tag: latest
+          pullPolicy: Always
+        service:
+          type: ClusterIP
+          port: 8000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        model:
+          enabled: true
+          mountPath: /app/model
+          pvcName: smartops-anomaly-model
   destination:
     server: https://kubernetes.default.svc
     namespace: smartops
@@ -24,4 +42,10 @@ spec:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
   revisionHistoryLimit: 10

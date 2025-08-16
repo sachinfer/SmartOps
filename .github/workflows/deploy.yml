@@ -1,420 +1,222 @@
-name: Build and Deploy SmartOps App & Anomaly Service
+name: Build and Push Images
 
 on:
   push:
-    branches:
-      - main
-      - gcp
-      - gcp2
-      # - dash
-      - Plotly-Dash
+    branches: [ main, Plotly-Dash ]
+  pull_request:
+    branches: [ main, Plotly-Dash ]
   workflow_dispatch:
 
+env:
+  REGISTRY: us-docker.pkg.dev
+  IMAGE_NAME: smartops-repo
+
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-    environment: dev
-    env:
-      NAMESPACE: smartops
-      DOCKER_BUILDKIT: 1
-      DOCKER_CLI_EXPERIMENTAL: enabled
-      # Network configuration
-      GITHUB_ACTIONS_RUNNER_EXTRA_LINUX_PRE_INSTALL: |
-        echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-        echo "nameserver 8.8.4.4" >> /etc/resolv.conf
-
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1  # Shallow clone for faster checkout
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1  # Shallow clone for faster checkout
 
-      - name: Configure Network Settings
-        run: |
-          echo "Configuring network settings..."
-          
-          # Configure DNS resolvers
-          echo "nameserver 8.8.8.8" | sudo tee -a /etc/resolv.conf
-          echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
-          
-          # Test network connectivity
-          echo "Testing basic network connectivity..."
-          ping -c 3 8.8.8.8 || echo "Basic network connectivity failed"
-          
-          echo "Network configuration completed"
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-      #added new telegram
-      - name: Notify Telegram - Deployment Started
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="🚀 *Production deployment started in namespace `smartops`!*" \
-            -d parse_mode=Markdown
+    - name: Configure Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Test Google Cloud Connectivity
-        run: |
-          echo "Testing Google Cloud connectivity..."
+    - name: Configure Docker for Google Artifact Registry
+      run: |
+        gcloud auth configure-docker us-docker.pkg.dev --quiet
+
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Configure Kubeconfig
+      run: |
+        gcloud container clusters get-credentials smartops-cluster --region us-central1 --project ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Set Image Tags
+      run: |
+        echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+        echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+        echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+
+    - name: Build All Images (Parallel)
+      run: |
+        echo "🚀 Building all Docker images in parallel..."
+        
+        # Build app image
+        docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest \
+          -t ${{ env.APP_TAG }} \
+          --platform linux/amd64 \
+          --provenance false \
+          . &
+        APP_PID=$!
+        
+        # Build anomaly image
+        docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest \
+          --platform linux/amd64 \
+          --provenance false \
+          -f ./smartops-ai/Dockerfile \
+          ./smartops-ai &
+        ANOMALY_PID=$!
+        
+        # Build dashboard image
+        docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest \
+          --platform linux/amd64 \
+          --provenance false \
+          -f ./smartops-ai/dashboard/Dockerfile \
+          ./smartops-ai/dashboard &
+        DASHBOARD_PID=$!
+        
+        # Build monitor image
+        docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest \
+          --platform linux/amd64 \
+          --provenance false \
+          -f ./smartops-ai/app/Dockerfile.monitor \
+          ./smartops-ai/app &
+        MONITOR_PID=$!
+        
+        # Wait for all builds to complete
+        echo "⏳ Waiting for all builds to complete..."
+        wait $APP_PID && echo "✅ App image built successfully" || echo "❌ App image build failed"
+        wait $ANOMALY_PID && echo "✅ Anomaly image built successfully" || echo "❌ Anomaly image build failed"
+        wait $DASHBOARD_PID && echo "✅ Dashboard image built successfully" || echo "❌ Dashboard image build failed"
+        wait $MONITOR_PID && echo "✅ Monitor image built successfully" || echo "❌ Monitor image build failed"
+        
+        echo "🎉 All Docker builds completed!"
+
+    - name: Quick Push All Images
+      run: |
+        echo "🚀 Pushing all images with quick timeout strategy..."
+        
+        # Function for quick push with minimal retry
+        quick_push() {
+          local image_name=$1
+          local max_attempts=2
           
-          # Test DNS resolution
-          echo "Testing DNS resolution..."
-          nslookup oauth2.googleapis.com || echo "DNS resolution failed"
-          nslookup storage.googleapis.com || echo "DNS resolution failed"
-          
-          # Test HTTPS connectivity with retries
-          echo "Testing HTTPS connectivity to Google Cloud..."
-          for i in {1..3}; do
-            echo "Attempt $i/3: Testing oauth2.googleapis.com..."
-            if curl -I --connect-timeout 10 --max-time 30 "https://oauth2.googleapis.com" > /dev/null 2>&1; then
-              echo "✅ oauth2.googleapis.com is reachable"
-              break
+          for attempt in {1..$max_attempts}; do
+            echo "Pushing $image_name (attempt $attempt)..."
+            if timeout 45 docker push "$image_name"; then
+              echo "✅ $image_name pushed successfully!"
+              return 0
             else
-              echo "❌ Attempt $i failed"
-              if [ $i -lt 3 ]; then
-                echo "Waiting 10 seconds before retry..."
-                sleep 10
+              echo "❌ Push failed on attempt $attempt"
+              if [ $attempt -lt $max_attempts ]; then
+                echo "Waiting 3 seconds before retry..."
+                sleep 3
               fi
             fi
           done
-          
-          # Test storage.googleapis.com
-          for i in {1..3}; do
-            echo "Attempt $i/3: Testing storage.googleapis.com..."
-            if curl -I --connect-timeout 10 --max-time 30 "https://storage.googleapis.com" > /dev/null 2>&1; then
-              echo "✅ storage.googleapis.com is reachable"
-              break
-            else
-              echo "❌ Attempt $i failed"
-              if [ $i -lt 3 ]; then
-                echo "Waiting 10 seconds before retry..."
-                sleep 10
-              fi
-            fi
-          done
+          echo "⚠️ $image_name push failed, but continuing..."
+          return 1
+        }
+        
+        # Push all images quickly
+        quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest" &
+        quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest" &
+        quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest" &
+        quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest" &
+        
+        # Wait for all pushes to complete
+        wait
+        echo "🎉 All image push attempts completed!"
 
-      - name: Authenticate to Google Cloud (with retry)
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-        continue-on-error: true
+    - name: Update ArgoCD Applications
+      run: |
+        echo "🔄 Updating ArgoCD applications to use new image tags..."
+        
+        # Wait for ArgoCD to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
+        
+        # Get ArgoCD server pod
+        echo "🔍 Looking for ArgoCD server pods..."
+        kubectl get pods -n argocd -o wide
+        
+        # Try multiple selectors to find the ArgoCD server pod
+        ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        
+        if [ -z "$ARGOCD_POD" ]; then
+          echo "🔄 Trying alternative selector..."
+          ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/component=server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        fi
+        
+        if [ -z "$ARGOCD_POD" ]; then
+          echo "🔄 Trying to get any ArgoCD pod..."
+          ARGOCD_POD=$(kubectl get pods -n argocd --no-headers -o custom-columns=":metadata.name" | grep argocd | head -1)
+        fi
+        
+        # Check if we got a valid pod name
+        if [ -z "$ARGOCD_POD" ]; then
+          echo "❌ Failed to get ArgoCD pod name"
+          echo "🔍 Available pods in argocd namespace:"
+          kubectl get pods -n argocd
+          echo "🔍 ArgoCD services:"
+          kubectl get svc -n argocd
+          exit 1
+        fi
+        
+        echo "📦 Using ArgoCD pod: $ARGOCD_POD"
+        
+        # Get ArgoCD server service IP for internal communication
+        ARGOCD_SERVER_IP=$(kubectl get svc -n argocd argocd-server -o jsonpath='{.spec.clusterIP}')
+        echo "🌐 ArgoCD Server IP: $ARGOCD_SERVER_IP"
+        
+        # Login to ArgoCD
+        echo "🔐 Logging into ArgoCD server..."
+        kubectl exec -n argocd $ARGOCD_POD -- argocd login localhost:8080 --insecure --username admin --password wKuAPSVNLZusO37m
+        
+        # Update ArgoCD applications to point to helm-charts repository
+        echo "🔄 Updating ArgoCD applications to use helm-charts repository..."
+        
+        # Update dashboard app to use helm-charts repo
+        kubectl exec -n argocd $ARGOCD_POD -- argocd app set smartops-dashboard \
+          --repo https://github.com/sachinfer/helm-charts \
+          --path smartops/dashboard \
+          --revision main \
+          --values image.tag=${{ env.SHORT_SHA }}
+        
+        # Update monitor app to use helm-charts repo
+        kubectl exec -n argocd $ARGOCD_POD -- argocd app set smartops-monitor \
+          --repo https://github.com/sachinfer/helm-charts \
+          --path smartops/monitor \
+          --revision main \
+          --values image.tag=${{ env.SHORT_SHA }}
+        
+        # Update anomaly app to use helm-charts repo
+        kubectl exec -n argocd $ARGOCD_POD -- argocd app set smartops-anomaly \
+          --repo https://github.com/sachinfer/helm-charts \
+          --path smartops/anomaly \
+          --revision main \
+          --values image.tag=${{ env.SHORT_SHA }}
+        
+        echo "✅ ArgoCD applications updated successfully!"
+        
+        # Sync all applications
+        echo "🔄 Syncing all applications..."
+        kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --prune --timeout 300
+        kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --prune --timeout 300
+        kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --prune --timeout 300
+        
+        echo "✅ All applications synced successfully!"
 
-      - name: Retry Google Cloud Authentication
-        if: steps.auth.outcome == 'failure'
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up gcloud SDK (with retry)
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: "gke-gcloud-auth-plugin"
-        continue-on-error: true
-
-      - name: Retry gcloud SDK Setup
-        if: steps.gcloud-setup.outcome == 'failure'
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: "gke-gcloud-auth-plugin"
-
-      - name: Fallback Manual Authentication
-        if: steps.gcloud-setup.outcome == 'failure'
-        run: |
-          echo "Using fallback manual authentication..."
-          
-          # Create service account key file
-          echo '${{ secrets.GCP_SA_KEY }}' | base64 -d > /tmp/service-account.json
-          
-          # Set environment variable
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json
-          
-          # Test authentication
-          gcloud auth activate-service-account --key-file=/tmp/service-account.json || echo "Fallback auth failed"
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }} || echo "Project config failed"
-          
-          echo "Fallback authentication completed"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:v0.12.0
-            network=host
-          buildkitd-flags: --debug
-
-      - name: Test Network Connectivity
-        run: |
-          echo "Testing network connectivity..."
-          echo "Testing DNS resolution..."
-          nslookup us-docker.pkg.dev || echo "DNS resolution failed"
-          
-          echo "Testing HTTPS connectivity..."
-          curl -I --connect-timeout 10 --max-time 30 "https://us-docker.pkg.dev" || echo "HTTPS connection failed"
-          
-          echo "Testing Google Cloud connectivity..."
-          curl -I --connect-timeout 10 --max-time 30 "https://storage.googleapis.com" || echo "Google Cloud connection failed"
-
-      - name: Authenticate Docker to Artifact Registry
-        run: |
-          gcloud auth configure-docker us-docker.pkg.dev
-          # Configure Docker with better timeout settings
-          echo '{"registry-mirrors": [], "insecure-registries": [], "debug": true, "experimental": true}' | sudo tee /etc/docker/daemon.json
-          sudo systemctl restart docker
-
-      - name: Generate Image Tags
-        run: |
-          echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
-
-      # Parallel Docker builds for faster execution
-      - name: Build All Images (Parallel)
-        run: |
-          echo "🚀 Building all Docker images in parallel..."
-          
-          # Build app image
-          docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest \
-            -t ${{ env.APP_TAG }} \
-            --platform linux/amd64 \
-            --provenance false \
-            . &
-          APP_PID=$!
-          
-          # Build anomaly image
-          docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest \
-            --platform linux/amd64 \
-            --provenance false \
-            -f ./smartops-ai/Dockerfile \
-            ./smartops-ai &
-          ANOMALY_PID=$!
-          
-          # Build dashboard image
-          docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest \
-            --platform linux/amd64 \
-            --provenance false \
-            -f ./smartops-ai/dashboard/Dockerfile \
-            ./smartops-ai/dashboard &
-          DASHBOARD_PID=$!
-          
-          # Build monitor image
-          docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest \
-            --platform linux/amd64 \
-            --provenance false \
-            -f ./smartops-ai/app/Dockerfile.monitor \
-            ./smartops-ai/app &
-          MONITOR_PID=$!
-          
-          # Wait for all builds to complete
-          echo "⏳ Waiting for all builds to complete..."
-          wait $APP_PID && echo "✅ App image built successfully" || echo "❌ App image build failed"
-          wait $ANOMALY_PID && echo "✅ Anomaly image built successfully" || echo "❌ Anomaly image build failed"
-          wait $DASHBOARD_PID && echo "✅ Dashboard image built successfully" || echo "❌ Dashboard image build failed"
-          wait $MONITOR_PID && echo "✅ Monitor image built successfully" || echo "❌ Monitor image build failed"
-          
-          echo "🎉 All Docker builds completed!"
-
-      # Quick push attempts with minimal retry
-      - name: Quick Push All Images
-        run: |
-          echo "🚀 Pushing all images with quick timeout strategy..."
-          
-          # Function for quick push with minimal retry
-          quick_push() {
-            local image_name=$1
-            local max_attempts=2
-            
-            for attempt in {1..$max_attempts}; do
-              echo "Pushing $image_name (attempt $attempt)..."
-              if timeout 45 docker push "$image_name"; then
-                echo "✅ $image_name pushed successfully!"
-                return 0
-              else
-                echo "❌ Push failed on attempt $attempt"
-                if [ $attempt -lt $max_attempts ]; then
-                  echo "Waiting 3 seconds before retry..."
-                  sleep 3
-                fi
-              fi
-            done
-            echo "⚠️ $image_name push failed, but continuing..."
-            return 1
-          }
-          
-          # Push all images quickly
-          quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest" &
-          quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest" &
-          quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest" &
-          quick_push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest" &
-          
-          # Wait for all pushes to complete
-          wait
-          echo "🎉 All image push attempts completed!"
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0'
-
-      - name: Configure Kubeconfig
-        run: |
-          gcloud container clusters get-credentials smartops-cluster \
-            --zone us-central1-a \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-          
-          # Verify connection
-          kubectl config current-context
-          kubectl get nodes
-
-      - name: Deploy via ArgoCD
-        run: |
-          echo "🚀 Triggering ArgoCD sync for all applications..."
-          
-          # Wait for ArgoCD to be ready
-          kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
-          
-          # Get ArgoCD server pod
-          echo "🔍 Looking for ArgoCD server pods..."
-          kubectl get pods -n argocd -o wide
-          
-          # Try multiple selectors to find the ArgoCD server pod
-          ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
-          
-          if [ -z "$ARGOCD_POD" ]; then
-            echo "🔄 Trying alternative selector..."
-            ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/component=server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
-          fi
-          
-          if [ -z "$ARGOCD_POD" ]; then
-            echo "🔄 Trying to get any ArgoCD pod..."
-            ARGOCD_POD=$(kubectl get pods -n argocd --no-headers -o custom-columns=":metadata.name" | grep argocd | head -1)
-          fi
-          
-          # Check if we got a valid pod name
-          if [ -z "$ARGOCD_POD" ]; then
-            echo "❌ Failed to get ArgoCD pod name"
-            echo "🔍 Available pods in argocd namespace:"
-            kubectl get pods -n argocd
-            echo "🔍 ArgoCD services:"
-            kubectl get svc -n argocd
-            exit 1
-          fi
-          
-          echo "📦 Using ArgoCD pod: $ARGOCD_POD"
-          
-          # Get ArgoCD server service IP for internal communication
-          ARGOCD_SERVER_IP=$(kubectl get svc -n argocd argocd-server -o jsonpath='{.spec.clusterIP}')
-          echo "🌐 ArgoCD Server IP: $ARGOCD_SERVER_IP"
-          
-          # Sync all SmartOps applications using kubectl exec with proper ArgoCD CLI configuration
-          echo "🔐 Logging into ArgoCD server..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd login localhost:8080 --insecure --username admin --password wKuAPSVNLZusO37m
-          
-          echo "🔄 Syncing smartops-dashboard..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --server localhost:8080 --insecure --prune --timeout 300
-          
-          echo "🔄 Syncing smartops-monitor..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --server localhost:8080 --insecure --prune --timeout 300
-          
-          echo "🔄 Syncing smartops-anomaly..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --server localhost:8080 --insecure --prune --timeout 300
-          
-          echo "✅ ArgoCD sync triggered successfully!"
-          
-          # Wait for applications to be healthy
-          echo "⏳ Waiting for applications to be healthy..."
-          kubectl wait --for=condition=healthy --timeout=600s application/smartops-dashboard -n argocd
-          kubectl wait --for=condition=healthy --timeout=600s application/smartops-monitor -n argocd
-          kubectl wait --for=condition=healthy --timeout=600s application/smartops-anomaly -n argocd
-          
-          echo "🎉 All applications are healthy!"
-
-      - name: Wait for Dashboard to be Ready
-        if: success()
-        run: |
-          echo "Checking dashboard status..."
-          # Check if pod is already ready first
-          if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' | grep -q "true"; then
-            echo "✅ Dashboard pod is already ready"
-          else
-            echo "Waiting for dashboard pod to become ready..."
-            kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
-            echo "✅ Dashboard pod is ready"
-          fi
-          
-          # Test dashboard connectivity
-          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          if [ -n "$DASHBOARD_IP" ]; then
-            echo "Testing dashboard connectivity at $DASHBOARD_IP..."
-            if curl -s "http://$DASHBOARD_IP:8000/log_event" --max-time 10 > /dev/null 2>&1; then
-              echo "✅ Dashboard is responding"
-            else
-              echo "⚠️ Dashboard not responding, but continuing..."
-            fi
-          else
-            echo "⚠️ Dashboard IP not available"
-          fi
-
-      - name: Notify Telegram - Deployment Success
-        if: success()
-        run: |
-          # Get the external IP of the dashboard service
-          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-          
-          if [ -n "$DASHBOARD_IP" ]; then
-            echo "Logging success to dashboard at $DASHBOARD_IP"
-            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-              -H "Content-Type: application/json" \
-              -d '{"status": "success", "message": "SmartOps AI platform deployment completed successfully - App, Anomaly Detection, Dashboard, and Monitor services deployed", "namespace": "smartops"}' \
-              --max-time 10 || echo "Failed to log success to dashboard"
-          else
-            echo "Dashboard IP not available, skipping dashboard logging"
-          fi
-          
-          # Always send Telegram notification
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://$DASHBOARD_IP)" \
-            -d parse_mode=Markdown
-
-      - name: Notify Telegram - Deployment Failed
-        if: failure()
-        run: |
-          # Try to log failure to dashboard if it's available
-          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-          
-          if [ -n "$DASHBOARD_IP" ]; then
-            echo "Logging failure to dashboard at $DASHBOARD_IP"
-            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-              -H "Content-Type: application/json" \
-              -d '{"status": "failed", "message": "Deployment failed - check pipeline logs for details", "namespace": "smartops"}' \
-              --max-time 10 || echo "Failed to log to dashboard"
-          else
-            echo "Dashboard not available, skipping dashboard logging"
-          fi
-          
-          # Always send Telegram notification
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="❌ *Production deployment failed in namespace \`smartops\`!*%0A%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Check:* [Pipeline Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
-            -d parse_mode=Markdown
-
-      - name: Always Notify Dashboard of Job Status
-        if: always()
-        run: |
-          # This step always runs, regardless of success/failure
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "Job completed successfully"
-          else
-            echo "Job failed or was cancelled"
-            # Try to log to dashboard if available
-            DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-            
-            if [ -n "$DASHBOARD_IP" ]; then
-              echo "Logging final status to dashboard at $DASHBOARD_IP"
-              curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-                -H "Content-Type: application/json" \
-                -d '{"status": "failed", "message": "Pipeline job failed - check GitHub Actions logs", "namespace": "smartops"}' \
-                --max-time 10 || echo "Failed to log final status to dashboard"
-            fi
-          fi
+    - name: Notify Deployment
+      if: success()
+      run: |
+        echo "🎉 Deployment completed successfully!"
+        echo "📦 New image tags:"
+        echo "   App: ${{ env.APP_TAG }}"
+        echo "   Anomaly: ${{ env.ANOMALY_TAG }}"
+        echo "   Dashboard: ${{ env.DASHBOARD_TAG }}"
+        echo "   Monitor: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest"
+        echo "🔗 ArgoCD applications updated to use helm-charts repository"
+        echo "📚 Helm charts repository: https://github.com/sachinfer/helm-charts"
