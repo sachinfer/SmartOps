@@ -99,13 +99,37 @@ st.markdown("""
         cursor: pointer;
         user-select: none;
     }
+    .navigation-section {
+        background: rgba(255,255,255,0.05);
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin: 2rem 0;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .button-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    }
 </style>
 """, unsafe_allow_html=True)
-
-# Function to handle card clicks
-def handle_card_click(page_name):
-    st.session_state.selected_page = page_name
-    st.rerun()
 
 # Main content
 st.markdown("""
@@ -123,25 +147,30 @@ with st.sidebar:
 st.markdown("""
 ## 🎯 Quick Navigation
 
-# Click on any card below to navigate to the corresponding section, or use the sidebar for navigation:
+Click on any card below to navigate to the corresponding section, or use the sidebar for navigation:
 
-# - **🏠 Overview** - System overview and basic statistics
-# - **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
-# - **📈 Analytics** - Resource usage analytics and trends
-# - **🤖 AI Actions** - AI recommendations and action history
-# - **🚀 Deployments** - Deployment workflow events and tracking
-# - **🛰️ Pod Explorer & Logs** - Pod management and log viewing
-# - **🔍 Cluster Explorer** - Cluster resource exploration
-# - **🖥️ Kubernetes Shell** - kubectl command interface
+- **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
+- **📈 Analytics** - Resource usage analytics and trends
+- **🤖 AI Actions** - AI recommendations and action history
+- **🚀 Deployments** - Deployment workflow events and tracking
+- **🛰️ Pod Explorer & Logs** - Pod management and log viewing
+- **🔍 Cluster Explorer** - Cluster resource exploration
+- **🖥️ Kubernetes Shell** - kubectl command interface
 
-# Each page is designed to provide focused functionality for specific aspects of Kubernetes monitoring and management.
-# """)
+Each page is designed to provide focused functionality for specific aspects of Kubernetes monitoring and management.
+""")
+
+# Navigation cards section
+st.markdown("""
+<div class="navigation-section">
+    <h3 style="color: white; margin-bottom: 1rem;">🚀 Quick Access Cards</h3>
+</div>
+""", unsafe_allow_html=True)
 
 # Feature cards with clickable functionality
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    # First row - 3 cards (removed Overview)
     if st.button("🔥 Anomaly Detection", key="anomaly", use_container_width=True, help="Click to go to Anomaly Detection page"):
         st.switch_page("pages/4_Anomaly_Detection.py")
     
@@ -152,20 +181,26 @@ with col1:
         st.switch_page("pages/8_AI_Actions.py")
 
 with col2:
-    # Second row - 4 cards
     if st.button("🚀 Deployments", key="deployments", use_container_width=True, help="Click to go to Deployments page"):
         st.switch_page("pages/9_Deployments.py")
     
     if st.button("🛰️ Pod Explorer & Logs", key="pod_explorer", use_container_width=True, help="Click to go to Pod Explorer page"):
         st.switch_page("pages/2_Pod Explorer & Logs.py")
-    
+
+with col3:
     if st.button("🔍 Cluster Explorer", key="cluster_explorer", use_container_width=True, help="Click to go to Cluster Explorer page"):
         st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
     
     if st.button("🖥️ Kubernetes Shell", key="k8s_shell", use_container_width=True, help="Click to go to Kubernetes Shell page"):
         st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
 
-# Alternative: Feature cards with HTML styling (if buttons don't work well)
+# Alternative: Feature cards with HTML styling for better visual appeal
+st.markdown("""
+<div class="navigation-section">
+    <h3 style="color: white; margin-bottom: 1rem;">📋 Feature Overview</h3>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <div class="feature-grid">
     <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'anomaly_click', value: true}, '*')">
@@ -206,27 +241,27 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Handle clicks from HTML cards (removed overview_click)
-# if st.button("🔥 Anomaly Detection", key="anomaly_click", use_container_width=True):
-#     st.switch_page("pages/4_Anomaly_Detection.py")
+# Handle clicks from HTML cards
+if st.button("🔥 Anomaly Detection", key="anomaly_click", use_container_width=True):
+    st.switch_page("pages/4_Anomaly_Detection.py")
 
-# if st.button("📈 Analytics", key="analytics_click", use_container_width=True):
-#     st.switch_page("pages/7_Analytics.py")
+if st.button("📈 Analytics", key="analytics_click", use_container_width=True):
+    st.switch_page("pages/7_Analytics.py")
 
-# if st.button("🤖 AI Actions", key="ai_actions_click", use_container_width=True):
-#     st.switch_page("pages/8_AI_Actions.py")
+if st.button("🤖 AI Actions", key="ai_actions_click", use_container_width=True):
+    st.switch_page("pages/8_AI_Actions.py")
 
-# if st.button("🚀 Deployments", key="deployments_click", use_container_width=True):
-#     st.switch_page("pages/9_Deployments.py")
+if st.button("🚀 Deployments", key="deployments_click", use_container_width=True):
+    st.switch_page("pages/9_Deployments.py")
 
-# if st.button("🛰️ Pod Explorer & Logs", key="pod_explorer_click", use_container_width=True):
-#     st.switch_page("pages/2_Pod Explorer & Logs.py")
+if st.button("🛰️ Pod Explorer & Logs", key="pod_explorer_click", use_container_width=True):
+    st.switch_page("pages/2_Pod Explorer & Logs.py")
 
-# if st.button("🔍 Cluster Explorer", key="cluster_explorer_click", use_container_width=True):
-#     st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
+if st.button("🔍 Cluster Explorer", key="cluster_explorer_click", use_container_width=True):
+    st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
 
-# if st.button("🖥️ Kubernetes Shell", key="k8s_shell_click", use_container_width=True):
-#     st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
+if st.button("🖥️ Kubernetes Shell", key="k8s_shell_click", use_container_width=True):
+    st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
 
 st.markdown("---")
 
