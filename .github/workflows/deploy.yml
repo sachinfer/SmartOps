@@ -50,6 +50,8 @@ jobs:
             image=moby/buildkit:v0.12.0
             network=host
           buildkitd-flags: --debug
+          # Fallback to local driver if GHA cache fails
+          use: true
 
       - name: Test Network Connectivity
         run: |
@@ -97,7 +99,7 @@ jobs:
             ${{ env.ANOMALY_TAG }}
         continue-on-error: false
 
-      - name: Build Dashboard Image
+      - name: Build Dashboard Image (Attempt 1)
         uses: docker/build-push-action@v5
         with:
           context: ./smartops-ai/dashboard
@@ -107,9 +109,23 @@ jobs:
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
             ${{ env.DASHBOARD_TAG }}
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: false
+        continue-on-error: true
+        id: build-attempt-1
+
+      - name: Build Dashboard Image (Attempt 2 - No Cache)
+        if: steps.build-attempt-1.outcome == 'failure'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./smartops-ai/dashboard
+          file: ./smartops-ai/dashboard/Dockerfile
+          push: false
+          tags: |
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
+            ${{ env.DASHBOARD_TAG }}
+          platforms: linux/amd64
+          provenance: false
+          no-cache: true
         continue-on-error: false
 
       - name: Push Dashboard Image with Retry
