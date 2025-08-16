@@ -99,58 +99,20 @@ jobs:
             ${{ env.ANOMALY_TAG }}
         continue-on-error: false
 
-      - name: Build Dashboard Image (Attempt 1)
+      - name: Build & Push Dashboard Image
         uses: docker/build-push-action@v5
         with:
           context: ./smartops-ai/dashboard
           file: ./smartops-ai/dashboard/Dockerfile
-          push: false
+          push: true
           tags: |
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
             ${{ env.DASHBOARD_TAG }}
           platforms: linux/amd64
           provenance: false
-        continue-on-error: true
-        id: build-attempt-1
-
-      - name: Build Dashboard Image (Attempt 2 - No Cache)
-        if: steps.build-attempt-1.outcome == 'failure'
-        uses: docker/build-push-action@v5
-        with:
-          context: ./smartops-ai/dashboard
-          file: ./smartops-ai/dashboard/Dockerfile
-          push: false
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
-            ${{ env.DASHBOARD_TAG }}
-          platforms: linux/amd64
-          provenance: false
-          no-cache: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
         continue-on-error: false
-
-      - name: Push Dashboard Image with Retry
-        run: |
-          # Test connectivity to Artifact Registry
-          echo "Testing connectivity to Artifact Registry..."
-          curl -I --connect-timeout 10 --max-time 30 "https://us-docker.pkg.dev" || echo "Warning: Direct connection test failed"
-          
-          # Push with multiple retry attempts
-          for attempt in 1 2 3; do
-            echo "Push attempt $attempt/3..."
-            if docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest; then
-              echo "✅ Push successful on attempt $attempt"
-              break
-            else
-              echo "❌ Push failed on attempt $attempt"
-              if [ $attempt -lt 3 ]; then
-                echo "Waiting 30 seconds before retry..."
-                sleep 30
-              fi
-            fi
-          done
-          
-          # Also push the tagged version
-          docker push ${{ env.DASHBOARD_TAG }} || echo "Warning: Tagged version push failed"
 
       - name: Build & Push Monitor Image
         uses: docker/build-push-action@v5
