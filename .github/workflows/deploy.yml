@@ -403,15 +403,31 @@ jobs:
           
           echo "📦 Using ArgoCD pod: $ARGOCD_POD"
           
-          # Sync all SmartOps applications using kubectl exec
+          # Get ArgoCD server service IP for internal communication
+          ARGOCD_SERVER_IP=$(kubectl get svc -n argocd argocd-server -o jsonpath='{.spec.clusterIP}')
+          echo "🌐 ArgoCD Server IP: $ARGOCD_SERVER_IP"
+          
+          # Sync all SmartOps applications using kubectl exec with proper ArgoCD CLI configuration
           echo "🔄 Syncing smartops-dashboard..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --prune --timeout 300
+          kubectl exec -n argocd $ARGOCD_POD -- bash -c "
+            export ARGOCD_SERVER=http://$ARGOCD_SERVER_IP:8080
+            export ARGOCD_OPTS='--server $ARGOCD_SERVER'
+            argocd app sync smartops-dashboard --prune --timeout 300
+          "
           
           echo "🔄 Syncing smartops-monitor..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --prune --timeout 300
+          kubectl exec -n argocd $ARGOCD_POD -- bash -c "
+            export ARGOCD_SERVER=http://$ARGOCD_SERVER_IP:8080
+            export ARGOCD_OPTS='--server $ARGOCD_SERVER'
+            argocd app sync smartops-monitor --prune --timeout 300
+          "
           
           echo "🔄 Syncing smartops-anomaly..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --prune --timeout 300
+          kubectl exec -n argocd $ARGOCD_POD -- bash -c "
+            export ARGOCD_SERVER=http://$ARGOCD_SERVER_IP:8080
+            export ARGOCD_OPTS='--server $ARGOCD_SERVER'
+            argocd app sync smartops-anomaly --prune --timeout 300
+          "
           
           echo "✅ ArgoCD sync triggered successfully!"
           
