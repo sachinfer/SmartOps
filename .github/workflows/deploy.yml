@@ -1,4 +1,4 @@
-name: Build and Push Images
+name: Build, Push Images and Update Helm Charts
 
 on:
   push:
@@ -10,6 +10,8 @@ on:
 env:
   REGISTRY: us-docker.pkg.dev
   IMAGE_NAME: smartops-repo
+  HELM_CHARTS_REPO: https://github.com/sachinfer/helm-charts.git
+  HELM_CHARTS_PATH: smartops
 
 jobs:
   build-and-push:
@@ -123,19 +125,202 @@ jobs:
         wait
         echo "🎉 All image push attempts completed!"
 
+    - name: Checkout Helm Charts Repository
+      run: |
+        echo "📥 Cloning helm-charts repository for updates..."
+        git clone --depth 1 ${{ env.HELM_CHARTS_REPO }} helm-charts
+        echo "✅ Helm charts repository cloned successfully"
+
+    - name: Create Helm Charts Structure
+      run: |
+        cd helm-charts
+        
+        # Create directory structure
+        mkdir -p smartops/{anomaly,dashboard,monitor}
+        
+        # Create anomaly Chart.yaml
+        cat > smartops/anomaly/Chart.yaml << 'EOF'
+        apiVersion: v2
+        name: smartops-anomaly
+        description: SmartOps Anomaly Detection Service
+        type: application
+        version: 0.1.0
+        appVersion: "1.0.0"
+        keywords:
+          - smartops
+          - anomaly
+          - detection
+          - ai
+        home: https://github.com/sachinfer/SmartOps
+        sources:
+          - https://github.com/sachinfer/SmartOps
+        maintainers:
+          - name: SmartOps Team
+            email: team@smartops.ai
+        EOF
+        
+        # Create dashboard Chart.yaml
+        cat > smartops/dashboard/Chart.yaml << 'EOF'
+        apiVersion: v2
+        name: smartops-dashboard
+        description: SmartOps Dashboard Web Application
+        type: application
+        version: 0.1.0
+        appVersion: "1.0.0"
+        keywords:
+          - smartops
+          - dashboard
+          - web
+          - ui
+        home: https://github.com/sachinfer/SmartOps
+        sources:
+          - https://github.com/sachinfer/SmartOps
+        maintainers:
+          - name: SmartOps Team
+            email: team@smartops.ai
+        EOF
+        
+        # Create monitor Chart.yaml
+        cat > smartops/monitor/Chart.yaml << 'EOF'
+        apiVersion: v2
+        name: smartops-monitor
+        description: SmartOps Monitoring Service
+        type: application
+        version: 0.1.0
+        appVersion: "1.0.0"
+        keywords:
+          - smartops
+          - monitor
+          - metrics
+          - monitoring
+        home: https://github.com/sachinfer/SmartOps
+        sources:
+          - https://github.com/sachinfer/SmartOps
+        maintainers:
+          - name: SmartOps Team
+            email: team@smartops.ai
+        EOF
+        
+        echo "✅ Helm charts structure created successfully!"
+
+    - name: Create and Update Values Files
+      run: |
+        cd helm-charts
+        
+        # Create anomaly values.yaml with new image tag
+        cat > smartops/anomaly/values.yaml << EOF
+        # Default values for smartops-anomaly
+        image:
+          repository: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly
+          tag: "${{ env.SHORT_SHA }}"
+          pullPolicy: Always
+        
+        service:
+          type: ClusterIP
+          port: 8000
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        model:
+          enabled: true
+          mountPath: /app/model
+          pvcName: smartops-anomaly-model
+        
+        replicaCount: 1
+        EOF
+        
+        # Create dashboard values.yaml with new image tag
+        cat > smartops/dashboard/values.yaml << EOF
+        # Default values for smartops-dashboard
+        image:
+          repository: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard
+          tag: "${{ env.SHORT_SHA }}"
+          pullPolicy: Always
+        
+        service:
+          type: LoadBalancer
+          port: 8000
+        
+        ingress:
+          enabled: true
+          className: nginx
+          hosts:
+            - host: smartops-dashboard.local
+              paths:
+                - path: /
+                  pathType: Prefix
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        replicaCount: 1
+        EOF
+        
+        # Create monitor values.yaml with new image tag
+        cat > smartops/monitor/values.yaml << EOF
+        # Default values for smartops-monitor
+        image:
+          repository: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor
+          tag: "${{ env.SHORT_SHA }}"
+          pullPolicy: Always
+        
+        service:
+          type: ClusterIP
+          port: 8000
+        
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        
+        replicaCount: 1
+        EOF
+        
+        echo "✅ Values files created with new image tags!"
+
+    - name: Commit and Push to Helm Charts
+      run: |
+        cd helm-charts
+        git config user.name "SmartOps Bot"
+        git config user.email "bot@smartops.ai"
+        
+        git add .
+        git commit -m "🤖 Auto-update helm charts with new image tags: ${{ env.SHORT_SHA }}"
+        git push origin main
+        
+        echo "✅ Helm charts repository updated successfully!"
+
     - name: Notify Success
       if: success()
       run: |
-        echo "🎉 Build and Push completed successfully!"
+        echo "🎉 Complete pipeline completed successfully!"
         echo "📦 New image tags:"
         echo "   App: ${{ env.APP_TAG }}"
         echo "   Anomaly: ${{ env.ANOMALY_TAG }}"
         echo "   Dashboard: ${{ env.DASHBOARD_TAG }}"
-        echo "   Monitor: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest"
+        echo "   Monitor: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:${{ env.SHORT_SHA }}"
         echo ""
-        echo "🚀 Next Steps:"
-        echo "   1. Images are now available in Google Artifact Registry"
-        echo "   2. ArgoCD will automatically deploy from your helm-charts repository"
-        echo "   3. Update your helm-charts repo to use new image tags if needed"
+        echo "🚀 What happened:"
+        echo "   1. ✅ Docker images built and pushed to Google Artifact Registry"
+        echo "   2. ✅ Helm charts created/updated in separate repository"
+        echo "   3. ✅ New image tags applied to helm charts"
+        echo "   4. ✅ ArgoCD will automatically detect changes and deploy"
         echo ""
-        echo "📚 Helm Charts Repository: https://github.com/sachinfer/helm-charts"
+        echo "📚 Helm Charts Repository: ${{ env.HELM_CHARTS_REPO }}"
+        echo "🎯 ArgoCD will automatically sync and deploy new versions!"
+        echo ""
+        echo "🎉 Your deployment process is now fully automated!"
