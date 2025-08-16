@@ -10,6 +10,8 @@ on:
 env:
   REGISTRY: us-docker.pkg.dev
   IMAGE_NAME: smartops-repo
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 
 jobs:
   build-and-push:
@@ -20,6 +22,21 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 1  # Shallow clone for faster checkout
+
+    - name: Verify Required Secrets
+      run: |
+        echo "Verifying required secrets..."
+        if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
+          echo "❌ GCP_PROJECT_ID secret is missing!"
+          exit 1
+        fi
+        if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
+          echo "❌ GCP_SA_KEY secret is missing!"
+          exit 1
+        fi
+        echo "✅ All required secrets are available"
+        echo "Project ID: ${{ secrets.GCP_PROJECT_ID }}"
+        echo "Service Account Key: [HIDDEN]"
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -67,6 +84,7 @@ jobs:
 
     - name: Configure Kubeconfig
       run: |
+        echo "Setting up kubectl with project: ${{ secrets.GCP_PROJECT_ID }}"
         gcloud container clusters get-credentials smartops-cluster --region us-central1 --project ${{ secrets.GCP_PROJECT_ID }}
 
     - name: Set Image Tags
