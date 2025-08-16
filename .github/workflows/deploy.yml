@@ -370,117 +370,27 @@ jobs:
             fi
           done
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0'
-
-      - name: Configure Kubeconfig
+      - name: Deploy via ArgoCD
         run: |
-          gcloud container clusters get-credentials smartops-cluster \
-            --zone us-central1-a \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Debug kubectl context
-        run: |
-          kubectl config current-context
-          kubectl get nodes
-
-      - name: Deploy Monitor Deployment
-        run: |
-          kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install Python dependencies for event logging
-        run: |
-          pip install -r smartops-ai/dashboard/requirements.txt
-
-      - name: Ensure data directory exists
-        run: mkdir -p smartops-ai/dashboard/data
-
-      - name: Log Deployment Started (to dashboard API)
-        run: |
-            # Check if dashboard pod exists and is ready
-            if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running 2>/dev/null | grep -q .; then
-              # Check if pod is already ready
-              if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' | grep -q "true"; then
-                echo "✅ Dashboard pod is already ready"
-              else
-                echo "Waiting for dashboard pod to become ready..."
-                kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
-              fi
-              
-              # Get the external IP of the dashboard service
-              DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-              
-              if [ -n "$DASHBOARD_IP" ]; then
-                echo "Logging deployment start to dashboard at $DASHBOARD_IP"
-                # Test dashboard connectivity first
-                if curl -s "http://$DASHBOARD_IP:8000/log_event" --max-time 5 > /dev/null 2>&1; then
-                  curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-                    -H "Content-Type: application/json" \
-                    -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}' \
-                    --max-time 10 || echo "Failed to log to dashboard"
-                else
-                  echo "Dashboard not responding, skipping external logging"
-                fi
-              else
-                echo "Dashboard service external IP not available yet, skipping event log"
-              fi
-              
-              # Also log to internal service for redundancy
-              kubectl exec -n smartops deployment/smartops-dashboard -- curl -X POST "http://localhost:8000/log_event" \
-                -H "Content-Type: application/json" \
-                -d '{"status": "started", "message": "Deployment started (internal)", "namespace": "smartops"}' \
-                --max-time 10 || echo "Internal logging failed"
-            else
-              echo "Dashboard pod not found yet, skipping event log (will be created during deployment)"
-            fi
-
-      # - name: Notify Telegram - Deployment Started
-      #   run: |
-      #     curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-      #       -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-      #       -d text="🚀 *Production deployment started in namespace `smartops`!*" \
-      #       -d parse_mode=Markdown
-
-      - name: Deploy to GKE
-        run: |
-          set -e  # Exit on any error
+          echo "🚀 Triggering ArgoCD sync for all applications..."
           
-          echo "Starting deployment to GKE..."
+          # Get ArgoCD server pod
+          ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o jsonpath='{.items[0].metadata.name}')
           
-          # Create namespace if it doesn't exist
-          kubectl get ns smartops || kubectl create ns smartops
-          echo "✅ Namespace ready"
-
-          # Deploy ConfigMap for dashboard configuration
-          kubectl apply -f smartops-ai/k8s/dashboard-config.yaml -n smartops
-          echo "✅ ConfigMap deployed"
-
-          # Deploy Main App
-          kubectl apply -f k8s/deployment.yaml -n smartops
-          kubectl apply -f k8s/service.yaml -n smartops
-          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops
-          echo "✅ Main app deployed"
-
-          # Deploy Anomaly Service
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops
-          kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n smartops
-          echo "✅ Anomaly service deployed"
-
-          # Deploy Dashboard Service
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n smartops
-          kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops
-          echo "✅ Dashboard deployed"
+          # Sync all SmartOps applications
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --prune
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --prune
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --prune
           
-          echo "🎉 All deployments completed successfully!"
+          echo "✅ ArgoCD sync triggered successfully!"
+          
+          # Wait for applications to be healthy
+          echo "⏳ Waiting for applications to be healthy..."
+          kubectl wait --for=condition=healthy --timeout=300s application/smartops-dashboard -n argocd
+          kubectl wait --for=condition=healthy --timeout=300s application/smartops-monitor -n argocd
+          kubectl wait --for=condition=healthy --timeout=300s application/smartops-anomaly -n argocd
+          
+          echo "🎉 All applications are healthy!"
 
       - name: Wait for Dashboard to be Ready
         if: success()
