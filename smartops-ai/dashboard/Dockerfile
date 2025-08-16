@@ -17,6 +17,13 @@ COPY dash_app.py .
 COPY event_api.py .
 COPY log_deployment_event.py .
 
+# Copy pages directory (Plotly-Dash modules)
+COPY pages/ ./pages/
+
+# Copy other necessary directories
+COPY src/ ./src/
+COPY public/ ./public/
+
 # Create data directory
 RUN mkdir -p /app/data
 
