@@ -370,25 +370,56 @@ jobs:
             fi
           done
 
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure Kubeconfig
+        run: |
+          gcloud container clusters get-credentials smartops-cluster \
+            --zone us-central1-a \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+          
+          # Verify connection
+          kubectl config current-context
+          kubectl get nodes
+
       - name: Deploy via ArgoCD
         run: |
           echo "🚀 Triggering ArgoCD sync for all applications..."
           
+          # Wait for ArgoCD to be ready
+          kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
+          
           # Get ArgoCD server pod
           ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o jsonpath='{.items[0].metadata.name}')
           
-          # Sync all SmartOps applications
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --prune
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --prune
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --prune
+          # Check if we got a valid pod name
+          if [ -z "$ARGOCD_POD" ]; then
+            echo "❌ Failed to get ArgoCD pod name"
+            exit 1
+          fi
+          
+          echo "📦 Using ArgoCD pod: $ARGOCD_POD"
+          
+          # Sync all SmartOps applications using kubectl exec
+          echo "🔄 Syncing smartops-dashboard..."
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --prune --timeout 300
+          
+          echo "🔄 Syncing smartops-monitor..."
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --prune --timeout 300
+          
+          echo "🔄 Syncing smartops-anomaly..."
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --prune --timeout 300
           
           echo "✅ ArgoCD sync triggered successfully!"
           
           # Wait for applications to be healthy
           echo "⏳ Waiting for applications to be healthy..."
-          kubectl wait --for=condition=healthy --timeout=300s application/smartops-dashboard -n argocd
-          kubectl wait --for=condition=healthy --timeout=300s application/smartops-monitor -n argocd
-          kubectl wait --for=condition=healthy --timeout=300s application/smartops-anomaly -n argocd
+          kubectl wait --for=condition=healthy --timeout=600s application/smartops-dashboard -n argocd
+          kubectl wait --for=condition=healthy --timeout=600s application/smartops-monitor -n argocd
+          kubectl wait --for=condition=healthy --timeout=600s application/smartops-anomaly -n argocd
           
           echo "🎉 All applications are healthy!"
 
