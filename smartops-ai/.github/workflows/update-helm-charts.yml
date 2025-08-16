@@ -1,0 +1,88 @@
+name: Update Helm Charts and Deploy
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'smartops-ai/**'
+      - 'app/**'
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  HELM_CHARTS_REPO: https://github.com/sachinfer/helm-charts.git
+  HELM_CHARTS_PATH: smartops
+
+jobs:
+  update-helm-charts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SmartOps repository
+        uses: actions/checkout@v4
+        with:
+          path: smartops
+          
+      - name: Checkout Helm Charts repository
+        uses: actions/checkout@v4
+        with:
+          repository: sachinfer/helm-charts
+          path: helm-charts
+          token: ${{ secrets.HELM_CHARTS_TOKEN }}
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          cd smartops
+          pip install pyyaml
+          
+      - name: Generate new image tags
+        id: generate-tags
+        run: |
+          cd smartops
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "anomaly-tag=v1.0.$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "dashboard-tag=v1.0.$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "monitor-tag=v1.0.$TIMESTAMP" >> $GITHUB_OUTPUT
+          
+      - name: Update Helm Charts values
+        run: |
+          cd smartops
+          python scripts/update-helm-charts.py \
+            --helm-repo ${{ env.HELM_CHARTS_REPO }} \
+            --helm-path ${{ env.HELM_CHARTS_PATH }} \
+            --git-user "SmartOps Bot" \
+            --git-email "bot@smartops.ai"
+            
+      - name: Commit and push to Helm Charts
+        run: |
+          cd helm-charts
+          git config user.name "SmartOps Bot"
+          git config user.email "bot@smartops.ai"
+          
+          # Update anomaly values
+          yq eval ".image.tag = \"${{ steps.generate-tags.outputs.anomaly-tag }}\"" \
+            -i smartops/anomaly/values.yaml
+          
+          # Update dashboard values  
+          yq eval ".image.tag = \"${{ steps.generate-tags.outputs.dashboard-tag }}\"" \
+            -i smartops/dashboard/values.yaml
+          
+          # Update monitor values
+          yq eval ".image.tag = \"${{ steps.generate-tags.outputs.monitor-tag }}\"" \
+            -i smartops/monitor/values.yaml
+          
+          git add .
+          git commit -m "🤖 Auto-update image tags: anomaly=${{ steps.generate-tags.outputs.anomaly-tag }}, dashboard=${{ steps.generate-tags.outputs.dashboard-tag }}, monitor=${{ steps.generate-tags.outputs.monitor-tag }}"
+          git push origin main
+          
+      - name: Notify ArgoCD sync
+        run: |
+          echo "🎯 Helm Charts updated successfully!"
+          echo "🔄 ArgoCD will automatically detect changes and deploy:"
+          echo "   - smartops-anomaly: ${{ steps.generate-tags.outputs.anomaly-tag }}"
+          echo "   - smartops-dashboard: ${{ steps.generate-tags.outputs.dashboard-tag }}"
+          echo "   - smartops-monitor: ${{ steps.generate-tags.outputs.monitor-tag }}"
