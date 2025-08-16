@@ -484,3 +484,5 @@ kubectl get service smartops-dashboard-service -n smartops
 
 ---
 
+#   T e s t i n g   p i p e l i n e   w i t h   H E L M _ C H A R T S _ T O K E N   -   0 8 / 1 6 / 2 0 2 5   2 2 : 2 6 : 3 8  
+ 
