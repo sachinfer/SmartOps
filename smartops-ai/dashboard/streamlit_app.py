@@ -150,7 +150,6 @@ st.markdown("""
 Click on any card below to navigate to the corresponding section, or use the sidebar for navigation:
 
 - **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
-- **📈 Analytics** - Resource usage analytics and trends
 - **🤖 AI Actions** - AI recommendations and action history
 - **🚀 Deployments** - Deployment workflow events and tracking
 - **🛰️ Pod Explorer & Logs** - Pod management and log viewing
@@ -173,9 +172,6 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("🔥 Anomaly Detection", key="anomaly", use_container_width=True, help="Click to go to Anomaly Detection page"):
         st.switch_page("pages/4_Anomaly_Detection.py")
-    
-    if st.button("📈 Analytics", key="analytics", use_container_width=True, help="Click to go to Analytics page"):
-        st.switch_page("pages/7_Analytics.py")
     
     if st.button("🤖 AI Actions", key="ai_actions", use_container_width=True, help="Click to go to AI Actions page"):
         st.switch_page("pages/8_AI_Actions.py")
@@ -208,11 +204,7 @@ st.markdown("""
         <div class="feature-title">Anomaly Detection</div>
         <div class="feature-desc">AI-powered anomaly detection with top anomalies by CPU usage and recent anomaly tracking.</div>
     </div>
-    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'analytics_click', value: true}, '*')">
-        <div class="feature-icon">📈</div>
-        <div class="feature-title">Analytics</div>
-        <div class="feature-desc">Resource usage analytics with interactive charts showing CPU and memory trends over time.</div>
-    </div>
+
     <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'ai_actions_click', value: true}, '*')">
         <div class="feature-icon">🤖</div>
         <div class="feature-title">AI Actions</div>
@@ -245,8 +237,7 @@ st.markdown("""
 if st.button("🔥 Anomaly Detection", key="anomaly_click", use_container_width=True):
     st.switch_page("pages/4_Anomaly_Detection.py")
 
-if st.button("📈 Analytics", key="analytics_click", use_container_width=True):
-    st.switch_page("pages/7_Analytics.py")
+
 
 if st.button("🤖 AI Actions", key="ai_actions_click", use_container_width=True):
     st.switch_page("pages/8_AI_Actions.py")
