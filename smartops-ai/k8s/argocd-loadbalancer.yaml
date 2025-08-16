@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server-loadbalancer
+  namespace: argocd
+  annotations:
+    service.beta.kubernetes.io/google-load-balancer-type: "External"
+    service.beta.kubernetes.io/google-load-balancer-network-tier: "Standard"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 8080
+      protocol: TCP
+      name: https
+  selector:
+    app.kubernetes.io/name: argocd-server
+  externalTrafficPolicy: Local

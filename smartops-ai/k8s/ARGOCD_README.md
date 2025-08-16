@@ -11,6 +11,31 @@ GitHub Repository → ArgoCD → Kubernetes Cluster
   Code Changes → Auto-Sync → Auto-Deploy
 ```
 
+## 🌐 LoadBalancer Configuration
+
+### **Why LoadBalancer Instead of Port-Forward?**
+
+- ✅ **Production Ready** - No need for local port forwarding
+- ✅ **External Access** - Accessible from anywhere on the internet
+- ✅ **Persistent** - IP remains stable across restarts
+- ✅ **Scalable** - Handles multiple concurrent users
+- ✅ **Professional** - Enterprise-grade access method
+
+### **LoadBalancer Service Details**
+
+The `argocd-loadbalancer.yaml` creates a Google Cloud Load Balancer that:
+- **Port 80** - HTTP access (redirects to HTTPS)
+- **Port 443** - HTTPS access (recommended)
+- **External Traffic Policy** - Local for better performance
+- **Google Cloud Integration** - Optimized for GKE
+
+### **Security Considerations**
+
+- 🔒 **HTTPS Recommended** - Use https://<EXTERNAL_IP> for secure access
+- 🔒 **Admin Password** - Change default password after first login
+- 🔒 **Network Policies** - Consider restricting access to specific IP ranges
+- 🔒 **RBAC** - Configure user roles and permissions as needed
+
 ## 📁 Files Structure
 
 ```
@@ -19,6 +44,8 @@ k8s/
 │   ├── smartops-dashboard-app.yaml # Dashboard Application
 │   ├── smartops-monitor-app.yaml   # Monitor Service Application
 │   └── smartops-anomaly-app.yaml  # Anomaly Detection Application
+├── argocd-loadbalancer.yaml        # LoadBalancer Service for UI Access
+├── argocd-namespace.yaml           # ArgoCD Namespace
 ├── install-argocd.sh              # ArgoCD Installation Script
 ├── deploy-argocd-apps.sh          # Deploy Applications Script
 └── ARGOCD_README.md               # This File
@@ -46,13 +73,17 @@ chmod +x deploy-argocd-apps.sh
 
 ### 3. Access ArgoCD UI
 ```bash
-# Port forward ArgoCD server
-kubectl port-forward svc/argocd-server -n argocd 8080:443
+# After installation, the script will show you the external IP
+# Access ArgoCD UI at: http://<EXTERNAL_IP> or https://<EXTERNAL_IP>
 
-# Open browser: http://localhost:8080
-# Username: admin
-# Password: (shown during installation)
+# To check the LoadBalancer status:
+kubectl get service argocd-server-loadbalancer -n argocd
+
+# To get the external IP manually:
+kubectl get service argocd-server-loadbalancer -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
+
+**Note:** The installation script automatically sets up a LoadBalancer service and displays the external IP for easy access.
 
 ## 🔧 Manual Installation
 
