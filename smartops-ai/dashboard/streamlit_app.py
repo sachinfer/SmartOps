@@ -121,29 +121,14 @@ st.markdown("""
 with st.sidebar:
     show_sidebar()
 
-# Main content area
+# Main content area - Simple and clean
 st.markdown("""
-## 🎯 Quick Navigation
+## 🎯 Quick Access
 
-Click on any card below to navigate to the corresponding section, or use the sidebar for navigation:
-
-- **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
-- **🤖 AI Actions** - AI recommendations and action history
-- **🚀 Deployments** - Deployment workflow events and tracking
-- **🛰️ Pod Explorer & Logs** - Pod management and log viewing
-- **🔍 Cluster Explorer** - Cluster resource exploration
-- **🖥️ Kubernetes Shell** - kubectl command interface
-
-Each page is designed to provide focused functionality for specific aspects of Kubernetes monitoring and management.
+Click on any card below to navigate to the corresponding section, or use the sidebar for navigation.
 """)
 
-# Feature cards with HTML styling for better visual appeal
-st.markdown("""
-<div class="navigation-section">
-    <h3 style="color: white; margin-bottom: 1rem;">📋 Feature Overview</h3>
-</div>
-""", unsafe_allow_html=True)
-
+# Feature cards with HTML styling
 st.markdown("""
 <div class="feature-grid">
     <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'anomaly_click', value: true}, '*')">
