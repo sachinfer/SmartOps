@@ -1,3 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: smartops-dashboard-sa
+  namespace: smartops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: smartops-dashboard-role
+  namespace: smartops
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: smartops-dashboard-rolebinding
+  namespace: smartops
+subjects:
+- kind: ServiceAccount
+  name: smartops-dashboard-sa
+  namespace: smartops
+roleRef:
+  kind: Role
+  name: smartops-dashboard-role
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,7 +54,7 @@ spec:
       serviceAccountName: smartops-dashboard-sa
       containers:
       - name: dashboard
-        image: gcr.io/smartops-project/smartops-dashboard:latest
+        image: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-dashboard:latest
         ports:
         - containerPort: 8501
         env:
@@ -34,11 +70,11 @@ spec:
               key: EVENT_API_ENDPOINT
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "128Mi"
+            cpu: "100m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "200m"
         volumeMounts:
         - name: dashboard-data
           mountPath: /app/data
@@ -57,7 +93,7 @@ spec:
       volumes:
       - name: dashboard-data
         persistentVolumeClaim:
-          claimName: smartops-dashboard-pvc
+          claimName: dashboard-data-pvc
 ---
 apiVersion: v1
 kind: Service
