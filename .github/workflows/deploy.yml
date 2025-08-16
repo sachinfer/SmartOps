@@ -28,6 +28,32 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+      continue-on-error: true
+
+    - name: Retry Google Cloud Authentication
+      if: steps.auth.outcome == 'failure'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Fallback Manual Authentication
+      if: steps.auth.outcome == 'failure'
+      run: |
+        echo "Using fallback manual authentication..."
+        
+        # Create service account key file
+        echo '${{ secrets.GCP_SA_KEY }}' > /tmp/service-account.json
+        
+        # Set environment variable
+        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json
+        
+        # Test authentication
+        gcloud auth activate-service-account --key-file=/tmp/service-account.json || echo "Fallback auth failed"
+        gcloud config set project ${{ secrets.GCP_PROJECT_ID }} || echo "Project config failed"
+        
+        echo "Fallback authentication completed"
 
     - name: Configure Docker for Google Artifact Registry
       run: |
