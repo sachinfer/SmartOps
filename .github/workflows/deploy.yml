@@ -184,8 +184,8 @@ jobs:
       - name: Build & Push Anomaly Image
         uses: docker/build-push-action@v5
         with:
-          context: ./smartops-ai/app
-          file: ./smartops-ai/app/Dockerfile
+          context: ./smartops-ai
+          file: ./smartops-ai/Dockerfile
           push: false
           tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
           platforms: linux/amd64
