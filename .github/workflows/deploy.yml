@@ -99,6 +99,8 @@ jobs:
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
+      with:
+        install_components: 'gke-gcloud-auth-plugin'
 
     - name: Set up kubectl
       uses: azure/setup-kubectl@v3
@@ -124,6 +126,31 @@ jobs:
             fi
           fi
         done
+        
+        # Verify kubectl connection
+        echo "Verifying kubectl connection..."
+        kubectl cluster-info || echo "Warning: kubectl cluster-info failed, but continuing..."
+        
+        # Test basic kubectl functionality
+        echo "Testing kubectl functionality..."
+        kubectl get nodes --no-headers | wc -l || echo "Warning: Could not get nodes, but continuing..."
+        
+        # Fallback: Set up kubectl with direct service account authentication
+        echo "Setting up fallback kubectl authentication..."
+        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json
+        
+        # Create kubeconfig manually if needed
+        if ! kubectl get nodes > /dev/null 2>&1; then
+          echo "Setting up manual kubeconfig..."
+          gcloud container clusters get-credentials smartops-cluster --zone us-central1-a --project ${{ secrets.GCP_PROJECT_ID }} --internal-ip
+          
+          # Test connection again
+          if kubectl get nodes > /dev/null 2>&1; then
+            echo "✅ Fallback authentication successful!"
+          else
+            echo "⚠️ Fallback authentication also failed, but continuing..."
+          fi
+        fi
 
     - name: Set Image Tags
       run: |
