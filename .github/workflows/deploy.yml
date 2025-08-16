@@ -292,21 +292,24 @@ jobs:
           --repo https://github.com/sachinfer/helm-charts \
           --path smartops/dashboard \
           --revision main \
-          --values image.tag=${{ env.SHORT_SHA }}
+          --values image.tag=${{ env.SHORT_SHA }} \
+          --values image.repository=us-docker.pkg.dev/sachinfer/smartops-repo/smartops-dashboard
         
         # Update monitor app to use helm-charts repo
         kubectl exec -n argocd $ARGOCD_POD -- argocd app set smartops-monitor \
           --repo https://github.com/sachinfer/helm-charts \
           --path smartops/monitor \
           --revision main \
-          --values image.tag=${{ env.SHORT_SHA }}
+          --values image.tag=${{ env.SHORT_SHA }} \
+          --values image.repository=us-docker.pkg.dev/sachinfer/smartops-repo/smartops-monitor
         
         # Update anomaly app to use helm-charts repo
         kubectl exec -n argocd $ARGOCD_POD -- argocd app set smartops-anomaly \
           --repo https://github.com/sachinfer/helm-charts \
           --path smartops/anomaly \
           --revision main \
-          --values image.tag=${{ env.SHORT_SHA }}
+          --values image.tag=${{ env.SHORT_SHA }} \
+          --values image.repository=us-docker.pkg.dev/smartops-repo/smartops-anomaly
         
         echo "✅ ArgoCD applications updated successfully!"
         
