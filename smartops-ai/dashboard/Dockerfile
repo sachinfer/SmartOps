@@ -20,8 +20,10 @@ COPY log_deployment_event.py .
 # Create data directory
 RUN mkdir -p /app/data
 
-# Copy data files if they exist
-COPY data/ ./data/
+# Create data directory (data files will be mounted at runtime)
+RUN mkdir -p /app/data
+# Ensure data directory has proper permissions
+RUN chmod 755 /app/data
 
 # Expose port
 EXPOSE 8501
