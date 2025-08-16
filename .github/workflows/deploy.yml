@@ -10,8 +10,6 @@ on:
 env:
   REGISTRY: us-docker.pkg.dev
   IMAGE_NAME: smartops-repo
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 
 jobs:
   build-and-push:
@@ -35,7 +33,7 @@ jobs:
           exit 1
         fi
         echo "✅ All required secrets are available"
-        echo "Project ID: ${{ secrets.GCP_PROJECT_ID }}"
+        echo "Project ID: [HIDDEN]"
         echo "Service Account Key: [HIDDEN]"
 
     - name: Set up Docker Buildx
