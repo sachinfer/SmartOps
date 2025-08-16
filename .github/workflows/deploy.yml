@@ -274,11 +274,29 @@ jobs:
           kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
           
           # Get ArgoCD server pod
-          ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o jsonpath='{.items[0].metadata.name}')
+          echo "🔍 Looking for ArgoCD server pods..."
+          kubectl get pods -n argocd -o wide
+          
+          # Try multiple selectors to find the ArgoCD server pod
+          ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+          
+          if [ -z "$ARGOCD_POD" ]; then
+            echo "🔄 Trying alternative selector..."
+            ARGOCD_POD=$(kubectl get pods -n argocd -l app.kubernetes.io/component=server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+          fi
+          
+          if [ -z "$ARGOCD_POD" ]; then
+            echo "🔄 Trying to get any ArgoCD pod..."
+            ARGOCD_POD=$(kubectl get pods -n argocd --no-headers -o custom-columns=":metadata.name" | grep argocd | head -1)
+          fi
           
           # Check if we got a valid pod name
           if [ -z "$ARGOCD_POD" ]; then
             echo "❌ Failed to get ArgoCD pod name"
+            echo "🔍 Available pods in argocd namespace:"
+            kubectl get pods -n argocd
+            echo "🔍 ArgoCD services:"
+            kubectl get svc -n argocd
             exit 1
           fi
           
