@@ -394,8 +394,8 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 ## 🛠️ Recent Improvements & Fixes
 
 ### Dashboard UI Improvements
-- **Migrated to Plotly-Dash** - Replaced Streamlit with modern Plotly-Dash framework
-- **Bootstrap integration** - Added responsive Bootstrap components for better UI/UX
+- **Plotly-Dash Framework** - Modern Plotly-Dash framework with Bootstrap components
+- **Bootstrap integration** - Responsive Bootstrap components for better UI/UX
 - **Modular architecture** - Separated page components for better maintainability
 - **Interactive charts** - Enhanced data visualization with Plotly charts and graphs
 - **Sidebar navigation** - Improved navigation with active state indicators
@@ -421,59 +421,47 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 - You have real-time anomaly detection and analytics, with a modern Plotly-Dash dashboard.
 - The project is in a stable, production-ready state with robust failure handling.
 - All services communicate reliably using Kubernetes service discovery.
-- **New:** Migrated from Streamlit to Plotly-Dash for enhanced performance and interactivity.
+- **Dashboard:** Built with Plotly-Dash for enhanced performance and interactivity.
 
 ---
 
-## 🚀 Migration to Plotly-Dash
+## 🚀 Plotly-Dash Dashboard
 
-SmartOps has been successfully migrated from Streamlit to Plotly-Dash, providing enhanced performance, better interactivity, and a more modern user interface.
+SmartOps now uses Plotly-Dash as the primary dashboard framework, providing enhanced performance, better interactivity, and a modern user interface.
 
-### Migration Benefits
+### Dashboard Features
 - **Better Performance:** Dash applications are generally faster and more responsive
 - **Interactive Charts:** Enhanced data visualization with Plotly's interactive charts
 - **Responsive Design:** Bootstrap integration for better mobile and desktop experience
 - **Modular Architecture:** Separated page components for easier maintenance
 - **Real-time Updates:** Better support for real-time data updates and live dashboards
 
-### Migration Files
+### Dashboard Files
 - `dash_app.py` - Main Dash application
-- `requirements_dash.txt` - Dash-specific dependencies
-- `Dockerfile.dash` - Docker configuration for Dash
+- `requirements.txt` - Dashboard dependencies
+- `Dockerfile` - Docker configuration
 - `pages/overview.py` - Overview page module
-- `migrate_to_dash.py` - Migration helper script
 
-### Running the New Dashboard
+### Running the Dashboard
 ```bash
-# Install Dash dependencies
-pip install -r requirements_dash.txt
+# Install dependencies
+pip install -r requirements.txt
 
 # Run the Dash application
 python dash_app.py
 
 # Or use Docker
-docker build -f Dockerfile.dash -t smartops-dashboard-dash .
-docker run -p 8501:8501 smartops-dashboard-dash
+docker build -t smartops-dashboard .
+docker run -p 8501:8501 smartops-dashboard
 ```
 
 ### Kubernetes Deployment
-The Dash dashboard is deployed alongside the existing Streamlit dashboard:
 ```bash
-# Deploy Dash dashboard
-kubectl apply -f k8s/smartops-dashboard-dash-deployment.yaml
+# Deploy dashboard
+kubectl apply -f k8s/smartops-dashboard-deployment.yaml
 
 # Get service URL
-kubectl get service smartops-dashboard-dash-service -n smartops
-```
-
-### Rollback
-If you need to rollback to Streamlit:
-```bash
-# Restore from backup
-cp -r streamlit_backup/* .
-
-# Reinstall Streamlit dependencies
-pip install -r requirements.txt
+kubectl get service smartops-dashboard-service -n smartops
 ```
 
 ---
@@ -489,7 +477,7 @@ pip install -r requirements.txt
 - [x] RBAC and service accounts for secure metrics access
 - [x] All dependencies included in Docker images
 - [x] Hotfix and redeploy steps automated
-- [x] **Dashboard migrated to Plotly-Dash with Bootstrap**
+- [x] **Dashboard built with Plotly-Dash and Bootstrap**
 - [x] **Pipeline failure handling improved**
 - [x] **Service communication made more robust**
 - [x] **Modular page architecture implemented**

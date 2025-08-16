@@ -17,6 +17,7 @@ import base64
 
 # Import page modules
 from pages.overview import create_overview_page
+from pages.anomaly_detection import create_anomaly_detection_page
 
 # Initialize Dash app with Bootstrap theme
 app = dash.Dash(
@@ -378,19 +379,7 @@ def create_home_page():
         create_feature_cards()
     ], fluid=True)
 
-def create_anomaly_detection_page():
-    """Create the anomaly detection page"""
-    return dbc.Container([
-        html.H2("🔥 Anomaly Detection", className="mb-4"),
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader("Recent Anomalies"),
-                    dbc.CardBody(id="anomalies-table")
-                ])
-            ])
-        ])
-    ], fluid=True)
+
 
 def create_ai_actions_page():
     """Create the AI actions page"""
