@@ -218,13 +218,16 @@ def create_pod_explorer_page():
                     html.H3("📊 Pod Status Distribution", className="mb-4"),
                     dcc.Graph(figure=status_fig, config={'displayModeBar': False})
                 ], className="chart-container")
-            ], width=6),
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
+        
+        dbc.Row([
             dbc.Col([
                 html.Div([
                     html.H3("🏗️ Pods by Namespace", className="mb-4"),
                     dcc.Graph(figure=namespace_fig, config={'displayModeBar': False})
                 ], className="chart-container")
-            ], width=6)
+            ], width=12, className="mb-4")
         ], className="mb-5 fade-in-up"),
         
         # Pod Management Controls

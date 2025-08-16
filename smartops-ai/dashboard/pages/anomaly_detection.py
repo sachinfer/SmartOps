@@ -44,6 +44,51 @@ def create_anomaly_detection_page():
         }
     ]
     
+    # Create a timeline figure
+    timeline_fig = go.Figure([
+        go.Scatter(
+            x=[anomaly['timestamp'] for anomaly in anomalies_data],
+            y=[anomaly['anomaly_score'] for anomaly in anomalies_data],
+            mode='lines+markers',
+            name='Anomaly Score',
+            line=dict(color='red', width=2),
+            marker=dict(size=8)
+        )
+    ]).update_layout(
+        xaxis_title="Time",
+        yaxis_title="Anomaly Score",
+        height=400
+    )
+
+    # Create a table for recent anomalies
+    anomalies_table = dbc.Table([
+        html.Thead([
+            html.Tr([
+                html.Th("Timestamp"),
+                html.Th("Pod Name"),
+                html.Th("CPU (%)"),
+                html.Th("Memory (%)"),
+                html.Th("Anomaly Score"),
+                html.Th("Status")
+            ])
+        ]),
+        html.Tbody([
+            html.Tr([
+                html.Td(anomaly['timestamp']),
+                html.Td(anomaly['pod_name']),
+                html.Td(f"{anomaly['cpu_usage']:.1f}"),
+                html.Td(f"{anomaly['memory_usage']:.1f}"),
+                html.Td(f"{anomaly['anomaly_score']:.2f}"),
+                html.Td(
+                    dbc.Badge(
+                        anomaly['status'],
+                        color="danger" if anomaly['anomaly_score'] > 0.8 else "warning"
+                    )
+                )
+            ]) for anomaly in anomalies_data
+        ])
+    ], striped=True, bordered=True, hover=True)
+
     return dbc.Container([
         # Page Header
         dbc.Row([
@@ -89,70 +134,24 @@ def create_anomaly_detection_page():
             ], width=3)
         ], className="mb-4"),
         
-        # Anomaly Chart
+        # Charts Row
         dbc.Row([
             dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader("Anomaly Score Timeline"),
-                    dbc.CardBody([
-                        dcc.Graph(
-                            figure=go.Figure([
-                                go.Scatter(
-                                    x=[anomaly['timestamp'] for anomaly in anomalies_data],
-                                    y=[anomaly['anomaly_score'] for anomaly in anomalies_data],
-                                    mode='lines+markers',
-                                    name='Anomaly Score',
-                                    line=dict(color='red', width=2),
-                                    marker=dict(size=8)
-                                )
-                            ]).update_layout(
-                                xaxis_title="Time",
-                                yaxis_title="Anomaly Score",
-                                height=400
-                            )
-                        )
-                    ])
-                ])
-            ])
-        ], className="mb-4"),
+                html.Div([
+                    html.H3("📊 Anomaly Score Timeline", className="mb-4"),
+                    dcc.Graph(figure=timeline_fig, config={'displayModeBar': False})
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
         
-        # Recent Anomalies Table
         dbc.Row([
             dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader("Recent Anomalies"),
-                    dbc.CardBody([
-                        dbc.Table([
-                            html.Thead([
-                                html.Tr([
-                                    html.Th("Timestamp"),
-                                    html.Th("Pod Name"),
-                                    html.Th("CPU (%)"),
-                                    html.Th("Memory (%)"),
-                                    html.Th("Anomaly Score"),
-                                    html.Th("Status")
-                                ])
-                            ]),
-                            html.Tbody([
-                                html.Tr([
-                                    html.Td(anomaly['timestamp']),
-                                    html.Td(anomaly['pod_name']),
-                                    html.Td(f"{anomaly['cpu_usage']:.1f}"),
-                                    html.Td(f"{anomaly['memory_usage']:.1f}"),
-                                    html.Td(f"{anomaly['anomaly_score']:.2f}"),
-                                    html.Td(
-                                        dbc.Badge(
-                                            anomaly['status'],
-                                            color="danger" if anomaly['anomaly_score'] > 0.8 else "warning"
-                                        )
-                                    )
-                                ]) for anomaly in anomalies_data
-                            ])
-                        ], striped=True, bordered=True, hover=True)
-                    ])
-                ])
-            ])
-        ], className="mb-4"),
+                html.Div([
+                    html.H3("🔍 Recent Anomalies", className="mb-4"),
+                    anomalies_table
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
         
         # Actions
         dbc.Row([

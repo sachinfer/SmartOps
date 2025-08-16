@@ -81,7 +81,7 @@ app.index_string = '''
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
                 padding: 4rem 3rem;
                 border-radius: 30px;
-                margin: 2rem;
+                margin: 2rem 0;
                 text-align: center;
                 color: white;
                 box-shadow: 
@@ -90,6 +90,7 @@ app.index_string = '''
                 position: relative;
                 overflow: hidden;
                 backdrop-filter: blur(20px);
+                width: 100%;
             }
             
             .main-header::before {
@@ -155,6 +156,11 @@ app.index_string = '''
                 position: relative;
                 overflow: hidden;
                 cursor: pointer;
+                height: 100%;
+                min-height: 200px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }
             
             .metric-card:hover {
@@ -217,44 +223,49 @@ app.index_string = '''
             
             /* Chart Containers */
             .chart-container {
-                background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+                background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
                 backdrop-filter: blur(25px);
-                border: 1px solid rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.2);
                 padding: 2.5rem;
                 border-radius: 25px;
+                color: white;
                 box-shadow: 
                     0 15px 50px rgba(0,0,0,0.4),
                     0 0 0 1px rgba(255,255,255,0.1);
-                margin: 2rem;
-                transition: all 0.4s ease;
-                position: relative;
-                overflow: hidden;
+                margin-bottom: 2rem;
+                width: 100%;
+                min-height: 400px;
             }
             
-            .chart-container::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 3px;
-                background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
-                opacity: 0;
-                transition: opacity 0.3s ease;
+            /* Ensure full width for all columns */
+            .row {
+                width: 100%;
+                margin-left: 0;
+                margin-right: 0;
             }
             
-            .chart-container:hover {
-                border-color: rgba(102, 126, 234, 0.5);
-                box-shadow: 
-                    0 25px 80px rgba(0,0,0,0.5),
-                    0 0 0 2px rgba(102, 126, 234, 0.3);
-                transform: translateY(-5px);
+            .col, .col-12 {
+                padding-left: 0;
+                padding-right: 0;
             }
             
-            .chart-container:hover::before {
-                opacity: 1;
+            /* Animations */
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(40px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
             
+            .fade-in-up {
+                animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            /* Chart container enhancements */
             .chart-container h3 {
                 font-size: 1.8rem;
                 font-weight: 700;
@@ -276,29 +287,65 @@ app.index_string = '''
                 border-radius: 2px;
             }
             
+            /* Responsive adjustments */
+            @media (max-width: 1200px) {
+                .content-area {
+                    margin-left: 250px;
+                    width: calc(100vw - 250px);
+                    padding: 2rem;
+                }
+            }
+            
+            @media (max-width: 768px) {
+                .sidebar {
+                    width: 100%;
+                    height: auto;
+                    position: relative;
+                }
+                .content-area {
+                    margin-left: 0;
+                    width: 100vw;
+                    padding: 1.5rem;
+                }
+                .main-header h1 {
+                    font-size: 2.5rem;
+                }
+                .metric-card h3 {
+                    font-size: 2.5rem;
+                }
+                .chart-container {
+                    padding: 1.5rem;
+                    margin-bottom: 1.5rem;
+                }
+            }
+            
             /* Feature Grid */
             .feature-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-                gap: 2.5rem;
-                margin: 3rem;
-                padding: 0 1rem;
+                margin: 2rem 0;
+                width: 100%;
             }
             
             .feature-card {
-                background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+                background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
                 backdrop-filter: blur(25px);
-                border: 1px solid rgba(255,255,255,0.15);
-                padding: 2.5rem;
+                border: 1px solid rgba(255,255,255,0.2);
+                padding: 2.5rem 2rem;
                 border-radius: 25px;
+                color: white;
+                text-align: center;
                 box-shadow: 
                     0 15px 50px rgba(0,0,0,0.4),
                     0 0 0 1px rgba(255,255,255,0.1);
+                margin: 1rem;
                 transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                cursor: pointer;
                 position: relative;
                 overflow: hidden;
-                text-align: center;
+                cursor: pointer;
+                height: 100%;
+                min-height: 300px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }
             
             .feature-card:hover {
@@ -411,29 +458,6 @@ app.index_string = '''
                 left: 100%;
             }
             
-            /* Content Area */
-            .content-area {
-                margin-left: 300px;
-                padding: 2.5rem;
-                min-height: 100vh;
-            }
-            
-            /* Animations */
-            @keyframes fadeInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(40px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            
-            .fade-in-up {
-                animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            
             /* Tables */
             .table {
                 background: rgba(255,255,255,0.05);
@@ -489,24 +513,6 @@ app.index_string = '''
             
             .btn:hover::before {
                 left: 100%;
-            }
-            
-            /* Responsive */
-            @media (max-width: 768px) {
-                .sidebar {
-                    width: 100%;
-                    height: auto;
-                    position: relative;
-                }
-                .content-area {
-                    margin-left: 0;
-                }
-                .main-header h1 {
-                    font-size: 2.5rem;
-                }
-                .metric-card h3 {
-                    font-size: 2.5rem;
-                }
             }
             
             /* Scrollbar */
@@ -696,7 +702,7 @@ def create_feature_cards():
                     dbc.Button("Go to " + card['title'], href=card['href'], color="primary", className="mt-2")
                 ])
             ], className="feature-card clickable-card h-100")
-        ], width=6, lg=4) for card in cards
+        ], width=12, lg=6, xl=4, className="mb-4") for card in cards
     ], className="feature-grid")
 
 # Main layout
@@ -749,15 +755,22 @@ def display_page(pathname):
 
 def create_home_page():
     """Create the home page with feature cards"""
-    return dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                html.H2("🎯 Quick Access", className="mb-4"),
-                html.P("Click on any card below to navigate to the corresponding section, or use the sidebar for navigation.", className="mb-4")
-            ])
-        ]),
-        create_feature_cards()
-    ], fluid=True)
+    return html.Div([
+        # Header
+        html.Div([
+            html.H1("🚀 SmartOps AI Dashboard", className="text-center mb-4"),
+            html.P("AI-Driven DevOps Automation & Monitoring Platform", 
+                   className="text-center text-muted mb-5")
+        ], className="main-header fade-in-up"),
+        
+        # Feature Cards
+        html.Div([
+            html.H2("🎯 Quick Access", className="text-center mb-5"),
+            html.P("Click on any card below to navigate to the corresponding section, or use the sidebar for navigation.", 
+                   className="text-center text-muted mb-5"),
+            create_feature_cards()
+        ], className="fade-in-up")
+    ])
 
 
 

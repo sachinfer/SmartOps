@@ -135,49 +135,59 @@ def create_ai_actions_page():
             ])
         ], className="mb-5 fade-in-up"),
         
-        # AI Performance Chart
-        html.Div([
-            html.H3("📊 AI Performance Metrics", className="mb-4"),
-            dcc.Graph(figure=performance_fig, config={'displayModeBar': False})
-        ], className="chart-container fade-in-up"),
+        # Charts Row
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("📊 AI Performance Metrics", className="mb-4"),
+                    dcc.Graph(figure=performance_fig, config={'displayModeBar': False})
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
         
-        # AI Actions Table
-        html.Div([
-            html.H3("🎯 Recent AI Actions", className="mb-4"),
-            actions_table
-        ], className="chart-container fade-in-up"),
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("🤖 AI Actions Table", className="mb-4"),
+                    actions_table
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
         
-        # AI Control Panel
-        html.Div([
-            html.H3("🎮 AI Control Panel", className="mb-4"),
-            dbc.Row([
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H5("Auto-scaling", className="card-title"),
-                            html.P("Enable intelligent resource scaling", className="card-text"),
-                            dbc.Switch(id="auto-scaling-switch", label="Enabled", value=True, className="mt-3")
-                        ])
-                    ], className="bg-dark text-white border-primary")
-                ], width=4),
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H5("Security AI", className="card-title"),
-                            html.P("AI-powered threat detection", className="card-text"),
-                            dbc.Switch(id="security-ai-switch", label="Enabled", value=True, className="mt-3")
-                        ])
-                    ], className="bg-dark text-white border-success")
-                ], width=4),
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H5("Performance AI", className="card-title"),
-                            html.P("Automatic optimization", className="card-text"),
-                            dbc.Switch(id="performance-ai-switch", label="Enabled", value=False, className="mt-3")
-                        ])
-                    ], className="bg-dark text-white border-warning")
-                ], width=4)
-            ])
-        ], className="chart-container fade-in-up")
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("🎮 AI Control Panel", className="mb-4"),
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Card([
+                                dbc.CardBody([
+                                    html.H5("Auto-scaling", className="card-title"),
+                                    html.P("Enable intelligent resource scaling", className="card-text"),
+                                    dbc.Switch(id="auto-scaling-switch", label="Enabled", value=True, className="mt-3")
+                                ])
+                            ], className="bg-dark text-white border-primary")
+                        ], width=4),
+                        dbc.Col([
+                            dbc.Card([
+                                dbc.CardBody([
+                                    html.H5("Security AI", className="card-title"),
+                                    html.P("AI-powered threat detection", className="card-text"),
+                                    dbc.Switch(id="security-ai-switch", label="Enabled", value=True, className="mt-3")
+                                ])
+                            ], className="bg-dark text-white border-success")
+                        ], width=4),
+                        dbc.Col([
+                            dbc.Card([
+                                dbc.CardBody([
+                                    html.H5("Performance AI", className="card-title"),
+                                    html.P("Automatic optimization", className="card-text"),
+                                    dbc.Switch(id="performance-ai-switch", label="Enabled", value=False, className="mt-3")
+                                ])
+                            ], className="bg-dark text-white border-warning")
+                        ], width=4)
+                    ])
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up")
     ])

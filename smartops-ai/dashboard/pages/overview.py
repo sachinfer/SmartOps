@@ -137,72 +137,33 @@ def create_overview_page():
             ])
         ], className="mb-4"),
         
-        # Resource Usage Overview
+        # Charts Row
         dbc.Row([
             dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader("Resource Usage Overview"),
-                    dbc.CardBody([
-                        dbc.Row([
-                            dbc.Col([
-                                # CPU Gauge
-                                dcc.Graph(
-                                    figure=go.Figure(go.Indicator(
-                                        mode="gauge+number+delta",
-                                        value=cpu_usage,
-                                        domain={'x': [0, 1], 'y': [0, 1]},
-                                        title={'text': "CPU Usage (%)"},
-                                        delta={'reference': 50},
-                                        gauge={
-                                            'axis': {'range': [None, 100]},
-                                            'bar': {'color': "darkblue"},
-                                            'steps': [
-                                                {'range': [0, 50], 'color': "lightgray"},
-                                                {'range': [50, 80], 'color': "yellow"},
-                                                {'range': [80, 100], 'color': "red"}
-                                            ],
-                                            'threshold': {
-                                                'line': {'color': "red", 'width': 4},
-                                                'thickness': 0.75,
-                                                'value': 90
-                                            }
-                                        }
-                                    )),
-                                    config={'displayModeBar': False}
-                                )
-                            ], width=6),
-                            dbc.Col([
-                                # Memory Gauge
-                                dcc.Graph(
-                                    figure=go.Figure(go.Indicator(
-                                        mode="gauge+number+delta",
-                                        value=memory_usage,
-                                        domain={'x': [0, 1], 'y': [0, 1]},
-                                        title={'text': "Memory Usage (%)"},
-                                        delta={'reference': 60},
-                                        gauge={
-                                            'axis': {'range': [None, 100]},
-                                            'bar': {'color': "darkblue"},
-                                            'steps': [
-                                                {'range': [0, 60], 'color': "lightgray"},
-                                                {'range': [60, 85], 'color': "yellow"},
-                                                {'range': [85, 100], 'color': "red"}
-                                            ],
-                                            'threshold': {
-                                                'line': {'color': "red", 'width': 4},
-                                                'thickness': 0.75,
-                                                'value': 90
-                                            }
-                                        }
-                                    )),
-                                    config={'displayModeBar': False}
-                                )
-                            ], width=6)
-                        ])
-                    ])
-                ])
-            ])
-        ], className="mb-4"),
+                html.Div([
+                    html.H3("📊 Cluster Health Overview", className="mb-4"),
+                    dcc.Graph(figure=health_fig, config={'displayModeBar': False})
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
+        
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("🏗️ Resource Usage Trends", className="mb-4"),
+                    dcc.Graph(figure=resource_fig, config={'displayModeBar': False})
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
+        
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("📈 Node Performance", className="mb-4"),
+                    dcc.Graph(figure=node_fig, config={'displayModeBar': False})
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
         
         # Node Health Status
         dbc.Row([

@@ -167,55 +167,36 @@ def create_deployments_page():
         dbc.Row([
             dbc.Col([
                 html.Div([
-                    html.H3("📈 Deployment Timeline", className="mb-4"),
+                    html.H3("📊 Deployment Timeline", className="mb-4"),
                     dcc.Graph(figure=timeline_fig, config={'displayModeBar': False})
                 ], className="chart-container")
-            ], width=8),
-            dbc.Col([
-                html.Div([
-                    html.H3("🥧 Status Distribution", className="mb-4"),
-                    dcc.Graph(figure=pie_fig, config={'displayModeBar': False})
-                ], className="chart-container")
-            ], width=4)
+            ], width=12, className="mb-4")
         ], className="mb-5 fade-in-up"),
         
-        # Deployments Table
-        html.Div([
-            html.H3("📋 Recent Deployments", className="mb-4"),
-            deployments_table
-        ], className="chart-container fade-in-up"),
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("🥧 Deployment Status Distribution", className="mb-4"),
+                    dcc.Graph(figure=pie_fig, config={'displayModeBar': False})
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
         
-        # Deployment Controls
-        html.Div([
-            html.H3("🎮 Deployment Controls", className="mb-4"),
-            dbc.Row([
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H5("🚀 New Deployment", className="card-title"),
-                            html.P("Deploy a new version", className="card-text"),
-                            dbc.Button("Start Deployment", color="primary", className="mt-3")
-                        ])
-                    ], className="bg-dark text-white border-primary")
-                ], width=4),
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H5("🔄 Rollback", className="card-title"),
-                            html.P("Rollback to previous version", className="card-text"),
-                            dbc.Button("Rollback", color="warning", className="mt-3")
-                        ])
-                    ], className="bg-dark text-white border-warning")
-                ], width=4),
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H5("⚙️ Settings", className="card-title"),
-                            html.P("Configure deployment settings", className="card-text"),
-                            dbc.Button("Configure", color="info", className="mt-3")
-                        ])
-                    ], className="bg-dark text-white border-info")
-                ], width=4)
-            ])
-        ], className="chart-container fade-in-up")
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("📋 Deployments Table", className="mb-4"),
+                    deployments_table
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
+        
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.H3("🎮 Deployment Controls", className="mb-4"),
+                    deployment_controls
+                ], className="chart-container")
+            ], width=12, className="mb-4")
+        ], className="mb-5 fade-in-up"),
     ])
