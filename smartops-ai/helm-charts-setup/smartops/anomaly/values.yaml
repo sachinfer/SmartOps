@@ -1,0 +1,37 @@
+# Default values for smartops-anomaly
+image:
+  repository: us-docker.pkg.dev/sachinfer/smartops-repo/smartops-anomaly
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+model:
+  enabled: true
+  mountPath: /app/model
+  pvcName: smartops-anomaly-model
+
+replicaCount: 1
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: smartops-monitor
+description: SmartOps Monitoring Service
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - smartops
+  - monitor
+  - metrics
+  - monitoring
+home: https://github.com/sachinfer/SmartOps
+sources:
+  - https://github.com/sachinfer/SmartOps
+maintainers:
+  - name: SmartOps Team
+    email: team@smartops.ai

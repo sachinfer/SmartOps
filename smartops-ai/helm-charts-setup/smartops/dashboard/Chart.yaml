@@ -1,0 +1,17 @@
+apiVersion: v2
+name: smartops-dashboard
+description: SmartOps Dashboard Web Application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - smartops
+  - dashboard
+  - web
+  - ui
+home: https://github.com/sachinfer/SmartOps
+sources:
+  - https://github.com/sachinfer/SmartOps
+maintainers:
+  - name: SmartOps Team
+    email: team@smartops.ai
