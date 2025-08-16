@@ -1,5 +1,5 @@
-# SmartOps
-“SmartOps: AI-Driven DevOps Automation & Monitoring Platform”
+# 🚀 SmartOps
+**"SmartOps: AI-Driven DevOps Automation & Monitoring Platform"**
 
 ---
 
@@ -18,12 +18,13 @@
 1. **Main Application (`smartops-app`)**: The core workload being monitored.
 2. **Anomaly Detection Service (`smartops-anomaly`)**: Uses the sidecar pattern—one container runs the FastAPI prediction API, and a second container runs the anomaly loop, calling the API via localhost.
 3. **Dashboard (`smartops-dashboard`)**: Streamlit UI for real-time and historical analytics, connects to SQLite in test/dev.
-    - **User-friendly interface:** Color-coded banners, plain English advice, and actionable recommendations.
+    - **Clean, modern interface:** Beautiful feature cards with hover effects and smooth animations.
+    - **User-friendly navigation:** Clickable cards for easy access to all features.
     - **Namespace selection:** Dropdown to filter predictions and analytics by namespace (e.g., all, smartops, test).
     - **ML-based actions:** Recommended actions are generated based on actual resource usage and anomaly type.
     - **Recent predictions table:** Shows the latest predictions and recommended actions for each event.
     - **System summary:** Plain English summary of recent anomaly counts and system health.
-4. **CI/CD Pipeline**: GitHub Actions for automated build, push, and deploy to GKE.
+4. **CI/CD Pipeline**: GitHub Actions for automated build, push, and deploy to GKE with robust failure handling.
 5. **Kubernetes Manifests**: YAMLs for all deployments/services, using LoadBalancer for external access.
 
 ---
@@ -40,14 +41,67 @@ The anomaly detection service is deployed as a multi-container pod:
 ## 📊 Current Project Status
 
 - Main app and anomaly service are deployed and running in GKE.
-- Dashboard is deployed and exposed via LoadBalancer.
-- All services are built and deployed automatically via GitHub Actions.
+- Dashboard is deployed and exposed via LoadBalancer with a clean, modern interface.
+- All services are built and deployed automatically via GitHub Actions with improved failure handling.
 - Anomaly detection is live, logging to both SQLite and MongoDB Atlas.
 - Dashboard visualizes live and historical anomaly data from SQLite (and MongoDB if configured).
 - Dashboard now supports namespace selection and user-friendly, actionable advice for non-technical users.
 - RBAC and service accounts are configured for secure metrics access.
 - All dependencies are now correctly included in Docker images.
 - Pods are healthy after the last dependency fix.
+- **Pipeline failure notifications** are now working correctly with dashboard integration.
+
+---
+
+## 🎨 Dashboard Features
+
+### Clean, Modern Interface
+- **Beautiful feature cards** with hover effects and smooth animations
+- **Clickable navigation** - Click any card to navigate to the corresponding page
+- **Responsive design** that works on all screen sizes
+- **No duplication** - Clean, single-purpose interface
+
+### Available Pages
+1. **🏠 Overview** - Cluster health status and resource usage overview
+2. **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
+3. **🤖 AI Actions** - AI recommendations and action history
+4. **🚀 Deployments** - Deployment workflow events and tracking
+5. **🛰️ Pod Explorer & Logs** - Pod management and log viewing
+6. **🔍 Cluster Explorer** - Cluster resource exploration
+7. **🖥️ Kubernetes Shell** - kubectl command interface
+
+### Overview Page Features
+- **Cluster Health Score** - Overall health percentage with color-coded status
+- **Resource Usage Gauges** - Interactive CPU and Memory usage visualization
+- **Node Health Table** - Detailed node status with health indicators
+- **Pod Status Summary** - Running, pending, failed, and total pod counts
+- **Quick Actions** - Direct navigation to key features
+
+---
+
+## 🚦 Enhanced CI/CD Pipeline with Failure Handling
+
+The GitHub Actions pipeline now includes robust failure handling and dashboard integration:
+
+### Key Improvements
+- **Smart pod ready detection** - Checks if pods are already ready before waiting
+- **Timeout protection** - All curl commands have max-time limits to prevent hanging
+- **Connectivity testing** - Verifies dashboard is responding before logging events
+- **Graceful fallbacks** - Continues deployment even if dashboard is unavailable
+- **Multiple failure notification points** - Catches failures at different stages
+
+### Pipeline Stages
+1. **Build & Push Images** - Docker images for all services
+2. **Deploy to GKE** - Kubernetes deployments with step-by-step logging
+3. **Wait for Dashboard** - Smart ready detection with connectivity testing
+4. **Log Events** - Dashboard integration with fallback handling
+5. **Notify Success/Failure** - Telegram notifications with dashboard links
+
+### Failure Handling
+- **`if: failure()`** - Triggers when any step fails
+- **`if: always()`** - Always runs regardless of success/failure
+- **Dashboard logging** - Attempts to log failures to dashboard if available
+- **Telegram notifications** - Always sends notifications with pipeline links
 
 ---
 
@@ -69,59 +123,6 @@ SmartOps integrates with Telegram for real-time anomaly alerts and basic cluster
 4. Redeploy the anomaly service.
 
 You will now receive both anomaly alerts and be able to query your cluster from Telegram!
-
----
-
-## 🚦 Telegram Deployment Notifications from CI/CD
-
-You can receive Telegram alerts when a deployment starts, succeeds, or fails via your GitHub Actions pipeline.
-
-### How to Set Up
-1. **Add your bot to your Telegram group.**
-2. **Send a message in the group as a user** (this is required for Telegram to allow the bot to send messages).
-3. **Get your group chat ID** (it will look like `-100xxxxxxxxxx`).
-4. **Add your bot token and chat ID as GitHub repository secrets:**
-   - `TELEGRAM_BOT_TOKEN`
-   - `TELEGRAM_CHAT_ID`
-5. **Your workflow will send messages at key stages:**
-   - 🚀 *Production deployment started!*
-   - ✅ *Production deployment completed successfully!*
-   - ❌ *Production deployment failed!*
-
-### Example Workflow Snippet
-```yaml
-- name: Notify Telegram - Deployment Started
-  run: |
-    curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-      -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-      -d text="🚀 *Production deployment started!*" \
-      -d parse_mode=Markdown
-
-- name: Notify Telegram - Deployment Success
-  if: success()
-  run: |
-    curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-      -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-      -d text="✅ *Production deployment completed successfully!*" \
-      -d parse_mode=Markdown
-
-- name: Notify Telegram - Deployment Failed
-  if: failure()
-  run: |
-    curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-      -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-      -d text="❌ *Production deployment failed!*" \
-      -d parse_mode=Markdown
-```
-
-### Troubleshooting: 'chat not found' Error
-- **Make sure your bot is in the group.**
-- **Send a message in the group as a user after adding the bot.**
-- **Use the correct chat ID (starts with -100 for supergroups).**
-- **Check that your bot is not blocked or restricted.**
-- **Double-check your bot token and chat ID in GitHub secrets.**
-
-If you follow these steps, you will receive real-time deployment notifications in your Telegram group!
 
 ---
 
@@ -169,30 +170,6 @@ SmartOps now supports real-time monitoring of application logs directly from Kub
   - Ensure the service account has the correct RBAC permissions.
   - Make sure the main app container name matches `MY_CONTAINER_NAME`.
   - Trigger a non-200 response (e.g., 404, 500) and check the logs for alert activity.
-
----
-
-## 🛠️ Troubleshooting & Recent Fixes
-
-### Issue: Anomalies Not Appearing in Dashboard/Database
-- **Symptom:** Telegram alerts are sent for actionable anomalies, but no rows appear in the `anomalies` table in the shared SQLite database (even after copying from the correct pod/container).
-- **Root Cause:** The anomaly-loop code was not logging errors or debug info for database writes, so silent failures (e.g., permissions, schema, or transaction issues) were not visible.
-- **Fix:**
-  - Added debug logging to the `log_prediction` function in `anomaly_loop.py`.
-  - Now, every attempt to log a prediction prints before and after the DB insert, and logs any error encountered.
-  - This will help pinpoint if/why database writes are failing.
-- **Next Steps:**
-  1. Redeploy the anomaly-loop pod with the new debug logging.
-  2. Trigger a new anomaly (e.g., with a stress-test pod).
-  3. Check the anomaly-loop logs for `LOGGING:` or `LOGGING ERROR:` messages.
-  4. Copy the database file and check for new rows.
-  5. Once confirmed, remove or reduce debug logging for production.
-
-### Status Update
-- **Anomaly detection, alerting, and dashboard are all functional.**
-- **Database logging of anomalies is under active investigation/fix.**
-- **Volume mounts and database paths are confirmed correct and shared.**
-- **Debug logging is now in place to ensure all future issues are visible and actionable.**
 
 ---
 
@@ -410,11 +387,35 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 
 ---
 
+## 🛠️ Recent Improvements & Fixes
+
+### Dashboard UI Improvements
+- **Removed Analytics page** - Streamlined navigation by removing redundant analytics functionality
+- **Cleaned up duplication** - Removed repetitive navigation sections and feature descriptions
+- **Modern interface** - Beautiful feature cards with hover effects and smooth animations
+- **Better organization** - Single "Quick Access" section with clear navigation
+
+### Pipeline Reliability Improvements
+- **Smart pod ready detection** - Checks if pods are already ready before waiting
+- **Timeout protection** - All network requests have max-time limits
+- **Connectivity testing** - Verifies dashboard availability before logging events
+- **Graceful fallbacks** - Continues deployment even if dashboard is unavailable
+- **Better error handling** - Multiple failure notification points with detailed logging
+
+### Service Communication Improvements
+- **Dynamic IP resolution** - No more hardcoded IP addresses
+- **Kubernetes service discovery** - Uses internal service names for communication
+- **ConfigMap configuration** - Centralized service URLs and endpoints
+- **Redundant logging** - Both external and internal logging for reliability
+
+---
+
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
-- You have real-time anomaly detection and analytics, with a modern dashboard.
-- The project is in a stable, production-ready state.
+- You have real-time anomaly detection and analytics, with a modern, clean dashboard.
+- The project is in a stable, production-ready state with robust failure handling.
+- All services communicate reliably using Kubernetes service discovery.
 
 ---
 
@@ -429,6 +430,10 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 - [x] RBAC and service accounts for secure metrics access
 - [x] All dependencies included in Docker images
 - [x] Hotfix and redeploy steps automated
+- [x] **Dashboard UI cleaned up and modernized**
+- [x] **Pipeline failure handling improved**
+- [x] **Service communication made more robust**
+- [x] **Analytics page removed for streamlined navigation**
 
 ---
 
