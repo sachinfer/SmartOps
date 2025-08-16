@@ -7,6 +7,7 @@ on:
       - gcp
       - gcp2
       # - dash
+      - Plotly-Dash
   workflow_dispatch:
 
 jobs:
@@ -50,6 +51,7 @@ jobs:
           echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "DASHBOARD_DASH_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard-dash:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
       - name: Build & Push App Image
         uses: docker/build-push-action@v5
@@ -71,7 +73,7 @@ jobs:
             ${{ env.ANOMALY_TAG }}
         continue-on-error: false
 
-      - name: Build & Push Dashboard Image
+      - name: Build & Push Dashboard Image (Streamlit)
         uses: docker/build-push-action@v5
         with:
           context: ./smartops-ai/dashboard
@@ -80,6 +82,17 @@ jobs:
           tags: |
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
             ${{ env.DASHBOARD_TAG }}
+        continue-on-error: false
+
+      - name: Build & Push Dashboard Image (Dash)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./smartops-ai/dashboard
+          file: ./smartops-ai/dashboard/Dockerfile.dash
+          push: true
+          tags: |
+            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard-dash:latest
+            ${{ env.DASHBOARD_DASH_TAG }}
         continue-on-error: false
 
       - name: Build & Push Monitor Image
@@ -196,12 +209,17 @@ jobs:
           kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n smartops
           echo "✅ Anomaly service deployed"
 
-          # Deploy Dashboard Service
+          # Deploy Dashboard Service (Streamlit)
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n smartops
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops
           kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops
-          echo "✅ Dashboard deployed"
+          echo "✅ Streamlit Dashboard deployed"
+
+          # Deploy Dashboard Service (Dash)
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-dash-deployment.yaml -n smartops
+          kubectl set image deployment/smartops-dashboard-dash dashboard-dash=${{ env.DASHBOARD_DASH_TAG }} -n smartops
+          echo "✅ Dash Dashboard deployed"
           
           echo "🎉 All deployments completed successfully!"
 

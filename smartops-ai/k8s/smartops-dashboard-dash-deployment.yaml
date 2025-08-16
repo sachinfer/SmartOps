@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartops-dashboard-dash
+  namespace: smartops
+  labels:
+    app: smartops-dashboard-dash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartops-dashboard-dash
+  template:
+    metadata:
+      labels:
+        app: smartops-dashboard-dash
+    spec:
+      serviceAccountName: smartops-dashboard-sa
+      containers:
+      - name: dashboard-dash
+        image: gcr.io/smartops-project/smartops-dashboard-dash:latest
+        ports:
+        - containerPort: 8501
+        env:
+        - name: DASHBOARD_URL
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard-config
+              key: DASHBOARD_INTERNAL_URL
+        - name: DASHBOARD_EVENT_API
+          valueFrom:
+            configMapKeyRef:
+              name: dashboard-config
+              key: EVENT_API_ENDPOINT
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: dashboard-data
+          mountPath: /app/data
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: dashboard-data
+        persistentVolumeClaim:
+          claimName: smartops-dashboard-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartops-dashboard-dash-service
+  namespace: smartops
+  labels:
+    app: smartops-dashboard-dash
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8501
+    targetPort: 8501
+    protocol: TCP
+  selector:
+    app: smartops-dashboard-dash

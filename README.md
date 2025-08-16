@@ -17,13 +17,14 @@
 
 1. **Main Application (`smartops-app`)**: The core workload being monitored.
 2. **Anomaly Detection Service (`smartops-anomaly`)**: Uses the sidecar pattern—one container runs the FastAPI prediction API, and a second container runs the anomaly loop, calling the API via localhost.
-3. **Dashboard (`smartops-dashboard`)**: Streamlit UI for real-time and historical analytics, connects to SQLite in test/dev.
-    - **Clean, modern interface:** Beautiful feature cards with hover effects and smooth animations.
-    - **User-friendly navigation:** Clickable cards for easy access to all features.
+3. **Dashboard (`smartops-dashboard`)**: Plotly-Dash UI for real-time and historical analytics, connects to SQLite in test/dev.
+    - **Modern Bootstrap interface:** Beautiful, responsive design with interactive components.
+    - **User-friendly navigation:** Sidebar navigation with active state indicators.
     - **Namespace selection:** Dropdown to filter predictions and analytics by namespace (e.g., all, smartops, test).
     - **ML-based actions:** Recommended actions are generated based on actual resource usage and anomaly type.
     - **Recent predictions table:** Shows the latest predictions and recommended actions for each event.
     - **System summary:** Plain English summary of recent anomaly counts and system health.
+    - **Interactive charts:** Real-time Plotly charts and graphs for data visualization.
 4. **CI/CD Pipeline**: GitHub Actions for automated build, push, and deploy to GKE with robust failure handling.
 5. **Kubernetes Manifests**: YAMLs for all deployments/services, using LoadBalancer for external access.
 
@@ -41,7 +42,7 @@ The anomaly detection service is deployed as a multi-container pod:
 ## 📊 Current Project Status
 
 - Main app and anomaly service are deployed and running in GKE.
-- Dashboard is deployed and exposed via LoadBalancer with a clean, modern interface.
+- Dashboard is deployed and exposed via LoadBalancer with a modern Plotly-Dash interface.
 - All services are built and deployed automatically via GitHub Actions with improved failure handling.
 - Anomaly detection is live, logging to both SQLite and MongoDB Atlas.
 - Dashboard visualizes live and historical anomaly data from SQLite (and MongoDB if configured).
@@ -55,24 +56,27 @@ The anomaly detection service is deployed as a multi-container pod:
 
 ## 🎨 Dashboard Features
 
-### Clean, Modern Interface
-- **Beautiful feature cards** with hover effects and smooth animations
-- **Clickable navigation** - Click any card to navigate to the corresponding page
-- **Responsive design** that works on all screen sizes
-- **No duplication** - Clean, single-purpose interface
+### Modern Plotly-Dash Interface
+- **Bootstrap-based design** with responsive components and modern styling
+- **Sidebar navigation** with active state indicators and smooth transitions
+- **Interactive charts** using Plotly for real-time data visualization
+- **Modular architecture** with separate page components for better maintainability
 
 ### Available Pages
 1. **🏠 Overview** - Cluster health status and resource usage overview
-2. **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
-3. **🤖 AI Actions** - AI recommendations and action history
-4. **🚀 Deployments** - Deployment workflow events and tracking
-5. **🛰️ Pod Explorer & Logs** - Pod management and log viewing
-6. **🔍 Cluster Explorer** - Cluster resource exploration
-7. **🖥️ Kubernetes Shell** - kubectl command interface
+2. **🏠 Home** - Feature cards for quick navigation
+3. **🔥 Anomaly Detection** - AI-powered anomaly detection and analysis
+4. **🤖 AI Actions** - AI recommendations and action history
+5. **🚀 Deployments** - Deployment workflow events and tracking
+6. **🛰️ Pod Explorer & Logs** - Pod management and log viewing
+7. **🔍 Cluster Explorer** - Cluster resource exploration
+8. **🖥️ Kubernetes Shell** - kubectl command interface
+9. **⚖️ Auto-Scaling** - HPA recommendations and control
+10. **🕒 Incident Timeline** - Incident tracking and postmortem reports
 
 ### Overview Page Features
 - **Cluster Health Score** - Overall health percentage with color-coded status
-- **Resource Usage Gauges** - Interactive CPU and Memory usage visualization
+- **Resource Usage Gauges** - Interactive Plotly gauge charts for CPU and Memory
 - **Node Health Table** - Detailed node status with health indicators
 - **Pod Status Summary** - Running, pending, failed, and total pod counts
 - **Quick Actions** - Direct navigation to key features
@@ -390,10 +394,11 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 ## 🛠️ Recent Improvements & Fixes
 
 ### Dashboard UI Improvements
-- **Removed Analytics page** - Streamlined navigation by removing redundant analytics functionality
-- **Cleaned up duplication** - Removed repetitive navigation sections and feature descriptions
-- **Modern interface** - Beautiful feature cards with hover effects and smooth animations
-- **Better organization** - Single "Quick Access" section with clear navigation
+- **Migrated to Plotly-Dash** - Replaced Streamlit with modern Plotly-Dash framework
+- **Bootstrap integration** - Added responsive Bootstrap components for better UI/UX
+- **Modular architecture** - Separated page components for better maintainability
+- **Interactive charts** - Enhanced data visualization with Plotly charts and graphs
+- **Sidebar navigation** - Improved navigation with active state indicators
 
 ### Pipeline Reliability Improvements
 - **Smart pod ready detection** - Checks if pods are already ready before waiting
@@ -413,9 +418,63 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 ## ✅ Summary
 
 - Your system is fully cloud-native, automated, and observable.
-- You have real-time anomaly detection and analytics, with a modern, clean dashboard.
+- You have real-time anomaly detection and analytics, with a modern Plotly-Dash dashboard.
 - The project is in a stable, production-ready state with robust failure handling.
 - All services communicate reliably using Kubernetes service discovery.
+- **New:** Migrated from Streamlit to Plotly-Dash for enhanced performance and interactivity.
+
+---
+
+## 🚀 Migration to Plotly-Dash
+
+SmartOps has been successfully migrated from Streamlit to Plotly-Dash, providing enhanced performance, better interactivity, and a more modern user interface.
+
+### Migration Benefits
+- **Better Performance:** Dash applications are generally faster and more responsive
+- **Interactive Charts:** Enhanced data visualization with Plotly's interactive charts
+- **Responsive Design:** Bootstrap integration for better mobile and desktop experience
+- **Modular Architecture:** Separated page components for easier maintenance
+- **Real-time Updates:** Better support for real-time data updates and live dashboards
+
+### Migration Files
+- `dash_app.py` - Main Dash application
+- `requirements_dash.txt` - Dash-specific dependencies
+- `Dockerfile.dash` - Docker configuration for Dash
+- `pages/overview.py` - Overview page module
+- `migrate_to_dash.py` - Migration helper script
+
+### Running the New Dashboard
+```bash
+# Install Dash dependencies
+pip install -r requirements_dash.txt
+
+# Run the Dash application
+python dash_app.py
+
+# Or use Docker
+docker build -f Dockerfile.dash -t smartops-dashboard-dash .
+docker run -p 8501:8501 smartops-dashboard-dash
+```
+
+### Kubernetes Deployment
+The Dash dashboard is deployed alongside the existing Streamlit dashboard:
+```bash
+# Deploy Dash dashboard
+kubectl apply -f k8s/smartops-dashboard-dash-deployment.yaml
+
+# Get service URL
+kubectl get service smartops-dashboard-dash-service -n smartops
+```
+
+### Rollback
+If you need to rollback to Streamlit:
+```bash
+# Restore from backup
+cp -r streamlit_backup/* .
+
+# Reinstall Streamlit dependencies
+pip install -r requirements.txt
+```
 
 ---
 
@@ -430,10 +489,10 @@ SmartOps now includes advanced AI/ML features for Kubernetes self-healing and op
 - [x] RBAC and service accounts for secure metrics access
 - [x] All dependencies included in Docker images
 - [x] Hotfix and redeploy steps automated
-- [x] **Dashboard UI cleaned up and modernized**
+- [x] **Dashboard migrated to Plotly-Dash with Bootstrap**
 - [x] **Pipeline failure handling improved**
 - [x] **Service communication made more robust**
-- [x] **Analytics page removed for streamlined navigation**
+- [x] **Modular page architecture implemented**
 
 ---
 
