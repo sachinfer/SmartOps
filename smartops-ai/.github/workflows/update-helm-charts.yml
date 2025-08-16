@@ -48,41 +48,184 @@ jobs:
           echo "dashboard-tag=v1.0.$TIMESTAMP" >> $GITHUB_OUTPUT
           echo "monitor-tag=v1.0.$TIMESTAMP" >> $GITHUB_OUTPUT
           
-      - name: Update Helm Charts values
+      - name: Create Helm Charts Structure
         run: |
-          cd smartops
-          python scripts/update-helm-charts.py \
-            --helm-repo ${{ env.HELM_CHARTS_REPO }} \
-            --helm-path ${{ env.HELM_CHARTS_PATH }} \
-            --git-user "SmartOps Bot" \
-            --git-email "bot@smartops.ai"
-            
+          cd helm-charts
+          
+          # Create directory structure
+          mkdir -p smartops/{anomaly,dashboard,monitor}
+          
+          # Create anomaly Chart.yaml
+          cat > smartops/anomaly/Chart.yaml << 'EOF'
+          apiVersion: v2
+          name: smartops-anomaly
+          description: SmartOps Anomaly Detection Service
+          type: application
+          version: 0.1.0
+          appVersion: "1.0.0"
+          keywords:
+            - smartops
+            - anomaly
+            - detection
+            - ai
+          home: https://github.com/sachinfer/SmartOps
+          sources:
+            - https://github.com/sachinfer/SmartOps
+          maintainers:
+            - name: SmartOps Team
+              email: team@smartops.ai
+          EOF
+          
+          # Create dashboard Chart.yaml
+          cat > smartops/dashboard/Chart.yaml << 'EOF'
+          apiVersion: v2
+          name: smartops-dashboard
+          description: SmartOps Dashboard Web Application
+          type: application
+          version: 0.1.0
+          appVersion: "1.0.0"
+          keywords:
+            - smartops
+            - dashboard
+            - web
+            - ui
+          home: https://github.com/sachinfer/SmartOps
+          sources:
+            - https://github.com/sachinfer/SmartOps
+          maintainers:
+            - name: SmartOps Team
+              email: team@smartops.ai
+          EOF
+          
+          # Create monitor Chart.yaml
+          cat > smartops/monitor/Chart.yaml << 'EOF'
+          apiVersion: v2
+          name: smartops-monitor
+          description: SmartOps Monitoring Service
+          type: application
+          version: 0.1.0
+          appVersion: "1.0.0"
+          keywords:
+            - smartops
+            - monitor
+            - metrics
+            - monitoring
+          home: https://github.com/sachinfer/SmartOps
+          sources:
+            - https://github.com/sachinfer/SmartOps
+          maintainers:
+            - name: SmartOps Team
+              email: team@smartops.ai
+          EOF
+          
+          echo "✅ Helm charts structure created successfully!"
+          
+      - name: Create and Update Values Files
+        run: |
+          cd helm-charts
+          
+          # Create anomaly values.yaml
+          cat > smartops/anomaly/values.yaml << 'EOF'
+          # Default values for smartops-anomaly
+          image:
+            repository: us-docker.pkg.dev/sachinfer/smartops-repo/smartops-anomaly
+            tag: "${{ steps.generate-tags.outputs.anomaly-tag }}"
+            pullPolicy: Always
+          
+          service:
+            type: ClusterIP
+            port: 8000
+          
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          
+          model:
+            enabled: true
+            mountPath: /app/model
+            pvcName: smartops-anomaly-model
+          
+          replicaCount: 1
+          EOF
+          
+          # Create dashboard values.yaml
+          cat > smartops/dashboard/values.yaml << 'EOF'
+          # Default values for smartops-dashboard
+          image:
+            repository: us-docker.pkg.dev/sachinfer/smartops-repo/smartops-dashboard
+            tag: "${{ steps.generate-tags.outputs.dashboard-tag }}"
+            pullPolicy: Always
+          
+          service:
+            type: LoadBalancer
+            port: 8000
+          
+          ingress:
+            enabled: true
+            className: nginx
+            hosts:
+              - host: smartops-dashboard.local
+                paths:
+                  - path: /
+                    pathType: Prefix
+          
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          
+          replicaCount: 1
+          EOF
+          
+          # Create monitor values.yaml
+          cat > smartops/monitor/values.yaml << 'EOF'
+          # Default values for smartops-monitor
+          image:
+            repository: us-docker.pkg.dev/sachinfer/smartops-repo/smartops-monitor
+            tag: "${{ steps.generate-tags.outputs.monitor-tag }}"
+            pullPolicy: Always
+          
+          service:
+            type: ClusterIP
+            port: 8000
+          
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          
+          replicaCount: 1
+          EOF
+          
+          echo "✅ Values files created with new image tags!"
+          
       - name: Commit and push to Helm Charts
         run: |
           cd helm-charts
           git config user.name "SmartOps Bot"
           git config user.email "bot@smartops.ai"
           
-          # Update anomaly values
-          yq eval ".image.tag = \"${{ steps.generate-tags.outputs.anomaly-tag }}\"" \
-            -i smartops/anomaly/values.yaml
-          
-          # Update dashboard values  
-          yq eval ".image.tag = \"${{ steps.generate-tags.outputs.dashboard-tag }}\"" \
-            -i smartops/dashboard/values.yaml
-          
-          # Update monitor values
-          yq eval ".image.tag = \"${{ steps.generate-tags.outputs.monitor-tag }}\"" \
-            -i smartops/monitor/values.yaml
-          
           git add .
-          git commit -m "🤖 Auto-update image tags: anomaly=${{ steps.generate-tags.outputs.anomaly-tag }}, dashboard=${{ steps.generate-tags.outputs.dashboard-tag }}, monitor=${{ steps.generate-tags.outputs.monitor-tag }}"
+          git commit -m "🤖 Auto-update helm charts and image tags: anomaly=${{ steps.generate-tags.outputs.anomaly-tag }}, dashboard=${{ steps.generate-tags.outputs.dashboard-tag }}, monitor=${{ steps.generate-tags.outputs.monitor-tag }}"
           git push origin main
           
       - name: Notify ArgoCD sync
         run: |
-          echo "🎯 Helm Charts updated successfully!"
+          echo "🎯 Helm Charts repository updated successfully!"
+          echo "📁 Repository: ${{ env.HELM_CHARTS_REPO }}"
           echo "🔄 ArgoCD will automatically detect changes and deploy:"
           echo "   - smartops-anomaly: ${{ steps.generate-tags.outputs.anomaly-tag }}"
           echo "   - smartops-dashboard: ${{ steps.generate-tags.outputs.dashboard-tag }}"
           echo "   - smartops-monitor: ${{ steps.generate-tags.outputs.monitor-tag }}"
+          echo ""
+          echo "🎉 Your separate helm-charts repository is now fully automated!"
