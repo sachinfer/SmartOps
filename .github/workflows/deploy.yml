@@ -126,18 +126,30 @@ jobs:
 
       - name: Log Deployment Started (to dashboard API)
         run: |
-            # Check if dashboard pod exists before trying to wait for it
-            if kubectl get pods -l app=smartops-dashboard -n smartops 2>/dev/null | grep -q .; then
-              # Wait for dashboard service to be ready
-              kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
+            # Check if dashboard pod exists and is ready
+            if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running 2>/dev/null | grep -q .; then
+              # Check if pod is already ready
+              if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' | grep -q "true"; then
+                echo "✅ Dashboard pod is already ready"
+              else
+                echo "Waiting for dashboard pod to become ready..."
+                kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
+              fi
               
               # Get the external IP of the dashboard service
               DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
               
               if [ -n "$DASHBOARD_IP" ]; then
-                curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-                  -H "Content-Type: application/json" \
-                  -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}'
+                echo "Logging deployment start to dashboard at $DASHBOARD_IP"
+                # Test dashboard connectivity first
+                if curl -s "http://$DASHBOARD_IP:8000/log_event" --max-time 5 > /dev/null 2>&1; then
+                  curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
+                    -H "Content-Type: application/json" \
+                    -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}' \
+                    --max-time 10 || echo "Failed to log to dashboard"
+                else
+                  echo "Dashboard not responding, skipping external logging"
+                fi
               else
                 echo "Dashboard service external IP not available yet, skipping event log"
               fi
@@ -145,7 +157,8 @@ jobs:
               # Also log to internal service for redundancy
               kubectl exec -n smartops deployment/smartops-dashboard -- curl -X POST "http://localhost:8000/log_event" \
                 -H "Content-Type: application/json" \
-                -d '{"status": "started", "message": "Deployment started (internal)", "namespace": "smartops"}' || echo "Internal logging failed"
+                -d '{"status": "started", "message": "Deployment started (internal)", "namespace": "smartops"}' \
+                --max-time 10 || echo "Internal logging failed"
             else
               echo "Dashboard pod not found yet, skipping event log (will be created during deployment)"
             fi
@@ -195,9 +208,28 @@ jobs:
       - name: Wait for Dashboard to be Ready
         if: success()
         run: |
-          echo "Waiting for dashboard to be ready..."
-          kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
-          echo "✅ Dashboard is ready"
+          echo "Checking dashboard status..."
+          # Check if pod is already ready first
+          if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' | grep -q "true"; then
+            echo "✅ Dashboard pod is already ready"
+          else
+            echo "Waiting for dashboard pod to become ready..."
+            kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
+            echo "✅ Dashboard pod is ready"
+          fi
+          
+          # Test dashboard connectivity
+          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -n "$DASHBOARD_IP" ]; then
+            echo "Testing dashboard connectivity at $DASHBOARD_IP..."
+            if curl -s "http://$DASHBOARD_IP:8000/log_event" --max-time 10 > /dev/null 2>&1; then
+              echo "✅ Dashboard is responding"
+            else
+              echo "⚠️ Dashboard not responding, but continuing..."
+            fi
+          else
+            echo "⚠️ Dashboard IP not available"
+          fi
 
       - name: Notify Telegram - Deployment Success
         if: success()
