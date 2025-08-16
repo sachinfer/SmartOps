@@ -18,6 +18,9 @@ import base64
 # Import page modules
 from pages.overview import create_overview_page
 from pages.anomaly_detection import create_anomaly_detection_page
+from pages.ai_actions import create_ai_actions_page
+from pages.deployments import create_deployments_page
+from pages.pod_explorer import create_pod_explorer_page
 
 # Initialize Dash app with Bootstrap theme
 app = dash.Dash(
@@ -31,7 +34,7 @@ app = dash.Dash(
 # App configuration
 app.config.suppress_callback_exceptions = True
 
-# Custom CSS for modern styling
+# Custom CSS for stunning dark theme
 app.index_string = '''
 <!DOCTYPE html>
 <html>
@@ -40,64 +43,254 @@ app.index_string = '''
         <title>{%title%}</title>
         {%favicon%}
         {%css%}
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+                color: #ffffff;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+            
+            /* Stunning Header */
             .main-header {
-                background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-                padding: 2rem;
-                border-radius: 15px;
-                margin-bottom: 2rem;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+                padding: 3rem 2rem;
+                border-radius: 20px;
+                margin: 2rem;
                 text-align: center;
                 color: white;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+                box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+                position: relative;
+                overflow: hidden;
             }
+            
+            .main-header::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+                opacity: 0.3;
+            }
+            
+            .main-header h1 {
+                font-size: 3rem;
+                font-weight: 700;
+                margin-bottom: 1rem;
+                text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                position: relative;
+                z-index: 1;
+            }
+            
+            .main-header p {
+                font-size: 1.2rem;
+                opacity: 0.9;
+                position: relative;
+                z-index: 1;
+            }
+            
+            /* Modern Cards */
             .metric-card {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 1.5rem;
-                border-radius: 15px;
+                background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.2);
+                padding: 2rem;
+                border-radius: 20px;
                 color: white;
                 text-align: center;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                margin: 0.5rem;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                margin: 1rem;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
             }
+            
+            .metric-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+                border-color: rgba(102, 126, 234, 0.5);
+            }
+            
+            .metric-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+                transition: left 0.5s;
+            }
+            
+            .metric-card:hover::before {
+                left: 100%;
+            }
+            
+            /* Alert Banners */
             .alert-banner {
                 background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-                padding: 1.5rem;
-                border-radius: 15px;
+                padding: 2rem;
+                border-radius: 20px;
                 color: white;
-                margin: 1rem 0;
-                box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+                margin: 1.5rem;
+                box-shadow: 0 8px 32px rgba(255,107,107,0.4);
+                border: 1px solid rgba(255,255,255,0.2);
             }
+            
             .success-banner {
                 background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
-                padding: 1.5rem;
-                border-radius: 15px;
+                padding: 2rem;
+                border-radius: 20px;
                 color: white;
-                margin: 1rem 0;
-                box-shadow: 0 4px 15px rgba(0,184,148,0.3);
+                margin: 1.5rem;
+                box-shadow: 0 8px 32px rgba(0,184,148,0.4);
+                border: 1px solid rgba(255,255,255,0.2);
             }
+            
+            /* Chart Containers */
             .chart-container {
-                background: white;
-                padding: 1.5rem;
-                border-radius: 15px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                margin: 1rem 0;
+                background: rgba(255,255,255,0.05);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.1);
+                padding: 2rem;
+                border-radius: 20px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                margin: 1.5rem;
+                transition: all 0.3s ease;
             }
+            
+            .chart-container:hover {
+                border-color: rgba(102, 126, 234, 0.3);
+                box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            }
+            
+            /* Feature Grid */
             .feature-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 1.5rem;
-                margin: 2rem 0;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 2rem;
+                margin: 2rem;
+                padding: 0 1rem;
             }
+            
             .feature-card {
-                background: white;
-                padding: 1.5rem;
-                border-radius: 15px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                border-left: 4px solid #667eea;
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                background: rgba(255,255,255,0.05);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.1);
+                padding: 2rem;
+                border-radius: 20px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 cursor: pointer;
-                border: 2px solid transparent;
+                position: relative;
+                overflow: hidden;
             }
+            
+            .feature-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                border-color: rgba(102, 126, 234, 0.5);
+                box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            }
+            
+            .feature-card::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            
+            .feature-card:hover::after {
+                opacity: 1;
+            }
+            
+            /* Navigation */
+            .sidebar {
+                background: rgba(0,0,0,0.8);
+                backdrop-filter: blur(20px);
+                border-right: 1px solid rgba(255,255,255,0.1);
+                padding: 2rem 1rem;
+                height: 100vh;
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 280px;
+                z-index: 1000;
+            }
+            
+            .nav-item {
+                padding: 1rem 1.5rem;
+                margin: 0.5rem 0;
+                border-radius: 15px;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                border: 1px solid transparent;
+            }
+            
+            .nav-item:hover {
+                background: rgba(102, 126, 234, 0.2);
+                border-color: rgba(102, 126, 234, 0.5);
+                transform: translateX(8px);
+            }
+            
+            .nav-item.active {
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+                border-color: rgba(102, 126, 234, 0.8);
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            }
+            
+            /* Content Area */
+            .content-area {
+                margin-left: 280px;
+                padding: 2rem;
+                min-height: 100vh;
+            }
+            
+            /* Animations */
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .fade-in-up {
+                animation: fadeInUp 0.6s ease-out;
+            }
+            
+            /* Responsive */
+            @media (max-width: 768px) {
+                .sidebar {
+                    width: 100%;
+                    height: auto;
+                    position: relative;
+                }
+                .content-area {
+                    margin-left: 0;
+                }
+                .main-header h1 {
+                    font-size: 2rem;
+                }
+            }
+        </style>
             .feature-card:hover {
                 transform: translateY(-5px);
                 box-shadow: 0 8px 25px rgba(0,0,0,0.15);
@@ -381,33 +574,8 @@ def create_home_page():
 
 
 
-def create_ai_actions_page():
-    """Create the AI actions page"""
-    return dbc.Container([
-        html.H2("🤖 AI Actions", className="mb-4"),
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader("AI Action History"),
-                    dbc.CardBody(id="ai-actions-table")
-                ])
-            ])
-        ])
-    ], fluid=True)
-
-def create_deployments_page():
-    """Create the deployments page"""
-    return dbc.Container([
-        html.H2("🚀 Deployments", className="mb-4"),
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader("Deployment Events"),
-                    dbc.CardBody(id="deployments-table")
-                ])
-            ])
-        ])
-    ], fluid=True)
+# These functions are now imported from the pages modules
+# def create_ai_actions_page() and def create_deployments_page() are imported above
 
 def create_pod_explorer_page():
     """Create the pod explorer page"""
