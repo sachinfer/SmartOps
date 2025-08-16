@@ -21,6 +21,7 @@ from pages.anomaly_detection import create_anomaly_detection_page
 from pages.ai_actions import create_ai_actions_page
 from pages.deployments import create_deployments_page
 from pages.pod_explorer import create_pod_explorer_page
+from pages.argocd_management import create_argocd_management_page
 
 # Initialize Dash app with Bootstrap theme
 app = dash.Dash(
@@ -649,6 +650,7 @@ def create_sidebar():
         dbc.NavLink("🖥️ Kubernetes Shell", href="/k8s-shell", id="nav-k8s-shell", className="nav-link"),
         dbc.NavLink("⚖️ Auto-Scaling", href="/auto-scaling", id="nav-auto-scaling", className="nav-link"),
         dbc.NavLink("🕒 Incident Timeline", href="/incident-timeline", id="nav-incident-timeline", className="nav-link"),
+        dbc.NavLink("🎯 ArgoCD Management", href="/argocd-management", id="nav-argocd-management", className="nav-link"),
     ], vertical=True, pills=True, className="sidebar")
 
 def create_feature_cards():
@@ -689,6 +691,12 @@ def create_feature_cards():
             'title': 'Kubernetes Shell',
             'desc': 'Interactive kubectl command interface with command history and safe execution.',
             'href': '/k8s-shell'
+        },
+        {
+            'icon': '🎯',
+            'title': 'ArgoCD Management',
+            'desc': 'GitOps deployment management with application monitoring and sync controls.',
+            'href': '/argocd-management'
         }
     ]
     
@@ -750,6 +758,8 @@ def display_page(pathname):
         return create_auto_scaling_page()
     elif pathname == '/incident-timeline':
         return create_incident_timeline_page()
+    elif pathname == '/argocd-management':
+        return create_argocd_management_page()
     else:
         return create_404_page()
 
@@ -847,6 +857,20 @@ def create_incident_timeline_page():
         ])
     ], fluid=True)
 
+def create_argocd_management_page():
+    """Create the ArgoCD Management page"""
+    return dbc.Container([
+        html.H2("🎯 ArgoCD Management", className="mb-4"),
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader("ArgoCD Applications"),
+                    dbc.CardBody(id="argocd-applications")
+                ])
+            ])
+        ])
+    ], fluid=True)
+
 def create_404_page():
     """Create 404 page"""
     return dbc.Container([
@@ -861,11 +885,11 @@ def create_404_page():
 
 # Callback to update active nav link
 @app.callback(
-    [Output(f"nav-{page}", "active") for page in ["overview", "home", "anomaly", "ai-actions", "deployments", "pod-explorer", "cluster-explorer", "k8s-shell", "auto-scaling", "incident-timeline"]],
+    [Output(f"nav-{page}", "active") for page in ["overview", "home", "anomaly", "ai-actions", "deployments", "pod-explorer", "cluster-explorer", "k8s-shell", "auto-scaling", "incident-timeline", "argocd-management"]],
     Input('url', 'pathname')
 )
 def update_active_nav(pathname):
-    active_states = [False] * 10
+    active_states = [False] * 11
     
     if pathname == '/' or pathname is None:
         active_states[0] = True
@@ -887,6 +911,8 @@ def update_active_nav(pathname):
         active_states[8] = True
     elif pathname == '/incident-timeline':
         active_states[9] = True
+    elif pathname == '/argocd-management':
+        active_states[10] = True
     
     return active_states
 
