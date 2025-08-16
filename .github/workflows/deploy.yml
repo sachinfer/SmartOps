@@ -175,11 +175,68 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          push: false
           tags: |
             us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
             ${{ env.APP_TAG }}
+          platforms: linux/amd64
+          provenance: false
+          outputs: type=docker,dest=/tmp/app-image.tar
         continue-on-error: false
+
+      - name: Test Google Cloud Connectivity (App)
+        run: |
+          echo "Testing Google Cloud connectivity for app push..."
+          for i in {1..3}; do
+            echo "Attempt $i: Testing DNS resolution..."
+            if nslookup oauth2.googleapis.com && nslookup us-docker.pkg.dev; then
+              echo "DNS resolution successful"
+              break
+            fi
+            echo "DNS resolution failed, retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          for i in {1..3}; do
+            echo "Attempt $i: Testing HTTPS connectivity..."
+            if curl -I --connect-timeout 10 --max-time 30 https://oauth2.googleapis.com; then
+              echo "HTTPS connectivity successful"
+              break
+            fi
+            echo "HTTPS connectivity failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+      - name: Push App Image (with retry)
+        run: |
+          echo "Pushing app image to Google Artifact Registry..."
+          
+          # Load the image from tar
+          docker load < /tmp/app-image.tar
+          
+          # Retry push with exponential backoff
+          for attempt in {1..5}; do
+            echo "Push attempt $attempt..."
+            
+            if docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest; then
+              echo "App image pushed successfully!"
+              break
+            else
+              echo "Push failed on attempt $attempt"
+              if [ $attempt -lt 5 ]; then
+                wait_time=$((2 ** $attempt))
+                echo "Waiting $wait_time seconds before retry..."
+                sleep $wait_time
+              else
+                echo "All push attempts failed"
+                exit 1
+              fi
+            fi
+          done
+          
+          # Also push the tagged version
+          echo "Pushing tagged app image..."
+          docker push ${{ env.APP_TAG }} || echo "Tagged image push failed, but continuing..."
 
       - name: Build & Push Anomaly Image
         uses: docker/build-push-action@v5
