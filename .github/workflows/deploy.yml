@@ -38,15 +38,33 @@ jobs:
         gcloud auth configure-docker us-docker.pkg.dev --quiet
 
     - name: Set Image Tags
+      id: set-tags
       run: |
-        echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-        echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
-        echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
-        echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+        echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:$SHORT_SHA" >> $GITHUB_ENV
+        echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:$SHORT_SHA" >> $GITHUB_ENV
+        echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:$SHORT_SHA" >> $GITHUB_ENV
+        
+        # Also set the tags as step outputs for debugging
+        echo "app_tag=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:$SHORT_SHA" >> $GITHUB_OUTPUT
+        echo "anomaly_tag=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:$SHORT_SHA" >> $GITHUB_OUTPUT
+        echo "dashboard_tag=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:$SHORT_SHA" >> $GITHUB_OUTPUT
+        
+        echo "✅ Image tags set successfully:"
+        echo "   SHORT_SHA: $SHORT_SHA"
+        echo "   APP_TAG: $APP_TAG"
+        echo "   ANOMALY_TAG: $ANOMALY_TAG"
+        echo "   DASHBOARD_TAG: $DASHBOARD_TAG"
 
     - name: Build All Images (Parallel)
       run: |
         echo "🚀 Building all Docker images in parallel..."
+        echo "📋 Using image tags:"
+        echo "   APP_TAG: ${{ env.APP_TAG }}"
+        echo "   ANOMALY_TAG: ${{ env.ANOMALY_TAG }}"
+        echo "   DASHBOARD_TAG: ${{ env.DASHBOARD_TAG }}"
+        echo "   SHORT_SHA: ${{ env.SHORT_SHA }}"
         
         # Build app image
         docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest \
