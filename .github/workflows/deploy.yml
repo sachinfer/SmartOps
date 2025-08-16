@@ -214,20 +214,19 @@ jobs:
           # Load the image from tar
           docker load < /tmp/app-image.tar
           
-          # Retry push with aggressive timeout and better error handling
-          for attempt in {1..3}; do
+          # Retry push with minimal attempts and quick failure
+          for attempt in {1..2}; do
             echo "Push attempt $attempt..."
             
-            # Set aggressive timeout (2 minutes) for the push command
-            if timeout 120 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest; then
+            # Set very aggressive timeout (1 minute) for the push command
+            if timeout 60 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest; then
               echo "App image pushed successfully!"
               break
             else
               echo "Push failed on attempt $attempt"
-              if [ $attempt -lt 3 ]; then
-                wait_time=$((5 * $attempt))
-                echo "Waiting $wait_time seconds before retry..."
-                sleep $wait_time
+              if [ $attempt -lt 2 ]; then
+                echo "Waiting 5 seconds before retry..."
+                sleep 5
               else
                 echo "All push attempts failed - continuing with deployment"
                 echo "⚠️ Warning: App image push failed, but continuing with other services"
@@ -236,9 +235,9 @@ jobs:
             fi
           done
           
-          # Also push the tagged version (with aggressive timeout)
+          # Also push the tagged version (with very aggressive timeout)
           echo "Pushing tagged app image..."
-          timeout 120 docker push ${{ env.APP_TAG }} || echo "Tagged image push failed, but continuing..."
+          timeout 60 docker push ${{ env.APP_TAG }} || echo "Tagged image push failed, but continuing..."
 
       - name: Build & Push Anomaly Image
         uses: docker/build-push-action@v5
@@ -281,20 +280,19 @@ jobs:
           # Load the image from tar
           docker load < /tmp/anomaly-image.tar
           
-          # Retry push with aggressive timeout and better error handling
-          for attempt in {1..3}; do
+          # Retry push with minimal attempts and quick failure
+          for attempt in {1..2}; do
             echo "Push attempt $attempt..."
             
-            # Set aggressive timeout (2 minutes) for the push command
-            if timeout 120 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest; then
+            # Set very aggressive timeout (1 minute) for the push command
+            if timeout 60 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest; then
               echo "Anomaly image pushed successfully!"
               break
             else
               echo "Push failed on attempt $attempt"
-              if [ $attempt -lt 3 ]; then
-                wait_time=$((5 * $attempt))
-                echo "Waiting $wait_time seconds before retry..."
-                sleep $wait_time
+              if [ $attempt -lt 2 ]; then
+                echo "Waiting 5 seconds before retry..."
+                sleep 5
               else
                 echo "All push attempts failed - continuing with deployment"
                 echo "⚠️ Warning: Anomaly image push failed, but continuing with other services"
@@ -350,20 +348,19 @@ jobs:
           # Load the image from tar
           docker load < /tmp/dashboard-image.tar
           
-          # Retry push with aggressive timeout and better error handling
-          for attempt in {1..3}; do
+          # Retry push with minimal attempts and quick failure
+          for attempt in {1..2}; do
             echo "Push attempt $attempt..."
             
-            # Set aggressive timeout (2 minutes) for the push command
-            if timeout 120 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest; then
+            # Set very aggressive timeout (1 minute) for the push command
+            if timeout 60 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest; then
               echo "Dashboard image pushed successfully!"
               break
             else
               echo "Push failed on attempt $attempt"
-              if [ $attempt -lt 3 ]; then
-                wait_time=$((5 * $attempt))
-                echo "Waiting $wait_time seconds before retry..."
-                sleep $wait_time
+              if [ $attempt -lt 2 ]; then
+                echo "Waiting 5 seconds before retry..."
+                sleep 5
               else
                 echo "All push attempts failed - continuing with deployment"
                 echo "⚠️ Warning: Dashboard image push failed, but continuing with other services"
@@ -413,20 +410,19 @@ jobs:
           # Load the image from tar
           docker load < /tmp/monitor-image.tar
           
-          # Retry push with aggressive timeout and better error handling
-          for attempt in {1..3}; do
+          # Retry push with minimal attempts and quick failure
+          for attempt in {1..2}; do
             echo "Push attempt $attempt..."
             
-            # Set aggressive timeout (2 minutes) for the push command
-            if timeout 120 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest; then
+            # Set very aggressive timeout (1 minute) for the push command
+            if timeout 60 docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor:latest; then
               echo "Monitor image pushed successfully!"
               break
             else
               echo "Push failed on attempt $attempt"
-              if [ $attempt -lt 3 ]; then
-                wait_time=$((5 * $attempt))
-                echo "Waiting $wait_time seconds before retry..."
-                sleep $wait_time
+              if [ $attempt -lt 2 ]; then
+                echo "Waiting 5 seconds before retry..."
+                sleep 5
               else
                 echo "All push attempts failed - continuing with deployment"
                 echo "⚠️ Warning: Monitor image push failed, but continuing with other services"
