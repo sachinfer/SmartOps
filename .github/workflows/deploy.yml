@@ -289,6 +289,9 @@ jobs:
           echo "🌐 ArgoCD Server IP: $ARGOCD_SERVER_IP"
           
           # Sync all SmartOps applications using kubectl exec with proper ArgoCD CLI configuration
+          echo "🔐 Logging into ArgoCD server..."
+          kubectl exec -n argocd $ARGOCD_POD -- argocd login localhost:8080 --insecure --username admin --password admin
+          
           echo "🔄 Syncing smartops-dashboard..."
           kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --server localhost:8080 --insecure --prune --timeout 300
           
