@@ -466,13 +466,13 @@ jobs:
           
           # Sync all SmartOps applications using kubectl exec with proper ArgoCD CLI configuration
           echo "🔄 Syncing smartops-dashboard..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --server $ARGOCD_SERVER_IP:8080 --prune --timeout 300
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-dashboard --server argocd-server.argocd.svc.cluster.local:8080 --prune --timeout 300
           
           echo "🔄 Syncing smartops-monitor..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --server $ARGOCD_SERVER_IP:8080 --prune --timeout 300
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-monitor --server argocd-server.argocd.svc.cluster.local:8080 --prune --timeout 300
           
           echo "🔄 Syncing smartops-anomaly..."
-          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --server $ARGOCD_SERVER_IP:8080 --prune --timeout 300
+          kubectl exec -n argocd $ARGOCD_POD -- argocd app sync smartops-anomaly --server argocd-server.argocd.svc.cluster.local:8080 --prune --timeout 300
           
           echo "✅ ArgoCD sync triggered successfully!"
           
