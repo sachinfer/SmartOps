@@ -871,10 +871,7 @@ col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
 
 with col_header1:
     # Display current time range selection
-    if time_preset == "Live (Now)":
-        st.markdown("**~ Now → Now**")
-    else:
-        st.markdown("**~ Historical Data**")
+    st.markdown("**~ Now → Now**")
 
 with col_header2:
     # Quick time presets dropdown
