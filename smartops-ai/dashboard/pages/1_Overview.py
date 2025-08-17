@@ -160,22 +160,93 @@ def fetch_pod_status_summary():
             "total": 12
         }
 
-def generate_time_series_data():
-    """Generate mock time series data for charts"""
+def generate_time_series_data(time_range="current"):
+    """Generate mock time series data for charts based on time range"""
     now = datetime.now()
-    timestamps = [now - timedelta(minutes=i) for i in range(60, 0, -1)]
     
-    # CPU usage with some variation
+    if time_range == "current" or time_range == "5min_ago":
+        # Last 5 minutes with 10-second intervals
+        timestamps = [now - timedelta(seconds=i*10) for i in range(30, 0, -1)]
+        intervals = 30
+    elif time_range == "15min_ago":
+        # Last 15 minutes with 1-minute intervals
+        timestamps = [now - timedelta(minutes=i) for i in range(15, 0, -1)]
+        intervals = 15
+    elif time_range == "1hour_ago":
+        # Last hour with 5-minute intervals
+        timestamps = [now - timedelta(minutes=i*5) for i in range(12, 0, -1)]
+        intervals = 12
+    elif time_range == "6hours_ago":
+        # Last 6 hours with 30-minute intervals
+        timestamps = [now - timedelta(minutes=i*30) for i in range(12, 0, -1)]
+        intervals = 12
+    else:  # 24hours_ago
+        # Last 24 hours with 2-hour intervals
+        timestamps = [now - timedelta(hours=i*2) for i in range(12, 0, -1)]
+        intervals = 12
+    
+    # CPU usage with some variation based on time
     cpu_base = 65
-    cpu_data = [cpu_base + np.random.normal(0, 5) for _ in range(60)]
+    cpu_data = [cpu_base + np.random.normal(0, 5) for _ in range(intervals)]
     cpu_data = [max(0, min(100, x)) for x in cpu_data]
     
-    # Memory usage with some variation
+    # Memory usage with some variation based on time
     memory_base = 72
-    memory_data = [memory_base + np.random.normal(0, 3) for _ in range(60)]
+    memory_data = [memory_base + np.random.normal(0, 3) for _ in range(intervals)]
     memory_data = [max(0, min(100, x)) for x in memory_data]
     
     return timestamps, cpu_data, memory_data
+
+def get_historical_metrics(time_range):
+    """Get historical cluster metrics based on time range"""
+    if time_range == "current":
+        return {
+            "cpu_usage": 2.5,
+            "memory_usage": 4.2 * (1024**3),
+            "node_count": 3,
+            "pod_count": 12,
+            "service_count": 8
+        }
+    elif time_range == "5min_ago":
+        return {
+            "cpu_usage": 2.8,
+            "memory_usage": 4.5 * (1024**3),
+            "node_count": 3,
+            "pod_count": 11,
+            "service_count": 8
+        }
+    elif time_range == "15min_ago":
+        return {
+            "cpu_usage": 3.1,
+            "memory_usage": 4.8 * (1024**3),
+            "node_count": 3,
+            "pod_count": 10,
+            "service_count": 8
+        }
+    elif time_range == "1hour_ago":
+        return {
+            "cpu_usage": 2.2,
+            "memory_usage": 3.9 * (1024**3),
+            "node_count": 3,
+            "pod_count": 13,
+            "service_count": 8
+        }
+    elif time_range == "6hours_ago":
+        return {
+            "cpu_usage": 1.8,
+            "memory_usage": 3.5 * (1024**3),
+            "node_count": 3,
+            "pod_count": 15,
+            "service_count": 8
+        }
+    else:  # 24hours_ago
+        return {
+            "cpu_usage": 1.5,
+            "memory_usage": 3.2 * (1024**3),
+            "node_count": 3,
+            "pod_count": 18,
+            "service_count": 8
+        }
 
 # Page config
 st.set_page_config(
@@ -399,8 +470,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Fetch all data
-cluster_metrics = fetch_cluster_metrics()
+# Fetch all data based on selected time range
+if selected_time == "Current":
+    cluster_metrics = fetch_cluster_metrics()
+else:
+    cluster_metrics = get_historical_metrics(selected_time)
+
 node_metrics = fetch_node_metrics()
 pod_status = fetch_pod_status_summary()
 df = load_anomalies_df()
@@ -583,6 +658,56 @@ fig_pods.update_yaxes(showgrid=True, gridcolor='#e9ecef')
 
 st.plotly_chart(fig_pods, use_container_width=True)
 
+# Time Selector for Historical Data
+st.markdown('<div class="section-header">⏰ Time Range Selector</div>', unsafe_allow_html=True)
+
+# Time range selection
+col1, col2, col3 = st.columns([1, 1, 1])
+
+with col1:
+    time_preset = st.selectbox(
+        "Quick Time Presets",
+        ["Live (Now)", "5 minutes ago", "15 minutes ago", "1 hour ago", "6 hours ago", "24 hours ago"],
+        index=0
+    )
+
+with col2:
+    custom_start = st.time_input("Custom Start Time", value=datetime.now().time())
+
+with col3:
+    custom_end = st.time_input("Custom End Time", value=datetime.now().time())
+
+# Apply time filter
+if time_preset == "Live (Now)":
+    selected_time = "Current"
+    time_description = "Real-time data"
+elif time_preset == "5 minutes ago":
+    selected_time = "5min_ago"
+    time_description = "Data from 5 minutes ago"
+elif time_preset == "15 minutes ago":
+    selected_time = "15min_ago"
+    time_description = "Data from 15 minutes ago"
+elif time_preset == "1 hour ago":
+    selected_time = "1hour_ago"
+    time_description = "Data from 1 hour ago"
+elif time_preset == "6 hours ago":
+    selected_time = "6hours_ago"
+    time_description = "Data from 6 hours ago"
+else:
+    selected_time = "24hours_ago"
+    time_description = "Data from 24 hours ago"
+
+# Display selected time info and refresh button
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    st.info(f"📅 **Viewing:** {time_description} | {custom_start.strftime('%H:%M')} - {custom_end.strftime('%H:%M')}")
+
+with col2:
+    if st.button("🔄 Refresh Data", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
 # Resource Usage Visualization
 st.markdown('<div class="section-header">⚡ Resource Usage Overview</div>', unsafe_allow_html=True)
 
@@ -663,8 +788,8 @@ with col2:
 # Time Series Charts
 st.markdown('<div class="section-header">⏰ Resource Usage Trends</div>', unsafe_allow_html=True)
 
-# Generate mock time series data
-timestamps, cpu_data, memory_data = generate_time_series_data()
+# Generate mock time series data based on selected time range
+timestamps, cpu_data, memory_data = generate_time_series_data(selected_time)
 
 # Create time series charts
 col1, col2 = st.columns(2)
@@ -679,8 +804,22 @@ with col1:
         line=dict(color='#2a5298', width=3),
         marker=dict(size=4)
     ))
+    # Update title based on time range
+    if selected_time == "Current":
+        title_text = "CPU Usage Trend (Live)"
+    elif selected_time == "5min_ago":
+        title_text = "CPU Usage Trend (Last 5 Minutes)"
+    elif selected_time == "15min_ago":
+        title_text = "CPU Usage Trend (Last 15 Minutes)"
+    elif selected_time == "1hour_ago":
+        title_text = "CPU Usage Trend (Last Hour)"
+    elif selected_time == "6hours_ago":
+        title_text = "CPU Usage Trend (Last 6 Hours)"
+    else:
+        title_text = "CPU Usage Trend (Last 24 Hours)"
+    
     fig_cpu_trend.update_layout(
-        title="CPU Usage Trend (Last Hour)",
+        title=title_text,
         xaxis_title="Time",
         yaxis_title="CPU Usage (%)",
         height=300,
@@ -701,8 +840,22 @@ with col2:
         line=dict(color='#00d4aa', width=3),
         marker=dict(size=4)
     ))
+    # Update title based on time range
+    if selected_time == "Current":
+        title_text = "Memory Usage Trend (Live)"
+    elif selected_time == "5min_ago":
+        title_text = "Memory Usage Trend (Last 5 Minutes)"
+    elif selected_time == "15min_ago":
+        title_text = "Memory Usage Trend (Last 15 Minutes)"
+    elif selected_time == "1hour_ago":
+        title_text = "Memory Usage Trend (Last Hour)"
+    elif selected_time == "6hours_ago":
+        title_text = "Memory Usage Trend (Last 6 Hours)"
+    else:
+        title_text = "Memory Usage Trend (Last 24 Hours)"
+    
     fig_memory_trend.update_layout(
-        title="Memory Usage Trend (Last Hour)",
+        title=title_text,
         xaxis_title="Time",
         yaxis_title="Memory Usage (%)",
         height=300,
