@@ -235,7 +235,7 @@ jobs:
         # Default values for smartops-anomaly
         image:
           repository: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly
-          tag: "${{ env.SHORT_SHA }}"
+          tag: "latest"
           pullPolicy: Always
         
         service:
@@ -244,18 +244,50 @@ jobs:
         
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "32Mi"
+            cpu: "25m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
-        
-        model:
-          enabled: true
-          mountPath: /app/model
-          pvcName: smartops-anomaly-model
+            memory: "64Mi"
+            cpu: "50m"
         
         replicaCount: 1
+        
+        # Autoscaling configuration
+        autoscaling:
+          enabled: false
+          minReplicas: 1
+          maxReplicas: 1
+          targetCPUUtilizationPercentage: 80
+        
+        # Pod annotations
+        podAnnotations: {}
+        
+        # Image pull secrets
+        imagePullSecrets:
+          - name: gcp-registry-secret
+        
+        # Service account configuration
+        serviceAccount:
+          create: true
+          name: ""
+        
+        # Pod security context
+        podSecurityContext: {}
+        
+        # Container security context
+        securityContext: {}
+        
+        # Environment variables
+        env: []
+        
+        # Node selector
+        nodeSelector: {}
+        
+        # Affinity
+        affinity: {}
+        
+        # Tolerations
+        tolerations: []
         EOF
         
         # Create dashboard values.yaml with new image tag
@@ -263,31 +295,59 @@ jobs:
         # Default values for smartops-dashboard
         image:
           repository: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard
-          tag: "${{ env.SHORT_SHA }}"
+          tag: "latest"
           pullPolicy: Always
         
         service:
           type: LoadBalancer
-          port: 8000
-        
-        ingress:
-          enabled: true
-          className: nginx
-          hosts:
-            - host: smartops-dashboard.local
-              paths:
-                - path: /
-                  pathType: Prefix
+          port: 8501
         
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "32Mi"
+            cpu: "25m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "64Mi"
+            cpu: "50m"
         
         replicaCount: 1
+        
+        # Autoscaling configuration
+        autoscaling:
+          enabled: false
+          minReplicas: 1
+          maxReplicas: 1
+          targetCPUUtilizationPercentage: 80
+        
+        # Pod annotations
+        podAnnotations: {}
+        
+        # Image pull secrets
+        imagePullSecrets:
+          - name: gcp-registry-secret
+        
+        # Service account configuration
+        serviceAccount:
+          create: true
+          name: ""
+        
+        # Pod security context
+        podSecurityContext: {}
+        
+        # Container security context
+        securityContext: {}
+        
+        # Environment variables
+        env: []
+        
+        # Node selector
+        nodeSelector: {}
+        
+        # Affinity
+        affinity: {}
+        
+        # Tolerations
+        tolerations: []
         EOF
         
         # Create monitor values.yaml with new image tag
@@ -295,7 +355,7 @@ jobs:
         # Default values for smartops-monitor
         image:
           repository: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-monitor
-          tag: "${{ env.SHORT_SHA }}"
+          tag: "latest"
           pullPolicy: Always
         
         service:
@@ -304,13 +364,50 @@ jobs:
         
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "100m"
+            memory: "32Mi"
+            cpu: "25m"
           limits:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "64Mi"
+            cpu: "50m"
         
         replicaCount: 1
+        
+        # Autoscaling configuration
+        autoscaling:
+          enabled: false
+          minReplicas: 1
+          maxReplicas: 1
+          targetCPUUtilizationPercentage: 80
+        
+        # Pod annotations
+        podAnnotations: {}
+        
+        # Image pull secrets
+        imagePullSecrets:
+          - name: gcp-registry-secret
+        
+        # Service account configuration
+        serviceAccount:
+          create: true
+          name: ""
+        
+        # Pod security context
+        podSecurityContext: {}
+        
+        # Container security context
+        securityContext: {}
+        
+        # Environment variables
+        env: []
+        
+        # Node selector
+        nodeSelector: {}
+        
+        # Affinity
+        affinity: {}
+        
+        # Tolerations
+        tolerations: []
         EOF
         
         echo "✅ Values files created with new image tags!"
