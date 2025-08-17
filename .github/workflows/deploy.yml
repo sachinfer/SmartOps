@@ -15,13 +15,12 @@ jobs:
     environment: dev
     env:
       NAMESPACE: smartops
+      REGISTRY: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo
 
-    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      #added new telegram
       - name: Notify Telegram - Deployment Started
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
@@ -47,50 +46,62 @@ jobs:
       - name: Generate Image Tags
         run: |
           echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "APP_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "ANOMALY_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
-          echo "DASHBOARD_TAG=us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "APP_TAG=${{ env.REGISTRY }}/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "ANOMALY_TAG=${{ env.REGISTRY }}/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "DASHBOARD_TAG=${{ env.REGISTRY }}/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "MONITOR_TAG=${{ env.REGISTRY }}/smartops-monitor:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-      - name: Build & Push App Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-app:latest
-            ${{ env.APP_TAG }}
-        continue-on-error: false
-
-      - name: Build & Push Anomaly Service Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./smartops-ai
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-anomaly:latest
-            ${{ env.ANOMALY_TAG }}
-        continue-on-error: false
-
-      - name: Build & Push Dashboard Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./smartops-ai/dashboard
-          file: ./smartops-ai/dashboard/Dockerfile
-          push: true
-          tags: |
-            us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo/smartops-dashboard:latest
-            ${{ env.DASHBOARD_TAG }}
-        continue-on-error: false
-
-      - name: Build & Push Monitor Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./smartops-ai/app
-          file: ./smartops-ai/app/Dockerfile.monitor
-          push: true
-          tags: |
-            us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-monitor:latest
-        continue-on-error: false
+      # 🚀 OPTIMIZED: Parallel builds with Docker layer caching
+      - name: Build & Push All Images (Parallel)
+        run: |
+          # Build all images in parallel using Docker Buildx
+          docker buildx create --use
+          
+          # Build and push all images simultaneously
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-app:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-app:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-app:latest \
+            --tag ${{ env.REGISTRY }}/smartops-app:${GITHUB_SHA::8} \
+            --push \
+            --file Dockerfile \
+            . &
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-anomaly:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-anomaly:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-anomaly:latest \
+            --tag ${{ env.REGISTRY }}/smartops-anomaly:${GITHUB_SHA::8} \
+            --push \
+            --file smartops-ai/Dockerfile \
+            ./smartops-ai &
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-dashboard:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-dashboard:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-dashboard:latest \
+            --tag ${{ env.REGISTRY }}/smartops-dashboard:${GITHUB_SHA::8} \
+            --push \
+            --file smartops-ai/dashboard/Dockerfile \
+            ./smartops-ai/dashboard &
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-monitor:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-monitor:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-monitor:latest \
+            --tag ${{ env.REGISTRY }}/smartops-monitor:${GITHUB_SHA::8} \
+            --push \
+            --file smartops-ai/app/Dockerfile.monitor \
+            ./smartops-ai/app &
+          
+          # Wait for all builds to complete
+          wait
+          
+          echo "✅ All images built and pushed successfully!"
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
@@ -103,194 +114,74 @@ jobs:
             --zone us-central1-a \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Debug kubectl context
+      # 🚀 OPTIMIZED: Deploy all resources in parallel
+      - name: Deploy All Resources (Parallel)
         run: |
-          kubectl config current-context
-          kubectl get nodes
-
-      - name: Deploy Monitor Deployment
-        run: |
-          kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install Python dependencies for event logging
-        run: |
-          pip install -r smartops-ai/dashboard/requirements.txt
-
-      - name: Ensure data directory exists
-        run: mkdir -p smartops-ai/dashboard/data
-
-      - name: Log Deployment Started (to dashboard API)
-        run: |
-            # Check if dashboard pod exists and is ready
-            if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running 2>/dev/null | grep -q .; then
-              # Check if pod is already ready
-              if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' | grep -q "true"; then
-                echo "✅ Dashboard pod is already ready"
-              else
-                echo "Waiting for dashboard pod to become ready..."
-                kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
-              fi
-              
-              # Get the external IP of the dashboard service
-              DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-              
-              if [ -n "$DASHBOARD_IP" ]; then
-                echo "Logging deployment start to dashboard at $DASHBOARD_IP"
-                # Test dashboard connectivity first
-                if curl -s "http://$DASHBOARD_IP:8000/log_event" --max-time 5 > /dev/null 2>&1; then
-                  curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-                    -H "Content-Type: application/json" \
-                    -d '{"status": "started", "message": "Deployment started", "namespace": "smartops"}' \
-                    --max-time 10 || echo "Failed to log to dashboard"
-                else
-                  echo "Dashboard not responding, skipping external logging"
-                fi
-              else
-                echo "Dashboard service external IP not available yet, skipping event log"
-              fi
-              
-              # Also log to internal service for redundancy
-              kubectl exec -n smartops deployment/smartops-dashboard -- curl -X POST "http://localhost:8000/log_event" \
-                -H "Content-Type: application/json" \
-                -d '{"status": "started", "message": "Deployment started (internal)", "namespace": "smartops"}' \
-                --max-time 10 || echo "Internal logging failed"
-            else
-              echo "Dashboard pod not found yet, skipping event log (will be created during deployment)"
-            fi
-
-      # - name: Notify Telegram - Deployment Started
-      #   run: |
-      #     curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-      #       -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-      #       -d text="🚀 *Production deployment started in namespace `smartops`!*" \
-      #       -d parse_mode=Markdown
-
-      - name: Deploy to GKE
-        run: |
-          set -e  # Exit on any error
+          set -e
           
-          echo "Starting deployment to GKE..."
+          echo "Starting parallel deployment to GKE..."
           
           # Create namespace if it doesn't exist
           kubectl get ns smartops || kubectl create ns smartops
-          echo "✅ Namespace ready"
-
-          # Deploy ConfigMap for dashboard configuration
-          kubectl apply -f smartops-ai/k8s/dashboard-config.yaml -n smartops
-          echo "✅ ConfigMap deployed"
-
-          # Deploy Main App
-          kubectl apply -f k8s/deployment.yaml -n smartops
-          kubectl apply -f k8s/service.yaml -n smartops
-          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops
-          echo "✅ Main app deployed"
-
-          # Deploy Anomaly Service
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops
-          kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n smartops
-          echo "✅ Anomaly service deployed"
-
-          # Deploy Dashboard Service
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops
-          kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops
-          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops
-          echo "✅ Dashboard deployed"
+          
+          # Deploy all resources simultaneously
+          kubectl apply -f smartops-ai/k8s/dashboard-config.yaml -n smartops &
+          kubectl apply -f k8s/deployment.yaml -n smartops &
+          kubectl apply -f k8s/service.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops &
+          
+          # Wait for all deployments to be applied
+          wait
+          
+          # Update images for all deployments
+          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops &
+          kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n smartops &
+          kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops &
+          
+          # Wait for image updates
+          wait
           
           echo "🎉 All deployments completed successfully!"
 
-      - name: Wait for Dashboard to be Ready
+      # 🚀 OPTIMIZED: Wait for critical services only
+      - name: Wait for Critical Services
         if: success()
         run: |
-          echo "Checking dashboard status..."
-          # Check if pod is already ready first
-          if kubectl get pods -l app=smartops-dashboard -n smartops --field-selector=status.phase=Running -o jsonpath='{.items[0].status.containerStatuses[0].ready}' | grep -q "true"; then
-            echo "✅ Dashboard pod is already ready"
-          else
-            echo "Waiting for dashboard pod to become ready..."
-            kubectl wait --for=condition=ready pod -l app=smartops-dashboard -n smartops --timeout=300s
-            echo "✅ Dashboard pod is ready"
-          fi
+          echo "Waiting for critical services to be ready..."
           
-          # Test dashboard connectivity
-          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          if [ -n "$DASHBOARD_IP" ]; then
-            echo "Testing dashboard connectivity at $DASHBOARD_IP..."
-            if curl -s "http://$DASHBOARD_IP:8000/log_event" --max-time 10 > /dev/null 2>&1; then
-              echo "✅ Dashboard is responding"
-            else
-              echo "⚠️ Dashboard not responding, but continuing..."
-            fi
-          else
-            echo "⚠️ Dashboard IP not available"
-          fi
+          # Wait for dashboard (most critical)
+          kubectl wait --for=condition=available deployment/smartops-dashboard -n smartops --timeout=180s || echo "⚠️ Dashboard deployment timeout"
+          
+          # Wait for anomaly service
+          kubectl wait --for=condition=available deployment/smartops-anomaly-deployment -n smartops --timeout=120s || echo "⚠️ Anomaly service timeout"
+          
+          # Wait for main app
+          kubectl wait --for=condition=available deployment/smartops-app -n smartops --timeout=120s || echo "⚠️ Main app timeout"
+          
+          echo "✅ Critical services are ready!"
 
-      - name: Notify Telegram - Deployment Success
+      # 🚀 OPTIMIZED: Simplified success notification
+      - name: Notify Success
         if: success()
         run: |
-          # Get the external IP of the dashboard service
           DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
           
-          if [ -n "$DASHBOARD_IP" ]; then
-            echo "Logging success to dashboard at $DASHBOARD_IP"
-            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-              -H "Content-Type: application/json" \
-              -d '{"status": "success", "message": "SmartOps AI platform deployment completed successfully - App, Anomaly Detection, Dashboard, and Monitor services deployed", "namespace": "smartops"}' \
-              --max-time 10 || echo "Failed to log success to dashboard"
-          else
-            echo "Dashboard IP not available, skipping dashboard logging"
-          fi
-          
-          # Always send Telegram notification
+          # Send Telegram notification
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://$DASHBOARD_IP)" \
             -d parse_mode=Markdown
 
-      - name: Notify Telegram - Deployment Failed
+      # 🚀 OPTIMIZED: Simplified failure notification
+      - name: Notify Failure
         if: failure()
         run: |
-          # Try to log failure to dashboard if it's available
-          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-          
-          if [ -n "$DASHBOARD_IP" ]; then
-            echo "Logging failure to dashboard at $DASHBOARD_IP"
-            curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-              -H "Content-Type: application/json" \
-              -d '{"status": "failed", "message": "Deployment failed - check pipeline logs for details", "namespace": "smartops"}' \
-              --max-time 10 || echo "Failed to log to dashboard"
-          else
-            echo "Dashboard not available, skipping dashboard logging"
-          fi
-          
-          # Always send Telegram notification
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="❌ *Production deployment failed in namespace \`smartops\`!*%0A%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Check:* [Pipeline Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
             -d parse_mode=Markdown
-
-      - name: Always Notify Dashboard of Job Status
-        if: always()
-        run: |
-          # This step always runs, regardless of success/failure
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "Job completed successfully"
-          else
-            echo "Job failed or was cancelled"
-            # Try to log to dashboard if available
-            DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-            
-            if [ -n "$DASHBOARD_IP" ]; then
-              echo "Logging final status to dashboard at $DASHBOARD_IP"
-              curl -X POST "http://$DASHBOARD_IP:8000/log_event" \
-                -H "Content-Type: application/json" \
-                -d '{"status": "failed", "message": "Pipeline job failed - check GitHub Actions logs", "namespace": "smartops"}' \
-                --max-time 10 || echo "Failed to log final status to dashboard"
-            fi
-          fi
