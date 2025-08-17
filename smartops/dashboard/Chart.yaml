@@ -1,0 +1,16 @@
+apiVersion: v2
+name: smartops-dashboard
+description: A Helm chart for SmartOps Dashboard
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - smartops
+  - dashboard
+  - monitoring
+home: https://github.com/sachinfer/smartops
+sources:
+  - https://github.com/sachinfer/smartops
+maintainers:
+  - name: sachinfer
+    email: sachinnavoda74@gmail.com

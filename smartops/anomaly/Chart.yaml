@@ -1,0 +1,16 @@
+apiVersion: v2
+name: smartops-anomaly
+description: A Helm chart for SmartOps Anomaly Detection
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - smartops
+  - anomaly
+  - detection
+home: https://github.com/sachinfer/smartops
+sources:
+  - https://github.com/sachinfer/smartops
+maintainers:
+  - name: sachinfer
+    email: sachinnavoda74@gmail.com
