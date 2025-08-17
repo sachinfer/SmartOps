@@ -12,18 +12,39 @@ from sidebar_utils import show_sidebar
 # Timezone setup
 IST = pytz.timezone('Asia/Kolkata')
 
+# API Configuration
+API_ENDPOINTS = [
+    "http://localhost:8000",
+    "http://34.9.232.188:8000", 
+    "http://34.9.232.188"
+]
+
+# Mock data fallback
+MOCK_NAMESPACES = ["default", "kube-system", "kube-public", "kube-node-lease"]
+
 # Cached functions
 @st.cache_data(ttl=30)
 def fetch_namespaces():
     try:
-        url = "http://localhost:8000/namespaces"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            return resp.json().get('namespaces', [])
-        else:
-            return []
+        # Try multiple possible API endpoints
+        urls = [
+            "http://localhost:8000/namespaces",
+            "http://34.9.232.188:8000/namespaces",
+            "http://34.9.232.188/namespaces"
+        ]
+        
+        for url in urls:
+            try:
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    return resp.json().get('namespaces', [])
+            except:
+                continue
+        
+        # Return mock data if no API is available
+        return ["default", "kube-system", "kube-public", "kube-node-lease"]
     except Exception as e:
-        return []
+        return ["default", "kube-system", "kube-public", "kube-node-lease"]
 
 @st.cache_data(ttl=30)
 def load_anomalies_df():
@@ -39,21 +60,31 @@ def load_anomalies_df():
 def fetch_cluster_metrics():
     """Fetch cluster-wide metrics"""
     try:
-        url = "http://localhost:8000/cluster_metrics"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            return resp.json()
-        else:
-            # Mock data for demonstration
-            return {
-                "cpu_usage": 2.5, 
-                "memory_usage": 4.2 * (1024**3), 
-                "cpu_capacity": 8, 
-                "memory_capacity": 16 * (1024**3),
-                "node_count": 3,
-                "pod_count": 12,
-                "service_count": 8
-            }
+        # Try multiple possible API endpoints
+        urls = [
+            "http://localhost:8000/cluster_metrics",
+            "http://34.9.232.188:8000/cluster_metrics",
+            "http://34.9.232.188/cluster_metrics"
+        ]
+        
+        for url in urls:
+            try:
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    return resp.json()
+            except:
+                continue
+        
+        # Mock data for demonstration
+        return {
+            "cpu_usage": 2.5, 
+            "memory_usage": 4.2 * (1024**3), 
+            "cpu_capacity": 8, 
+            "memory_capacity": 16 * (1024**3),
+            "node_count": 3,
+            "pod_count": 12,
+            "service_count": 8
+        }
     except Exception as e:
         return {
             "cpu_usage": 2.5, 
@@ -69,41 +100,51 @@ def fetch_cluster_metrics():
 def fetch_node_metrics():
     """Fetch node-level metrics"""
     try:
-        url = "http://localhost:8000/node_metrics"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            return resp.json().get("nodes", [])
-        else:
-            # Mock data for demonstration
-            return [
-                {
-                    "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
-                    "cpu_usage": 2.5,
-                    "cpu_capacity": 8,
-                    "memory_usage": 4.2 * (1024**3),
-                    "memory_capacity": 16 * (1024**3),
-                    "status": "Ready",
-                    "pods": 4
-                },
-                {
-                    "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
-                    "cpu_usage": 1.8,
-                    "cpu_capacity": 8,
-                    "memory_usage": 3.1 * (1024**3),
-                    "memory_capacity": 16 * (1024**3),
-                    "status": "Ready",
-                    "pods": 3
-                },
-                {
-                    "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
-                    "cpu_usage": 3.2,
-                    "cpu_capacity": 8,
-                    "memory_usage": 5.8 * (1024**3),
-                    "memory_capacity": 16 * (1024**3),
-                    "status": "Ready",
-                    "pods": 5
-                }
-            ]
+        # Try multiple possible API endpoints
+        urls = [
+            "http://localhost:8000/node_metrics",
+            "http://34.9.232.188:8000/node_metrics",
+            "http://34.9.232.188/node_metrics"
+        ]
+        
+        for url in urls:
+            try:
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    return resp.json().get("nodes", [])
+            except:
+                continue
+        
+        # Mock data for demonstration
+        return [
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
+                "cpu_usage": 2.5,
+                "cpu_capacity": 8,
+                "memory_usage": 4.2 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 4
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
+                "cpu_usage": 1.8,
+                "cpu_capacity": 8,
+                "memory_usage": 3.1 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 3
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
+                "cpu_usage": 3.2,
+                "cpu_capacity": 8,
+                "memory_usage": 5.8 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 5
+            }
+        ]
     except Exception as e:
         return [
             {
@@ -139,18 +180,28 @@ def fetch_node_metrics():
 def fetch_pod_status_summary():
     """Fetch pod status summary"""
     try:
-        url = "http://localhost:8000/pod_status_summary"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            return resp.json()
-        else:
-            return {
-                "running": 10,
-                "pending": 1,
-                "failed": 0,
-                "succeeded": 1,
-                "total": 12
-            }
+        # Try multiple possible API endpoints
+        urls = [
+            "http://localhost:8000/pod_status_summary",
+            "http://34.9.232.188:8000/pod_status_summary",
+            "http://34.9.232.188/pod_status_summary"
+        ]
+        
+        for url in urls:
+            try:
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    return resp.json()
+            except:
+                continue
+        
+        return {
+            "running": 10,
+            "pending": 1,
+            "failed": 0,
+            "succeeded": 1,
+            "total": 12
+        }
     except Exception as e:
         return {
             "running": 10,
@@ -462,6 +513,25 @@ st.markdown("""
     margin: 1rem 0;
 }
 
+.quick-time-btn {
+    background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.quick-time-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
 .time-input-label {
     font-weight: 600;
     color: #495057;
@@ -499,6 +569,37 @@ st.markdown('<div class="section-header">⏰ Time Range Selector</div>', unsafe_
 # Time range selection with styled container
 st.markdown('<div class="time-selector-container">', unsafe_allow_html=True)
 
+# Quick time range buttons
+st.markdown("**Quick Set Time Ranges:**")
+col_quick1, col_quick2, col_quick3, col_quick4 = st.columns([1, 1, 1, 1])
+
+with col_quick1:
+    if st.button("🌅 7 AM - Now", key="quick_7am_now"):
+        start_time = datetime.strptime("07:00", "%H:%M").time()
+        end_time = datetime.now().time()
+        st.rerun()
+
+with col_quick2:
+    if st.button("🌞 9 AM - 5 PM", key="quick_9am_5pm"):
+        start_time = datetime.strptime("09:00", "%H:%M").time()
+        end_time = datetime.strptime("17:00", "%H:%M").time()
+        st.rerun()
+
+with col_quick3:
+    if st.button("🌙 6 PM - 6 AM", key="quick_6pm_6am"):
+        start_time = datetime.strptime("18:00", "%H:%M").time()
+        end_time = datetime.strptime("06:00", "%H:%M").time()
+        st.rerun()
+
+with col_quick4:
+    if st.button("🕐 Current Hour", key="quick_current_hour"):
+        now = datetime.now()
+        start_time = now.replace(minute=0, second=0, microsecond=0).time()
+        end_time = now.time()
+        st.rerun()
+
+st.markdown("---")
+
 col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 
 with col1:
@@ -517,47 +618,92 @@ with col2:
     )
 
 with col3:
-    # Start time with AM/PM format
+    # Start time with AM/PM format - default to 7 AM for historical data
+    if time_preset == "Live (Now)":
+        default_start_time = datetime.now().time()
+    else:
+        # For historical data, default to 7 AM
+        default_start_time = datetime.strptime("07:00", "%H:%M").time()
+    
     start_time = st.time_input(
         "🕐 Start Time",
-        value=datetime.now().time(),
-        step=300  # 5-minute intervals
+        value=default_start_time,
+        step=300,  # 5-minute intervals
+        format="HH:mm"  # 24-hour format for better AM/PM display
     )
 
 with col4:
-    # End time with AM/PM format
+    # End time with AM/PM format - default to current time for historical data
+    default_end_time = datetime.now().time() if time_preset != "Live (Now)" else datetime.now().time()
     end_time = st.time_input(
         "🕐 End Time", 
-        value=datetime.now().time(),
-        step=300  # 5-minute intervals
+        value=default_end_time,
+        step=300,  # 5-minute intervals
+        format="HH:mm"  # 24-hour format for better AM/PM display
     )
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Apply time filter
+# Apply time filter and auto-update times
 if time_preset == "Live (Now)":
     selected_time = "Current"
     time_description = "Real-time data"
     # For live data, use current date and time
     display_date = datetime.now().strftime("%B %d, %Y")
     display_time = f"{datetime.now().strftime('%I:%M %p')}"
+    
+    # Auto-update start and end times to current time for live data
+    if st.button("🔄 Sync to Current Time", key="sync_live"):
+        start_time = datetime.now().time()
+        end_time = datetime.now().time()
+        st.rerun()
+        
 else:
     # For historical data, use selected date and times
     if time_preset == "5 minutes ago":
         selected_time = "5min_ago"
         time_description = "Data from 5 minutes ago"
+        # Auto-set start time to 5 minutes ago, end time to now
+        if st.button("🔄 Set 5 Min Range", key="sync_5min"):
+            start_time = (datetime.now() - timedelta(minutes=5)).time()
+            end_time = datetime.now().time()
+            st.rerun()
+            
     elif time_preset == "15 minutes ago":
         selected_time = "15min_ago"
         time_description = "Data from 15 minutes ago"
+        # Auto-set start time to 15 minutes ago, end time to now
+        if st.button("🔄 Set 15 Min Range", key="sync_15min"):
+            start_time = (datetime.now() - timedelta(minutes=15)).time()
+            end_time = datetime.now().time()
+            st.rerun()
+            
     elif time_preset == "1 hour ago":
         selected_time = "1hour_ago"
         time_description = "Data from 1 hour ago"
+        # Auto-set start time to 1 hour ago, end time to now
+        if st.button("🔄 Set 1 Hour Range", key="sync_1hour"):
+            start_time = (datetime.now() - timedelta(hours=1)).time()
+            end_time = datetime.now().time()
+            st.rerun()
+            
     elif time_preset == "6 hours ago":
         selected_time = "6hours_ago"
         time_description = "Data from 6 hours ago"
+        # Auto-set start time to 6 hours ago, end time to now
+        if st.button("🔄 Set 6 Hour Range", key="sync_6hour"):
+            start_time = (datetime.now() - timedelta(hours=6)).time()
+            end_time = datetime.now().time()
+            st.rerun()
+            
     else:
         selected_time = "24hours_ago"
         time_description = "Data from 24 hours ago"
+        # Auto-set start time to 24 hours ago, end time to now
+        if st.button("🔄 Set 24 Hour Range", key="sync_24hour"):
+            start_time = (datetime.now() - timedelta(hours=24)).time()
+            end_time = datetime.now().time()
+            st.rerun()
     
     # Format selected date and times
     display_date = selected_date.strftime("%B %d, %Y")
@@ -577,6 +723,9 @@ with col2:
     if st.button("🔄 Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+
+# API Connection Status
+st.info("🔌 **API Status:** Using mock data for demonstration. Real-time metrics will be available once the API endpoints are configured.")
 
 # Fetch all data based on selected time range
 if selected_time == "Current":
