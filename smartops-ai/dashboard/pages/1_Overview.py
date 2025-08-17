@@ -470,6 +470,56 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Time Selector for Historical Data
+st.markdown('<div class="section-header">⏰ Time Range Selector</div>', unsafe_allow_html=True)
+
+# Time range selection
+col1, col2, col3 = st.columns([1, 1, 1])
+
+with col1:
+    time_preset = st.selectbox(
+        "Quick Time Presets",
+        ["Live (Now)", "5 minutes ago", "15 minutes ago", "1 hour ago", "6 hours ago", "24 hours ago"],
+        index=0
+    )
+
+with col2:
+    custom_start = st.time_input("Custom Start Time", value=datetime.now().time())
+
+with col3:
+    custom_end = st.time_input("Custom End Time", value=datetime.now().time())
+
+# Apply time filter
+if time_preset == "Live (Now)":
+    selected_time = "Current"
+    time_description = "Real-time data"
+elif time_preset == "5 minutes ago":
+    selected_time = "5min_ago"
+    time_description = "Data from 5 minutes ago"
+elif time_preset == "15 minutes ago":
+    selected_time = "15min_ago"
+    time_description = "Data from 15 minutes ago"
+elif time_preset == "1 hour ago":
+    selected_time = "1hour_ago"
+    time_description = "Data from 1 hour ago"
+elif time_preset == "6 hours ago":
+    selected_time = "6hours_ago"
+    time_description = "Data from 6 hours ago"
+else:
+    selected_time = "24hours_ago"
+    time_description = "Data from 24 hours ago"
+
+# Display selected time info and refresh button
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    st.info(f"📅 **Viewing:** {time_description} | {custom_start.strftime('%H:%M')} - {custom_end.strftime('%H:%M')}")
+
+with col2:
+    if st.button("🔄 Refresh Data", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
 # Fetch all data based on selected time range
 if selected_time == "Current":
     cluster_metrics = fetch_cluster_metrics()
@@ -657,56 +707,6 @@ fig_pods.update_xaxes(showgrid=False)
 fig_pods.update_yaxes(showgrid=True, gridcolor='#e9ecef')
 
 st.plotly_chart(fig_pods, use_container_width=True)
-
-# Time Selector for Historical Data
-st.markdown('<div class="section-header">⏰ Time Range Selector</div>', unsafe_allow_html=True)
-
-# Time range selection
-col1, col2, col3 = st.columns([1, 1, 1])
-
-with col1:
-    time_preset = st.selectbox(
-        "Quick Time Presets",
-        ["Live (Now)", "5 minutes ago", "15 minutes ago", "1 hour ago", "6 hours ago", "24 hours ago"],
-        index=0
-    )
-
-with col2:
-    custom_start = st.time_input("Custom Start Time", value=datetime.now().time())
-
-with col3:
-    custom_end = st.time_input("Custom End Time", value=datetime.now().time())
-
-# Apply time filter
-if time_preset == "Live (Now)":
-    selected_time = "Current"
-    time_description = "Real-time data"
-elif time_preset == "5 minutes ago":
-    selected_time = "5min_ago"
-    time_description = "Data from 5 minutes ago"
-elif time_preset == "15 minutes ago":
-    selected_time = "15min_ago"
-    time_description = "Data from 15 minutes ago"
-elif time_preset == "1 hour ago":
-    selected_time = "1hour_ago"
-    time_description = "Data from 1 hour ago"
-elif time_preset == "6 hours ago":
-    selected_time = "6hours_ago"
-    time_description = "Data from 6 hours ago"
-else:
-    selected_time = "24hours_ago"
-    time_description = "Data from 24 hours ago"
-
-# Display selected time info and refresh button
-col1, col2 = st.columns([3, 1])
-
-with col1:
-    st.info(f"📅 **Viewing:** {time_description} | {custom_start.strftime('%H:%M')} - {custom_end.strftime('%H:%M')}")
-
-with col2:
-    if st.button("🔄 Refresh Data", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
 
 # Resource Usage Visualization
 st.markdown('<div class="section-header">⚡ Resource Usage Overview</div>', unsafe_allow_html=True)
