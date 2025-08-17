@@ -453,6 +453,29 @@ st.markdown("""
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+/* Time selector styling */
+.time-selector-container {
+    background: #f8f9fa;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.time-input-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.date-input-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
 /* Quick actions CSS removed */
 
 /* Hide Streamlit elements */
@@ -473,8 +496,10 @@ st.markdown("""
 # Time Selector for Historical Data
 st.markdown('<div class="section-header">⏰ Time Range Selector</div>', unsafe_allow_html=True)
 
-# Time range selection
-col1, col2, col3 = st.columns([1, 1, 1])
+# Time range selection with styled container
+st.markdown('<div class="time-selector-container">', unsafe_allow_html=True)
+
+col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 
 with col1:
     time_preset = st.selectbox(
@@ -484,36 +509,69 @@ with col1:
     )
 
 with col2:
-    custom_start = st.time_input("Custom Start Time", value=datetime.now().time())
+    # Date picker with calendar icon
+    selected_date = st.date_input(
+        "📅 Select Date",
+        value=datetime.now().date(),
+        format="MM/DD/YYYY"
+    )
 
 with col3:
-    custom_end = st.time_input("Custom End Time", value=datetime.now().time())
+    # Start time with AM/PM format
+    start_time = st.time_input(
+        "🕐 Start Time",
+        value=datetime.now().time(),
+        step=300  # 5-minute intervals
+    )
+
+with col4:
+    # End time with AM/PM format
+    end_time = st.time_input(
+        "🕐 End Time", 
+        value=datetime.now().time(),
+        step=300  # 5-minute intervals
+    )
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Apply time filter
 if time_preset == "Live (Now)":
     selected_time = "Current"
     time_description = "Real-time data"
-elif time_preset == "5 minutes ago":
-    selected_time = "5min_ago"
-    time_description = "Data from 5 minutes ago"
-elif time_preset == "15 minutes ago":
-    selected_time = "15min_ago"
-    time_description = "Data from 15 minutes ago"
-elif time_preset == "1 hour ago":
-    selected_time = "1hour_ago"
-    time_description = "Data from 1 hour ago"
-elif time_preset == "6 hours ago":
-    selected_time = "6hours_ago"
-    time_description = "Data from 6 hours ago"
+    # For live data, use current date and time
+    display_date = datetime.now().strftime("%B %d, %Y")
+    display_time = f"{datetime.now().strftime('%I:%M %p')}"
 else:
-    selected_time = "24hours_ago"
-    time_description = "Data from 24 hours ago"
+    # For historical data, use selected date and times
+    if time_preset == "5 minutes ago":
+        selected_time = "5min_ago"
+        time_description = "Data from 5 minutes ago"
+    elif time_preset == "15 minutes ago":
+        selected_time = "15min_ago"
+        time_description = "Data from 15 minutes ago"
+    elif time_preset == "1 hour ago":
+        selected_time = "1hour_ago"
+        time_description = "Data from 1 hour ago"
+    elif time_preset == "6 hours ago":
+        selected_time = "6hours_ago"
+        time_description = "Data from 6 hours ago"
+    else:
+        selected_time = "24hours_ago"
+        time_description = "Data from 24 hours ago"
+    
+    # Format selected date and times
+    display_date = selected_date.strftime("%B %d, %Y")
+    start_time_12hr = start_time.strftime("%I:%M %p")
+    end_time_12hr = end_time.strftime("%I:%M %p")
 
 # Display selected time info and refresh button
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.info(f"📅 **Viewing:** {time_description} | {custom_start.strftime('%H:%M')} - {custom_end.strftime('%H:%M')}")
+    if time_preset == "Live (Now)":
+        st.info(f"📅 **Viewing:** {time_description} | {display_date} at {display_time}")
+    else:
+        st.info(f"📅 **Viewing:** {time_description} | {display_date} from {start_time_12hr} to {end_time_12hr}")
 
 with col2:
     if st.button("🔄 Refresh Data", use_container_width=True):
