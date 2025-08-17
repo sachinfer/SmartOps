@@ -79,8 +79,8 @@ def format_timestamp(timestamp_str):
             dt = pytz.utc.localize(dt)
         dt_ist = dt.astimezone(ist)
         
-        # Return clean format: YYYY-MM-DD HH:MM:SS
-        return dt_ist.strftime('%Y-%m-%d %H:%M:%S')
+        # Return clean format: YYYY-MM-DD HH:MM:SS AM/PM
+        return dt_ist.strftime('%Y-%m-%d %I:%M:%S %p')
     except Exception as e:
         # If parsing fails, return original but clean
         return timestamp_str.split('+')[0].replace('T', ' ')
@@ -103,6 +103,52 @@ st.markdown("""
     <p>Deployment tracking and workflow management</p>
 </div>
 """, unsafe_allow_html=True)
+
+# Real-time updates
+st.markdown("### 🔄 Real-time Updates")
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    auto_refresh = st.checkbox("🔄 Auto-refresh every 30 seconds", value=True, key="auto_refresh")
+
+with col2:
+    if st.button("🔄 Manual Refresh", key="manual_refresh"):
+        st.rerun()
+
+# Auto-refresh logic
+if auto_refresh:
+    import time
+    if 'last_refresh' not in st.session_state:
+        st.session_state.last_refresh = time.time()
+    
+    if time.time() - st.session_state.last_refresh > 30:
+        st.session_state.last_refresh = time.time()
+        st.rerun()
+
+# Show last refresh time
+if 'last_refresh' in st.session_state:
+    st.info(f"🕐 Last updated: {datetime.fromtimestamp(st.session_state.last_refresh).strftime('%I:%M:%S %p')}")
+
+# Live status indicator
+if 'last_event_count' not in st.session_state:
+    st.session_state.last_event_count = 0
+
+# Show live status
+st.markdown("### 📊 Live Status")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("🔄 Auto-refresh", "ON" if auto_refresh else "OFF")
+    
+with col2:
+    if 'last_event_count' in st.session_state:
+        st.metric("📈 Events Monitored", st.session_state.last_event_count)
+        
+with col3:
+    current_time = datetime.now().strftime('%I:%M:%S %p')
+    st.metric("🕐 Current Time", current_time)
+
+st.markdown("---")
 
 # Deployment Workflow Events Summary
 st.markdown('<div class="section-header">🚀 Deployment Workflow Events</div>', unsafe_allow_html=True)
@@ -162,11 +208,26 @@ try:
         # Filter out "started" events, keep only success and failed
         events = events[events['status'].isin(['success', 'failed'])]
         
+        # Update event count for live tracking
+        current_event_count = len(events)
+        if 'last_event_count' not in st.session_state:
+            st.session_state.last_event_count = current_event_count
+        
+        # Check if new events were added
+        new_events = current_event_count - st.session_state.last_event_count
+        st.session_state.last_event_count = current_event_count
+        
         # Debug: Show raw data
         st.markdown("### 🔍 Debug: Raw Events Data")
         st.write(f"Database path used: {used_path}")
         st.write(f"Total events found: {len(events)} (success + failed only)")
         st.write(f"Status distribution: {events['status'].value_counts().to_dict()}")
+        
+        # Show new events indicator
+        if new_events > 0:
+            st.success(f"🆕 **{new_events} new events** detected since last refresh!")
+        elif new_events == 0:
+            st.info("📊 No new events since last refresh")
         
         # Count by status
         status_counts = events["status"].value_counts().to_dict()
