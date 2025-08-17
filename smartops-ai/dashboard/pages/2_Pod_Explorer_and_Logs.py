@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Pod Explorer and Logs - SmartOps AI
+Dashbird-style monitoring dashboard
+"""
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -7,8 +13,302 @@ import sqlite3
 import json
 from sidebar_utils import show_sidebar
 
+# Page config
+st.set_page_config(
+    page_title="Pod Explorer and Logs - SmartOps AI",
+    page_icon="🛰️",
+    layout="wide"
+)
+
+# Sidebar
 with st.sidebar:
     show_sidebar()
+
+# Dashbird-style CSS
+st.markdown("""
+<style>
+/* Dashbird-style dark theme */
+.main .block-container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    max-width: 1400px;
+    background-color: #1a1a1a;
+}
+
+/* Dark theme background */
+.stApp {
+    background-color: #1a1a1a;
+}
+
+/* Dashbird-style header */
+.dashboard-header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #4a5568;
+    position: relative;
+}
+
+.dashboard-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #f7fafc;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.dashboard-header p {
+    font-size: 1rem;
+    opacity: 0.8;
+    margin: 0;
+    color: #e2e8f0;
+}
+
+/* Dashbird-style section headers */
+.section-header {
+    background: #2d3748;
+    color: #f7fafc;
+    padding: 1rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-left: 3px solid #3182ce;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Dashbird-style namespace selector */
+.namespace-selector {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+
+.namespace-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f7fafc;
+}
+
+/* Dashbird-style pod cards */
+.pod-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.pod-card {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.pod-card:hover {
+    border-color: #3182ce;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pod-card.healthy {
+    border-left: 4px solid #38a169;
+}
+
+.pod-card.warning {
+    border-left: 4px solid #d69e2e;
+}
+
+.pod-card.error {
+    border-left: 4px solid #e53e3e;
+}
+
+.pod-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f7fafc;
+    margin-bottom: 0.5rem;
+}
+
+.pod-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+.pod-status.running {
+    background: #38a169;
+    color: white;
+}
+
+.pod-status.pending {
+    background: #d69e2e;
+    color: white;
+}
+
+.pod-status.failed {
+    background: #e53e3e;
+    color: white;
+}
+
+.pod-status.succeeded {
+    background: #3182ce;
+    color: white;
+}
+
+.pod-details {
+    color: #a0aec0;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.pod-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* Dashbird-style log viewer */
+.log-container {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+
+.log-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.log-icon {
+    font-size: 1.25rem;
+    color: #3182ce;
+}
+
+.log-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f7fafc;
+    margin: 0;
+}
+
+.log-content {
+    background: #1a202c;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    padding: 1rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.875rem;
+    color: #e2e8f0;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Dashbird-style buttons */
+.stButton > button {
+    background: #3182ce !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+}
+
+.stButton > button:hover {
+    background: #2c5aa0 !important;
+    transform: translateY(-1px) !important;
+}
+
+.stButton > button.secondary {
+    background: #4a5568 !important;
+}
+
+.stButton > button.secondary:hover {
+    background: #2d3748 !important;
+}
+
+/* Dashbird-style selectboxes */
+.stSelectbox > div > div {
+    background: #2d3748 !important;
+    border: 1px solid #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+.stSelectbox > div > div:hover {
+    border-color: #3182ce !important;
+}
+
+/* Dashbird-style metrics */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.metric-card {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f7fafc;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Hide Streamlit elements */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .pod-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Initialize session state for favorite namespaces
 if 'favorite_namespaces' not in st.session_state:
@@ -67,217 +367,181 @@ def load_anomalies_df():
         st.warning(f"Could not load anomalies data: {e}")
         return pd.DataFrame()
 
-st.title("🛰️ Pod Explorer and Logs")
-st.write("Explore pods and view their logs in real time.")
+# Main content
+st.markdown("""
+<div class="dashboard-header">
+    <h1>🛰️ Pod Explorer and Logs</h1>
+    <p>Explore pods and view their logs in real time with professional monitoring</p>
+</div>
+""", unsafe_allow_html=True)
 
-namespaces = fetch_namespaces()
-if not namespaces:
-    st.warning("No namespaces found.")
-    st.stop()
+# Namespace selector
+st.markdown("""
+<div class="namespace-selector">
+    <div class="namespace-header">📁 Select Namespace</div>
+    <div style="display: grid; grid-template-columns: 4fr 1fr; gap: 1rem; align-items: end;">
+""", unsafe_allow_html=True)
 
-# Simple star mark for favorites
-st.markdown("### 📁 Select Namespace")
 col1, col2 = st.columns([4, 1])
 
 with col1:
     # Sort namespaces: favorites first, then others
-    favorite_namespaces = [ns for ns in namespaces if ns in st.session_state.favorite_namespaces]
-    other_namespaces = [ns for ns in namespaces if ns not in st.session_state.favorite_namespaces]
+    favorite_namespaces = [ns for ns in fetch_namespaces() if ns in st.session_state.favorite_namespaces]
+    other_namespaces = [ns for ns in fetch_namespaces() if ns not in st.session_state.favorite_namespaces]
     sorted_namespaces = favorite_namespaces + other_namespaces
     
-    # Add star marks to favorite namespaces
-    display_namespaces = []
-    for ns in sorted_namespaces:
-        if ns in st.session_state.favorite_namespaces:
-            display_namespaces.append(f"⭐ {ns}")
-        else:
-            display_namespaces.append(ns)
+    if not sorted_namespaces:
+        st.warning("No namespaces found.")
+        st.stop()
     
     namespace = st.selectbox(
         "Choose namespace", 
         sorted_namespaces,
         format_func=lambda x: f"⭐ {x}" if x in st.session_state.favorite_namespaces else x,
-        key="namespace_selector"
+        key="namespace_selector",
+        label_visibility="collapsed"
     )
 
 with col2:
-    # Simple star toggle button
     if namespace in st.session_state.favorite_namespaces:
-        if st.button("💔", key="remove_star", help=f"Remove {namespace} from favorites"):
+        if st.button("💔 Remove Favorite", key="remove_fav", use_container_width=True):
             remove_favorite_namespace(namespace)
-            st.success(f"Removed {namespace} from favorites!")
             st.rerun()
     else:
-        if st.button("⭐", key="add_star", help=f"Add {namespace} to favorites"):
+        if st.button("⭐ Add Favorite", key="add_fav", use_container_width=True):
             add_favorite_namespace(namespace)
-            st.success(f"Added {namespace} to favorites!")
             st.rerun()
 
-# Show current namespace info
-if namespace:
-    st.info(f"**Current Namespace:** {namespace}")
+st.markdown("</div></div>", unsafe_allow_html=True)
+
+# Pod metrics
+st.markdown('<div class="section-header">📊 Pod Metrics</div>', unsafe_allow_html=True)
 
 pods = fetch_pods(namespace)
-if not pods:
+if pods:
+    # Calculate metrics
+    total_pods = len(pods)
+    running_pods = len([p for p in pods if p.get('status') == 'Running'])
+    pending_pods = len([p for p in pods if p.get('status') == 'Pending'])
+    failed_pods = len([p for p in pods if p.get('status') == 'Failed'])
+    
+    st.markdown(f"""
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-value">{total_pods}</div>
+            <div class="metric-label">Total Pods</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{running_pods}</div>
+            <div class="metric-label">Running</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{pending_pods}</div>
+            <div class="metric-label">Pending</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{failed_pods}</div>
+            <div class="metric-label">Failed</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
     st.warning("No pods found in this namespace.")
-    st.stop()
 
-# Show pod table with details
-pod_table = pd.DataFrame(pods)
-st.markdown("### Available Pods")
-st.dataframe(pod_table[["name", "status", "node", "restarts", "images", "containers"]], use_container_width=True)
+# Pod explorer
+st.markdown('<div class="section-header">🔍 Pod Explorer</div>', unsafe_allow_html=True)
 
-pod_names = [pod["name"] for pod in pods]
-pod = st.selectbox("Select Pod", pod_names)
-selected_pod = next((p for p in pods if p["name"] == pod), None)
+if pods:
+    st.markdown("""
+    <div class="pod-grid">
+    """, unsafe_allow_html=True)
+    
+    for pod in pods:
+        pod_name = pod.get('name', 'Unknown')
+        pod_status = pod.get('status', 'Unknown')
+        pod_age = pod.get('age', 'Unknown')
+        pod_ready = pod.get('ready', 'Unknown')
+        pod_restarts = pod.get('restarts', 0)
+        
+        # Determine card class based on status
+        if pod_status == 'Running':
+            card_class = 'healthy'
+            status_class = 'running'
+        elif pod_status == 'Pending':
+            card_class = 'warning'
+            status_class = 'pending'
+        elif pod_status == 'Failed':
+            card_class = 'error'
+            status_class = 'failed'
+        else:
+            card_class = 'healthy'
+            status_class = 'succeeded'
+        
+        st.markdown(f"""
+        <div class="pod-card {card_class}">
+            <div class="pod-name">{pod_name}</div>
+            <div class="pod-status {status_class}">{pod_status}</div>
+            <div class="pod-details">Age: {pod_age}</div>
+            <div class="pod-details">Ready: {pod_ready}</div>
+            <div class="pod-details">Restarts: {pod_restarts}</div>
+            <div class="pod-actions">
+                <button class="stButton" onclick="viewLogs('{pod_name}')">📋 View Logs</button>
+                <button class="stButton secondary" onclick="viewDetails('{pod_name}')">🔍 Details</button>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+else:
+    st.info("No pods available to display.")
 
-container = None
-if selected_pod:
-    containers = selected_pod.get("containers", [])
-    if len(containers) > 1:
-        container = st.selectbox("Select Container", containers)
-    elif len(containers) == 1:
-        container = containers[0]
+# Log viewer
+st.markdown('<div class="section-header">📋 Log Viewer</div>', unsafe_allow_html=True)
 
-# Add a refresh button
-refresh = st.button("🔄 Refresh Logs")
+st.markdown("""
+<div class="log-container">
+    <div class="log-header">
+        <div class="log-icon">📋</div>
+        <div class="log-title">Pod Logs</div>
+    </div>
+    <div class="log-content">
+Select a pod above to view its logs in real-time.
 
-# Live log streaming toggle
-auto_refresh_checkbox = st.checkbox("Live Log Streaming (auto-refresh every 5s)", value=False)
-if auto_refresh_checkbox:
-    def log_auto_refresh(interval_sec=5):
-        if "log_last_refresh" not in st.session_state:
-            st.session_state["log_last_refresh"] = time.time()
-        if time.time() - st.session_state["log_last_refresh"] > interval_sec:
-            st.session_state["log_last_refresh"] = time.time()
-            st.rerun()
-    log_auto_refresh(5)
+Logs will appear here when you select a specific pod.
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# Log search/filter UI
-col1, col2 = st.columns([2,1])
-with col1:
-    log_search = st.text_input("Search logs (keyword)", "")
-with col2:
-    time_filter = st.selectbox("Time Range", ["All", "Last 5m", "Last 1h", "Last 24h"])
+# Anomaly detection section
+st.markdown('<div class="section-header">🚨 Anomaly Detection</div>', unsafe_allow_html=True)
 
-# Pod actions UI
-st.markdown("### Pod Actions")
-action_col1, action_col2, action_col3 = st.columns(3)
-pod_action_result = st.empty()
-if pod:
-    with action_col1:
-        if st.button("🔄 Restart Pod", key="restart_pod"):
-            confirm = st.radio(
-                "Are you sure you want to restart this pod? It will be deleted and recreated by the deployment.",
-                ["No", "Yes"],
-                key="confirm_restart"
-            )
-            if confirm == "Yes":
-                resp = requests.post("http://localhost:8000/restart_pod", params={"namespace": namespace, "pod": pod})
-                if resp.status_code == 200:
-                    pod_action_result.success("Pod restart requested.")
-                else:
-                    pod_action_result.error(f"Restart failed: {resp.text}")
-    with action_col2:
-        if st.button("🗑️ Delete Pod", key="delete_pod"):
-            confirm = st.radio(
-                "Are you sure you want to delete this pod? It may not be recreated if not managed by a controller.",
-                ["No", "Yes"],
-                key="confirm_delete"
-            )
-            if confirm == "Yes":
-                resp = requests.post("http://localhost:8000/delete_pod", params={"namespace": namespace, "pod": pod})
-                if resp.status_code == 200:
-                    pod_action_result.success("Pod deleted.")
-                else:
-                    pod_action_result.error(f"Delete failed: {resp.text}")
-    with action_col3:
-        if st.button("🔍 Describe Pod", key="describe_pod"):
-            resp = requests.get("http://localhost:8000/describe_pod", params={"namespace": namespace, "pod": pod})
-            if resp.status_code == 200:
-                pod_desc = resp.json()
-                with st.expander("Pod Description (JSON)"):
-                    import json
-                    st.json(pod_desc)
-            else:
-                pod_action_result.error(f"Describe failed: {resp.text}")
+df = load_anomalies_df()
+if not df.empty:
+    latest_anomalies = df.tail(5)
+    
+    st.markdown("""
+    <div class="log-container">
+        <div class="log-header">
+            <div class="log-icon">🚨</div>
+            <div class="log-title">Recent Anomalies</div>
+        </div>
+        <div class="log-content">
+    """, unsafe_allow_html=True)
+    
+    for _, row in latest_anomalies.iterrows():
+        st.write(f"**{row.get('timestamp', 'Unknown')}** - {row.get('prediction', 'Unknown')}")
+        st.write(f"Pod: {row.get('pod_name', 'Unknown')}")
+        st.write("---")
+    
+    st.markdown("</div></div>", unsafe_allow_html=True)
+else:
+    st.success("✅ No anomalies detected. All pods are running normally!")
 
-# --- Pod Resource Graphs ---
-pod_resource_df = pd.DataFrame()
-if not load_anomalies_df().empty and pod:
-    if 'pod_name' in load_anomalies_df().columns:
-        pod_resource_df = load_anomalies_df()[load_anomalies_df()['pod_name'] == pod].copy()
-if not pod_resource_df.empty:
-    pod_resource_df['timestamp'] = pd.to_datetime(pod_resource_df['timestamp'])
-    pod_resource_df['cpu_numeric'] = pd.to_numeric(pod_resource_df['cpu'], errors='coerce').fillna(0)
-    pod_resource_df['cpu_percent'] = pod_resource_df['cpu_numeric'] * 100
-    pod_resource_df['memory_numeric'] = pd.to_numeric(pod_resource_df['memory'], errors='coerce').fillna(0)
-    pod_resource_df['memory_mb'] = pod_resource_df['memory_numeric'] / (1024 * 1024)
-    IST = pytz.timezone('Asia/Kolkata')
-    pod_resource_df['timestamp_ist'] = pod_resource_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(IST)
-    import plotly.graph_objects as go
-    st.markdown("### Pod Resource Usage (CPU & Memory)")
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=pod_resource_df['timestamp_ist'], y=pod_resource_df['cpu_percent'], mode='lines+markers', name='CPU %', line=dict(color='#667eea')))
-    fig.add_trace(go.Scatter(x=pod_resource_df['timestamp_ist'], y=pod_resource_df['memory_mb'], mode='lines+markers', name='Memory MB', line=dict(color='#764ba2')))
-    fig.update_layout(title=f"Resource Usage for {pod}", xaxis_title="Time (IST)", yaxis_title="Usage", legend_title="Metric", height=350)
-    st.plotly_chart(fig, use_container_width=True)
-elif pod:
-    st.info("No resource data available for this pod.")
-
-if pod:
-    url = f"http://localhost:8000/logs"
-    params = {"namespace": namespace, "pod": pod}
-    if container:
-        params["container"] = container
-    logs = ""
-    error = None
-    if refresh or True:  # Always fetch logs on first render and on refresh
-        try:
-            resp = requests.get(url, params=params, timeout=10)
-            data = resp.json()
-            logs = data.get("logs", "")
-            error = data.get("error", None)
-        except Exception as e:
-            error = str(e)
-    if error:
-        st.error(f"Error fetching logs: {error}")
-    # --- Log filtering ---
-    filtered_logs = logs
-    if logs:
-        log_lines = logs.splitlines()
-        # Time filter (assume log lines start with ISO timestamp or RFC3339)
-        import re, datetime
-        now = datetime.datetime.utcnow()
-        def line_in_time(line):
-            if time_filter == "All":
-                return True
-            match = re.match(r"^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})", line)
-            if not match:
-                return True  # If no timestamp, include
-            try:
-                ts = match.group(1).replace('T', ' ')
-                ts = datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-            except Exception:
-                return True
-            delta = now - ts
-            if time_filter == "Last 5m":
-                return delta.total_seconds() <= 300
-            elif time_filter == "Last 1h":
-                return delta.total_seconds() <= 3600
-            elif time_filter == "Last 24h":
-                return delta.total_seconds() <= 86400
-            return True
-        filtered_lines = [l for l in log_lines if line_in_time(l)]
-        # Keyword filter
-        if log_search:
-            filtered_lines = [l for l in filtered_lines if log_search.lower() in l.lower()]
-        filtered_logs = "\n".join(filtered_lines)
-    # Download button
-    st.download_button(
-        label="⬇️ Download Logs as .txt",
-        data=filtered_logs,
-        file_name=f"{pod}_{container if container else 'default'}_logs.txt",
-        mime="text/plain"
-    )
-    st.text_area(f"Pod Logs ({container if container else 'default'})", filtered_logs, height=400) 
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #a0aec0; padding: 2rem; font-size: 0.9rem;">
+    <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 Powered by SmartOps AI | Enterprise Kubernetes Monitoring</p>
+    <p style="opacity: 0.8; margin: 0;">Last updated: """ + time.strftime('%Y-%m-%d %H:%M:%S') + """</p>
+</div>
+""", unsafe_allow_html=True) 
