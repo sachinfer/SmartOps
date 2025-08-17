@@ -1,7 +1,7 @@
 # Default values for smartops-anomaly
 image:
   repository: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-anomaly
-  tag: "0f72817"
+  tag: "latest"
   pullPolicy: Always
 
 service:
@@ -10,11 +10,11 @@ service:
 
 resources:
   requests:
-    memory: "128Mi"
-    cpu: "100m"
+    memory: "32Mi"
+    cpu: "25m"
   limits:
-    memory: "256Mi"
-    cpu: "200m"
+    memory: "64Mi"
+    cpu: "50m"
 
 replicaCount: 1
 
@@ -29,7 +29,8 @@ autoscaling:
 podAnnotations: {}
 
 # Image pull secrets
-imagePullSecrets: []
+imagePullSecrets:
+  - name: gcp-registry-secret
 
 # Service account configuration
 serviceAccount:
