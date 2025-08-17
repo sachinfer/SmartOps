@@ -22,6 +22,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "SmartOps API", "timestamp": str(datetime.now())}
+
 # Simulated HPA data (replace with real DB/API integration)
 hpa_data = [
     {"pod": "app-1", "cpu_avg": 0.45, "mem_avg": 0.60, "min_replicas": 1, "max_replicas": 5},
@@ -350,8 +355,19 @@ def kubectl_raw(command: str = Query(..., description="kubectl command after 'ku
         # Load Kubernetes config
         try:
             config.load_incluster_config()
-        except Exception:
-            config.load_kube_config()
+        except Exception as e:
+            try:
+                config.load_kube_config()
+            except Exception as config_error:
+                return JSONResponse(
+                    status_code=500, 
+                    content={
+                        "error": f"Failed to load Kubernetes config: {str(config_error)}",
+                        "stdout": "",
+                        "stderr": f"Kubernetes config error: {str(config_error)}",
+                        "returncode": 1
+                    }
+                )
         
         # Handle different kubectl commands
         if parts[0] == "get":
@@ -361,10 +377,26 @@ def kubectl_raw(command: str = Query(..., description="kubectl command after 'ku
         elif parts[0] == "logs":
             return handle_kubectl_logs(parts[1:])
         else:
-            return JSONResponse(status_code=400, content={"error": f"Unsupported command: {parts[0]}"})
+            return JSONResponse(
+                status_code=400, 
+                content={
+                    "error": f"Unsupported command: {parts[0]}",
+                    "stdout": "",
+                    "stderr": f"Unsupported command: {parts[0]}",
+                    "returncode": 1
+                }
+            )
             
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(
+            status_code=500, 
+            content={
+                "error": str(e),
+                "stdout": "",
+                "stderr": str(e),
+                "returncode": 1
+            }
+        )
 
 def handle_kubectl_get(args):
     """Handle kubectl get commands using Python client"""
@@ -373,7 +405,7 @@ def handle_kubectl_get(args):
         apps_v1 = client.AppsV1Api()
         
         if not args:
-            return JSONResponse(status_code=400, content={"error": "No resource type specified"})
+            return {"stdout": "", "stderr": "No resource type specified", "returncode": 1}
         
         resource_type = args[0]
         all_namespaces = "-A" in args or "--all-namespaces" in args
@@ -428,10 +460,10 @@ def handle_kubectl_get(args):
             return {"stdout": "\n".join(output_lines), "stderr": "", "returncode": 0}
             
         else:
-            return JSONResponse(status_code=400, content={"error": f"Unsupported resource type: {resource_type}"})
+            return {"stdout": "", "stderr": f"Unsupported resource type: {resource_type}", "returncode": 1}
             
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return {"stdout": "", "stderr": str(e), "returncode": 1}
 
 def handle_kubectl_describe(args):
     """Handle kubectl describe commands using Python client"""
@@ -440,7 +472,7 @@ def handle_kubectl_describe(args):
         apps_v1 = client.AppsV1Api()
         
         if not args:
-            return JSONResponse(status_code=400, content={"error": "No resource specified"})
+            return {"stdout": "", "stderr": "No resource specified", "returncode": 1}
         
         resource_type = args[0]
         resource_name = args[1] if len(args) > 1 else None
@@ -448,7 +480,7 @@ def handle_kubectl_describe(args):
         
         if resource_type == "pod":
             if not resource_name:
-                return JSONResponse(status_code=400, content={"error": "Pod name required"})
+                return {"stdout": "", "stderr": "Pod name required", "returncode": 1}
             pod = v1.read_namespaced_pod(name=resource_name, namespace=namespace)
             # Convert to YAML-like format
             output = f"Name:         {pod.metadata.name}\n"
@@ -459,10 +491,10 @@ def handle_kubectl_describe(args):
             return {"stdout": output, "stderr": "", "returncode": 0}
             
         else:
-            return JSONResponse(status_code=400, content={"error": f"Unsupported resource type for describe: {resource_type}"})
+            return {"stdout": "", "stderr": f"Unsupported resource type for describe: {resource_type}", "returncode": 1}
             
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return {"stdout": "", "stderr": str(e), "returncode": 1}
 
 def handle_kubectl_logs(args):
     """Handle kubectl logs commands using Python client"""
@@ -470,7 +502,7 @@ def handle_kubectl_logs(args):
         v1 = client.CoreV1Api()
         
         if not args:
-            return JSONResponse(status_code=400, content={"error": "Pod name required"})
+            return {"stdout": "", "stderr": "Pod name required", "returncode": 1}
         
         pod_name = args[0]
         namespace = "default"
@@ -487,7 +519,7 @@ def handle_kubectl_logs(args):
         return {"stdout": logs, "stderr": "", "returncode": 0}
         
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return {"stdout": "", "stderr": str(e), "returncode": 1}
 
 @app.get("/kubectl_namespaces")
 def kubectl_namespaces():

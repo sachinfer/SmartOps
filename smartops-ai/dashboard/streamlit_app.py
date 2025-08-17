@@ -59,9 +59,10 @@ st.markdown("""
     }
     .feature-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.2rem;
         margin: 2rem 0;
+        max-width: 100%;
     }
     .feature-card {
         background: white;
@@ -72,6 +73,10 @@ st.markdown("""
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         cursor: pointer;
         border: 2px solid transparent;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     .feature-card:hover {
         transform: translateY(-5px);
@@ -82,18 +87,23 @@ st.markdown("""
         transform: translateY(-2px);
     }
     .feature-icon {
-        font-size: 2rem;
+        font-size: 2.5rem;
         margin-bottom: 1rem;
+        text-align: center;
     }
     .feature-title {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: bold;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.8rem;
         color: #2c3e50;
+        text-align: center;
     }
     .feature-desc {
         color: #666;
-        line-height: 1.5;
+        line-height: 1.4;
+        font-size: 0.9rem;
+        text-align: center;
+        flex-grow: 1;
     }
     .clickable-card {
         cursor: pointer;
@@ -105,6 +115,19 @@ st.markdown("""
         border-radius: 15px;
         margin: 2rem 0;
         border: 1px solid rgba(255,255,255,0.1);
+    }
+    .category-header {
+        text-align: center;
+        margin: 2rem 0 1rem 0;
+        color: #2c3e50;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .category-subheader {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: #666;
+        font-size: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -128,27 +151,37 @@ st.markdown("""
 Click on any card below to navigate to the corresponding section, or use the sidebar for navigation.
 """)
 
-# Feature cards with HTML styling
+# Feature cards with HTML styling - Updated to include all available functions
+st.markdown("""
+<div class="category-header">📊 Core Monitoring & Overview</div>
+<div class="category-subheader">Essential monitoring and anomaly detection capabilities</div>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <div class="feature-grid">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'overview_click', value: true}, '*')">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Overview Dashboard</div>
+        <div class="feature-desc">Comprehensive system overview with metrics, alerts, and real-time monitoring data.</div>
+    </div>
     <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'anomaly_click', value: true}, '*')">
         <div class="feature-icon">🔥</div>
         <div class="feature-title">Anomaly Detection</div>
         <div class="feature-desc">AI-powered anomaly detection with top anomalies by CPU usage and recent anomaly tracking.</div>
     </div>
-    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'ai_actions_click', value: true}, '*')">
-        <div class="feature-icon">🤖</div>
-        <div class="feature-title">AI Actions</div>
-        <div class="feature-desc">AI recommendations and action history with model retraining capabilities.</div>
-    </div>
-    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'deployments_click', value: true}, '*')">
-        <div class="feature-icon">🚀</div>
-        <div class="feature-title">Deployments</div>
-        <div class="feature-desc">Deployment workflow events tracking with success/failure statistics and metrics.</div>
-    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="category-header">🛰️ Pod & Cluster Management</div>
+<div class="category-subheader">Kubernetes resource exploration and management tools</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="feature-grid">
     <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'pod_explorer_click', value: true}, '*')">
         <div class="feature-icon">🛰️</div>
-        <div class="feature-title">Pod Explorer</div>
+        <div class="feature-title">Pod Explorer & Logs</div>
         <div class="feature-desc">Pod management with real-time log viewing, filtering, and pod actions (restart, delete, describe).</div>
     </div>
     <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'cluster_explorer_click', value: true}, '*')">
@@ -164,24 +197,73 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Handle clicks from HTML cards
+st.markdown("""
+<div class="category-header">⚡ Operations & Control</div>
+<div class="category-subheader">Deployment and scaling management tools</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="feature-grid">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'auto_scaling_click', value: true}, '*')">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Auto Scaling Control</div>
+        <div class="feature-desc">Intelligent auto-scaling recommendations and control mechanisms for optimal resource utilization.</div>
+    </div>
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'deployments_click', value: true}, '*')">
+        <div class="feature-icon">🚀</div>
+        <div class="feature-title">Deployments</div>
+        <div class="feature-desc">Deployment workflow events tracking with success/failure statistics and metrics.</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="category-header">🤖 AI & Analytics</div>
+<div class="category-subheader">Advanced AI-powered insights and incident management</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="feature-grid">
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'incident_timeline_click', value: true}, '*')">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Incident Timeline</div>
+        <div class="feature-desc">Comprehensive incident tracking with timeline visualization and postmortem report generation.</div>
+    </div>
+    <div class="feature-card clickable-card" onclick="window.parent.postMessage({type: 'streamlit:setComponentValue', key: 'ai_actions_click', value: true}, '*')">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI Actions</div>
+        <div class="feature-desc">AI recommendations and action history with model retraining capabilities.</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Handle clicks from HTML cards - Updated to include all functions
+if st.button("📊 Overview Dashboard", key="overview_click", use_container_width=True):
+    st.switch_page("pages/1_Overview.py")
+
 if st.button("🔥 Anomaly Detection", key="anomaly_click", use_container_width=True):
     st.switch_page("pages/4_Anomaly_Detection.py")
+
+if st.button("🛰️ Pod Explorer & Logs", key="pod_explorer_click", use_container_width=True):
+    st.switch_page("pages/2_Pod_Explorer_and_Logs.py")
+
+if st.button("🔍 Cluster Explorer", key="cluster_explorer_click", use_container_width=True):
+    st.switch_page("pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
+
+if st.button("🖥️ Kubernetes Shell", key="k8s_shell_click", use_container_width=True):
+    st.switch_page("pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
+
+if st.button("⚡ Auto Scaling Control", key="auto_scaling_click", use_container_width=True):
+    st.switch_page("pages/5_Auto_Scaling_Recommendations_and_Control.py")
+
+if st.button("📋 Incident Timeline", key="incident_timeline_click", use_container_width=True):
+    st.switch_page("pages/6_Incident_Timeline_and_Postmortem_Report_Generator.py")
 
 if st.button("🤖 AI Actions", key="ai_actions_click", use_container_width=True):
     st.switch_page("pages/8_AI_Actions.py")
 
 if st.button("🚀 Deployments", key="deployments_click", use_container_width=True):
     st.switch_page("pages/9_Deployments.py")
-
-if st.button("🛰️ Pod Explorer & Logs", key="pod_explorer_click", use_container_width=True):
-    st.switch_page("pages/2_Pod Explorer & Logs.py")
-
-if st.button("🔍 Cluster Explorer", key="cluster_explorer_click", use_container_width=True):
-    st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
-
-if st.button("🖥️ Kubernetes Shell", key="k8s_shell_click", use_container_width=True):
-    st.switch_page("pages/3_Kubernetes Shell & Cluster Explorer.py")
 
 st.markdown("---")
 
