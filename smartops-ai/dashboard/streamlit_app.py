@@ -272,4 +272,4 @@ st.markdown("""
     <p>🚀 Powered by SmartOps AI | Real-time Kubernetes Monitoring</p>
     <p>Built with ❤️ using Streamlit and AI/ML</p>
 </div>
-""", unsafe_allow_html=True) 
+""", unsafe_allow_html=True)

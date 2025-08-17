@@ -780,34 +780,55 @@ st.markdown("""
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Time selector styling */
-.time-selector-container {
+/* Grafana-style time selector */
+.grafana-time-selector {
     background: #f8f9fa;
     border: 1px solid #e1e5e9;
     border-radius: 8px;
     padding: 1.5rem;
     margin: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.quick-time-btn {
-    background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    font-weight: 500;
+/* Time tabs styling */
+.time-tabs {
+    display: flex;
+    border-bottom: 2px solid #e1e5e9;
+    margin: 1rem 0;
+}
+
+.tab {
+    padding: 0.75rem 1.5rem;
     cursor: pointer;
+    border-bottom: 3px solid transparent;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 500;
+    color: #6c757d;
+    background: transparent;
 }
 
-.quick-time-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+.tab:hover {
+    color: #2a5298;
+    background: rgba(42, 82, 152, 0.05);
 }
 
+.tab.active {
+    color: #2a5298;
+    border-bottom-color: #2a5298;
+    background: rgba(42, 82, 152, 0.1);
+}
+
+/* Tab content */
+.tab-content {
+    display: none;
+    padding: 1rem 0;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Time input styling */
 .time-input-label {
     font-weight: 600;
     color: #495057;
@@ -842,154 +863,227 @@ st.markdown("""
 # Time Selector for Historical Data
 st.markdown('<div class="section-header">⏰ Time Range Selector</div>', unsafe_allow_html=True)
 
-# Time range selection with styled container
-st.markdown('<div class="time-selector-container">', unsafe_allow_html=True)
+# Grafana-style time range selector
+st.markdown('<div class="grafana-time-selector">', unsafe_allow_html=True)
 
-# Quick time range buttons
-st.markdown("**Quick Set Time Ranges:**")
-col_quick1, col_quick2, col_quick3, col_quick4 = st.columns([1, 1, 1, 1])
+# Header bar with current selection and refresh button
+col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
 
-with col_quick1:
-    if st.button("🌅 7 AM - Now", key="quick_7am_now"):
-        start_time = datetime.strptime("07:00", "%H:%M").time()
-        end_time = datetime.now().time()
-        st.rerun()
-
-with col_quick2:
-    if st.button("🌞 9 AM - 5 PM", key="quick_9am_5pm"):
-        start_time = datetime.strptime("09:00", "%H:%M").time()
-        end_time = datetime.strptime("17:00", "%H:%M").time()
-        st.rerun()
-
-with col_quick3:
-    if st.button("🌙 6 PM - 6 AM", key="quick_6pm_6am"):
-        start_time = datetime.strptime("18:00", "%H:%M").time()
-        end_time = datetime.strptime("06:00", "%H:%M").time()
-        st.rerun()
-
-with col_quick4:
-    if st.button("🕐 Current Hour", key="quick_current_hour"):
-        now = datetime.now()
-        start_time = now.replace(minute=0, second=0, microsecond=0).time()
-        end_time = now.time()
-        st.rerun()
-
-st.markdown("---")
-
-col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-
-with col1:
-    time_preset = st.selectbox(
-        "Quick Time Presets",
-        ["Live (Now)", "5 minutes ago", "15 minutes ago", "1 hour ago", "6 hours ago", "24 hours ago"],
-        index=0
-    )
-
-with col2:
-    # Date picker with calendar icon
-    selected_date = st.date_input(
-        "📅 Select Date",
-        value=datetime.now().date(),
-        format="MM/DD/YYYY"
-    )
-
-with col3:
-    # Start time with AM/PM format - default to 7 AM for historical data
+with col_header1:
+    # Display current time range selection
     if time_preset == "Live (Now)":
-        default_start_time = datetime.now().time()
+        st.markdown(f"**~ Now → Now**")
     else:
-        # For historical data, default to 7 AM
-        default_start_time = datetime.strptime("07:00", "%H:%M").time()
-    
-    start_time = st.time_input(
-        "🕐 Start Time",
-        value=default_start_time,
-        step=300  # 5-minute intervals
+        # Calculate relative time display
+        now = datetime.now()
+        selected_datetime = datetime.combine(selected_date, start_time)
+        time_diff = now - selected_datetime
+        
+        if time_diff.days > 0:
+            relative_text = f"~ {time_diff.days} days ago → ~ in {time_diff.days} days"
+        elif time_diff.seconds > 3600:
+            hours = time_diff.seconds // 3600
+            relative_text = f"~ {hours} hours ago → ~ in {hours} hours"
+        elif time_diff.seconds > 60:
+            minutes = time_diff.seconds // 60
+            relative_text = f"~ {minutes} minutes ago → ~ in {minutes} minutes"
+        else:
+            relative_text = "~ Now → Now"
+        
+        st.markdown(f"**{relative_text}**")
+
+with col_header2:
+    # Quick time presets dropdown
+    time_preset = st.selectbox(
+        "Quick Presets",
+        ["Live (Now)", "5 minutes ago", "15 minutes ago", "1 hour ago", "6 hours ago", "24 hours ago"],
+        index=0,
+        label_visibility="collapsed"
     )
 
-with col4:
-    # End time with AM/PM format - default to current time for historical data
-    default_end_time = datetime.now().time() if time_preset != "Live (Now)" else datetime.now().time()
-    end_time = st.time_input(
-        "🕐 End Time", 
-        value=default_end_time,
-        step=300  # 5-minute intervals
+with col_header3:
+    # Refresh button
+    if st.button("🔄 Refresh", use_container_width=True, key="refresh_main"):
+        st.cache_data.clear()
+        st.rerun()
+
+# Tab-style time selection
+st.markdown("""
+<div class="time-tabs">
+    <div class="tab active" id="relative-tab" onclick="switchTab('relative')">Relative</div>
+    <div class="tab" id="absolute-tab" onclick="switchTab('absolute')">Absolute</div>
+    <div class="tab" id="now-tab" onclick="switchTab('now')">Now</div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Hide all tab contents
+    var contents = document.querySelectorAll('.tab-content');
+    for (var i = 0; i < contents.length; i++) {
+        contents[i].classList.remove('active');
+    }
+    
+    // Remove active class from all tabs
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+    }
+    
+    // Show selected tab content and activate tab
+    document.getElementById(tabName + '-content').classList.add('active');
+    document.getElementById(tabName + '-tab').classList.add('active');
+}
+</script>
+""", unsafe_allow_html=True)
+
+# Relative time selection (default active tab)
+st.markdown('<div class="tab-content active" id="relative-content">', unsafe_allow_html=True)
+
+col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 1])
+
+with col_rel1:
+    # Number input for relative time
+    relative_value = st.number_input(
+        "Value",
+        min_value=1,
+        max_value=365,
+        value=1,
+        step=1,
+        key="relative_value"
+    )
+
+with col_rel2:
+    # Unit selection
+    relative_unit = st.selectbox(
+        "Unit",
+        ["Minutes ago", "Hours ago", "Days ago", "Weeks ago"],
+        index=1,  # Default to "Hours ago"
+        key="relative_unit"
+    )
+
+with col_rel3:
+    # Calculate and display start date
+    if relative_unit == "Minutes ago":
+        start_datetime = datetime.now() - timedelta(minutes=relative_value)
+    elif relative_unit == "Hours ago":
+        start_datetime = datetime.now() - timedelta(hours=relative_value)
+    elif relative_unit == "Days ago":
+        start_datetime = datetime.now() - timedelta(days=relative_value)
+    else:  # Weeks ago
+        start_datetime = datetime.now() - timedelta(weeks=relative_value)
+    
+    st.markdown(f"**Start date:** {start_datetime.strftime('%b %d, %Y @ %H:%M:%S.%f')[:-3]}")
+
+# Round to day toggle
+round_to_day = st.checkbox("Round to the day", value=True, key="round_to_day")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Absolute time selection
+st.markdown('<div class="tab-content" id="absolute-content">', unsafe_allow_html=True)
+
+col_abs1, col_abs2, col_abs3, col_abs4 = st.columns([1, 1, 1, 1])
+
+with col_abs1:
+    # Start date
+    start_date = st.date_input(
+        "Start Date",
+        value=datetime.now().date(),
+        key="start_date_abs"
+    )
+
+with col_abs2:
+    # Start time
+    start_time_abs = st.time_input(
+        "Start Time",
+        value=datetime.strptime("00:00", "%H:%M").time(),
+        key="start_time_abs"
+    )
+
+with col_abs3:
+    # End date
+    end_date = st.date_input(
+        "End Date",
+        value=datetime.now().date(),
+        key="end_date_abs"
+    )
+
+with col_abs4:
+    # End time
+    end_time_abs = st.time_input(
+        "End Time",
+        value=datetime.now().time(),
+        key="end_time_abs"
     )
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Data Availability Indicator
-data_available_indicator = check_data_availability(selected_date, start_time, end_time, time_preset)
-if data_available_indicator:
-    st.success(f"✅ **Data Available:** Historical data found for {selected_date.strftime('%B %d, %Y')} from {start_time.strftime('%I:%M %p')} to {end_time.strftime('%I:%M %p')}")
-else:
-    st.error(f"❌ **Data Not Available:** No historical data found for {selected_date.strftime('%B %d, %Y')} from {start_time.strftime('%I:%M %p')} to {end_time.strftime('%I:%M %p')}")
+# Now tab (instant current time)
+st.markdown('<div class="tab-content" id="now-content">', unsafe_allow_html=True)
 
-# Apply time filter and auto-update times
+st.info("🕐 **Current Time:** " + datetime.now().strftime("%B %d, %Y at %I:%M:%S %p"))
+
+if st.button("Set to Current Time", key="set_now"):
+    time_preset = "Live (Now)"
+    st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Apply the selected time range
 if time_preset == "Live (Now)":
     selected_time = "Current"
     time_description = "Real-time data"
-    # For live data, use current date and time
     display_date = datetime.now().strftime("%B %d, %Y")
     display_time = f"{datetime.now().strftime('%I:%M %p')}"
-    
-    # Auto-update start and end times to current time for live data
-    if st.button("🔄 Sync to Current Time", key="sync_live"):
-        start_time = datetime.now().time()
-        end_time = datetime.now().time()
-        st.rerun()
-        
+    start_time = datetime.now().time()
+    end_time = datetime.now().time()
+    selected_date = datetime.now().date()
 else:
-    # For historical data, use selected date and times
-    if time_preset == "5 minutes ago":
+    # For relative time, use the calculated start time
+    if relative_unit == "Minutes ago":
+        start_datetime = datetime.now() - timedelta(minutes=relative_value)
+    elif relative_unit == "Hours ago":
+        start_datetime = datetime.now() - timedelta(hours=relative_value)
+    elif relative_unit == "Days ago":
+        start_datetime = datetime.now() - timedelta(days=relative_value)
+    else:  # Weeks ago
+        start_datetime = datetime.now() - timedelta(weeks=relative_value)
+    
+    if round_to_day:
+        start_datetime = start_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    selected_date = start_datetime.date()
+    start_time = start_datetime.time()
+    end_time = datetime.now().time()
+    
+    # Map to our internal time format
+    if relative_unit == "Minutes ago" and relative_value <= 5:
         selected_time = "5min_ago"
-        time_description = "Data from 5 minutes ago"
-        # Auto-set start time to 5 minutes ago, end time to now
-        if st.button("🔄 Set 5 Min Range", key="sync_5min"):
-            start_time = (datetime.now() - timedelta(minutes=5)).time()
-            end_time = datetime.now().time()
-            st.rerun()
-            
-    elif time_preset == "15 minutes ago":
+        time_description = f"Data from {relative_value} minutes ago"
+    elif relative_unit == "Minutes ago" and relative_value <= 15:
         selected_time = "15min_ago"
-        time_description = "Data from 15 minutes ago"
-        # Auto-set start time to 15 minutes ago, end time to now
-        if st.button("🔄 Set 15 Min Range", key="sync_15min"):
-            start_time = (datetime.now() - timedelta(minutes=15)).time()
-            end_time = datetime.now().time()
-            st.rerun()
-            
-    elif time_preset == "1 hour ago":
+        time_description = f"Data from {relative_value} minutes ago"
+    elif relative_unit == "Hours ago" and relative_value <= 1:
         selected_time = "1hour_ago"
-        time_description = "Data from 1 hour ago"
-        # Auto-set start time to 1 hour ago, end time to now
-        if st.button("🔄 Set 1 Hour Range", key="sync_1hour"):
-            start_time = (datetime.now() - timedelta(hours=1)).time()
-            end_time = datetime.now().time()
-            st.rerun()
-            
-    elif time_preset == "6 hours ago":
+        time_description = f"Data from {relative_value} hour ago"
+    elif relative_unit == "Hours ago" and relative_value <= 6:
         selected_time = "6hours_ago"
-        time_description = "Data from 6 hours ago"
-        # Auto-set start time to 6 hours ago, end time to now
-        if st.button("🔄 Set 6 Hour Range", key="sync_6hour"):
-            start_time = (datetime.now() - timedelta(hours=6)).time()
-            end_time = datetime.now().time()
-            st.rerun()
-            
+        time_description = f"Data from {relative_value} hours ago"
+    elif relative_unit == "Days ago" and relative_value <= 1:
+        selected_time = "24hours_ago"
+        time_description = f"Data from {relative_value} day ago"
     else:
         selected_time = "24hours_ago"
-        time_description = "Data from 24 hours ago"
-        # Auto-set start time to 24 hours ago, end time to now
-        if st.button("🔄 Set 24 Hour Range", key="sync_24hour"):
-            start_time = (datetime.now() - timedelta(hours=24)).time()
-            end_time = datetime.now().time()
-            st.rerun()
+        time_description = f"Data from {relative_value} {relative_unit.lower()}"
     
-    # Format selected date and times
+    # Format for display
     display_date = selected_date.strftime("%B %d, %Y")
     start_time_12hr = start_time.strftime("%I:%M %p")
     end_time_12hr = end_time.strftime("%I:%M %p")
+
+
 
 # Display selected time info and refresh button
 col1, col2 = st.columns([3, 1])
@@ -1004,6 +1098,9 @@ with col2:
     if st.button("🔄 Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+
+# Check data availability for the selected time range FIRST
+data_available = check_data_availability(selected_date, start_time, end_time, time_preset)
 
 # Data Availability Summary
 st.markdown('<div class="section-header">📊 Data Availability Summary</div>', unsafe_allow_html=True)
@@ -1035,9 +1132,6 @@ else:
 # API Connection Status
 st.info("🔌 **API Status:** Using mock data for demonstration. Real-time metrics will be available once the API endpoints are configured.")
 
-# Check data availability for the selected time range
-data_available = check_data_availability(selected_date, start_time, end_time, time_preset)
-
 # Fetch all data based on selected time range
 if selected_time == "Current":
     cluster_metrics = fetch_cluster_metrics()
@@ -1056,7 +1150,7 @@ else:
 df = load_anomalies_df()
 
 # Overall Cluster Health Status
-if data_available:
+if data_available and cluster_metrics and node_metrics and pod_status:
     st.markdown(f'<div class="section-header">🏥 Cluster Health Status - {time_description}</div>', unsafe_allow_html=True)
     
     # Show time context
@@ -1066,6 +1160,29 @@ if data_available:
     # Calculate overall health score
     health_score = 0
     total_checks = 0
+    
+    # CPU health check
+    cpu_usage_percent = (cluster_metrics['cpu_usage'] / cluster_metrics['cpu_capacity']) * 100 if cluster_metrics['cpu_capacity'] > 0 else 0
+    if cpu_usage_percent < 70:
+        health_score += 1
+    total_checks += 1
+
+    # Memory health check
+    memory_usage_percent = (cluster_metrics['memory_usage'] / cluster_metrics['memory_capacity']) * 100 if cluster_metrics['memory_capacity'] > 0 else 0
+    if memory_usage_percent < 70:
+        health_score += 1
+    total_checks += 1
+
+    # Pod health check
+    if pod_status['failed'] == 0:
+        health_score += 1
+    total_checks += 1
+
+    # Node health check
+    healthy_nodes = sum(1 for node in node_metrics if node.get('status') == 'Ready')
+    if healthy_nodes == len(node_metrics):
+        health_score += 1
+    total_checks += 1
 else:
     st.markdown('<div class="section-header">🏥 Cluster Health Status</div>', unsafe_allow_html=True)
     st.warning("⚠️ **Health Status Unavailable:** Cannot calculate cluster health without historical data.")
@@ -1074,29 +1191,9 @@ else:
     # Set default values for display
     health_score = 0
     total_checks = 1
-
-# CPU health check
-cpu_usage_percent = (cluster_metrics['cpu_usage'] / cluster_metrics['cpu_capacity']) * 100 if cluster_metrics['cpu_capacity'] > 0 else 0
-if cpu_usage_percent < 70:
-    health_score += 1
-total_checks += 1
-
-# Memory health check
-memory_usage_percent = (cluster_metrics['memory_usage'] / cluster_metrics['memory_capacity']) * 100 if cluster_metrics['memory_capacity'] > 0 else 0
-if memory_usage_percent < 70:
-    health_score += 1
-total_checks += 1
-
-# Pod health check
-if pod_status['failed'] == 0:
-    health_score += 1
-total_checks += 1
-
-# Node health check
-healthy_nodes = sum(1 for node in node_metrics if node.get('status') == 'Ready')
-if healthy_nodes == len(node_metrics):
-    health_score += 1
-total_checks += 1
+    cpu_usage_percent = 0
+    memory_usage_percent = 0
+    healthy_nodes = 0
 
 # Anomaly health check
 if df.empty or df.iloc[-1]['prediction'].lower() == 'normal':
@@ -1154,12 +1251,20 @@ with col2:
     """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-value">{healthy_nodes}/{len(node_metrics)}</div>
-        <div class="metric-label">Healthy Nodes</div>
-    </div>
-    """, unsafe_allow_html=True)
+    if node_metrics:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{healthy_nodes}/{len(node_metrics)}</div>
+            <div class="metric-label">Healthy Nodes</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">0/0</div>
+            <div class="metric-label">Healthy Nodes</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # SmartOps AI Status
 if not df.empty:
