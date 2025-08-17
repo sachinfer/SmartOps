@@ -7,6 +7,7 @@ import plotly.express as px
 import pytz
 import requests
 import numpy as np
+from sidebar_utils import show_sidebar
 
 # Timezone setup
 IST = pytz.timezone('Asia/Kolkata')
@@ -180,9 +181,12 @@ def generate_time_series_data():
 st.set_page_config(
     page_title="Kubernetes Cluster Overview - SmartOps AI",
     page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="wide"
 )
+
+# Sidebar
+with st.sidebar:
+    show_sidebar()
 
 # Professional Grafana-style CSS
 st.markdown("""
@@ -378,35 +382,7 @@ st.markdown("""
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Quick actions */
-.quick-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin: 2rem 0;
-}
-
-.action-btn {
-    background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
-    color: white;
-    border: none;
-    padding: 1rem;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(42, 82, 152, 0.3);
-}
+/* Quick actions CSS removed */
 
 /* Hide Streamlit elements */
 #MainMenu {visibility: hidden;}
@@ -608,7 +584,7 @@ fig_pods.update_yaxes(showgrid=True, gridcolor='#e9ecef')
 st.plotly_chart(fig_pods, use_container_width=True)
 
 # Resource Usage Visualization
-st.markdown('<div class="section-header">📈 Resource Usage Overview</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">⚡ Resource Usage Overview</div>', unsafe_allow_html=True)
 
 # Show notice about mock data
 st.info("📊 **Note:** Currently showing demonstration data. Real-time metrics will be available once the API is fully deployed.")
@@ -777,17 +753,7 @@ if node_metrics:
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Quick Actions
-st.markdown('<div class="section-header">⚡ Quick Actions</div>', unsafe_allow_html=True)
-
-st.markdown("""
-<div class="quick-actions">
-    <button class="action-btn" onclick="window.location.href='?page=refresh'">🔄 Refresh Data</button>
-    <button class="action-btn" onclick="window.location.href='?page=anomaly'">🔥 Anomaly Detection</button>
-    <button class="action-btn" onclick="window.location.href='?page=ai'">🤖 AI Actions</button>
-    <button class="action-btn" onclick="window.location.href='?page=logs'">📋 Pod Logs</button>
-</div>
-""", unsafe_allow_html=True)
+# Quick Actions section removed
 
 # Footer
 st.markdown("---")
