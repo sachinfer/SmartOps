@@ -2,67 +2,67 @@ import streamlit as st
 
 def show_sidebar():
     st.markdown("""
-    <style>
-    section[data-testid="stSidebar"] > div:first-child {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        height: 100vh;
-        padding-top: 1.5rem;
-        padding-bottom: 2rem;
-        border-top-right-radius: 20px;
-        border-bottom-right-radius: 20px;
-        box-shadow: 2px 0 16px rgba(102,126,234,0.08);
-    }
+    # <style>
+    # section[data-testid="stSidebar"] > div:first-child {
+    #     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    #     height: 100vh;
+    #     padding-top: 1.5rem;
+    #     padding-bottom: 2rem;
+    #     border-top-right-radius: 20px;
+    #     border-bottom-right-radius: 20px;
+    #     box-shadow: 2px 0 16px rgba(102,126,234,0.08);
+    # }
     
-    /* Hide the default Streamlit sidebar header */
-    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
-        display: none !important;
-    }
+    # /* Hide the default Streamlit sidebar header */
+    # section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
+    #     display: none !important;
+    # }
     
-    /* Alternative way to hide the header if the above doesn't work */
-    section[data-testid="stSidebar"] > div:first-child > div:first-child {
-        display: none !important;
-    }
+    # /* Alternative way to hide the header if the above doesn't work */
+    # section[data-testid="stSidebar"] > div:first-child > div:first-child {
+    #     display: none !important;
+    # }
     
-    .sidebar-section-title {
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: #fff;
-        margin: 1.5rem 0 0.5rem 0;
-        letter-spacing: 1px;
-    }
-    .sidebar-divider {
-        border-top: 1px solid rgba(255,255,255,0.2);
-        margin: 1.2rem 0;
-    }
-    .sidebar-nav-item {
-        background: rgba(255,255,255,0.1);
-        border-radius: 8px;
-        padding: 0.8rem;
-        margin: 0.3rem 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    .sidebar-nav-item:hover {
-        background: rgba(255,255,255,0.2);
-        transform: translateX(5px);
-    }
-    .sidebar-nav-item:active {
-        transform: translateX(2px);
-    }
-    .sidebar-nav-icon {
-        margin-right: 0.5rem;
-        font-size: 1.1rem;
-    }
-    .sidebar-nav-text {
-        color: #fff;
-        font-weight: 500;
-        font-size: 0.95rem;
-    }
-    .sidebar-category {
-        margin: 1rem 0;
-    }
-    </style>
+    # .sidebar-section-title {
+    #     font-size: 1.1rem;
+    #     font-weight: bold;
+    #     color: #fff;
+    #     margin: 1.5rem 0 0.5rem 0;
+    #     letter-spacing: 1px;
+    # }
+    # .sidebar-divider {
+    #     border-top: 1px solid rgba(255,255,255,0.2);
+    #     margin: 1.2rem 0;
+    # }
+    # .sidebar-nav-item {
+    #     background: rgba(255,255,255,0.1);
+    #     border-radius: 8px;
+    #     padding: 0.8rem;
+    #     margin: 0.3rem 0;
+    #     cursor: pointer;
+    #     transition: all 0.3s ease;
+    #     border: 1px solid rgba(255,255,255,0.1);
+    # }
+    # .sidebar-nav-item:hover {
+    #     background: rgba(255,255,255,0.2);
+    #     transform: translateX(5px);
+    # }
+    # .sidebar-nav-item:active {
+    #     transform: translateX(2px);
+    # }
+    # .sidebar-nav-icon {
+    #     margin-right: 0.5rem;
+    #     font-size: 1.1rem;
+    # }
+    # .sidebar-nav-text {
+    #     color: #fff;
+    #     font-weight: 500;
+    #     font-size: 0.95rem;
+    # }
+    # .sidebar-category {
+    #     margin: 1rem 0;
+    # }
+    # </style>
     """, unsafe_allow_html=True)
 
     # Logo and project
