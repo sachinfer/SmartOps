@@ -22,6 +22,27 @@ API_ENDPOINTS = [
 # Mock data fallback
 MOCK_NAMESPACES = ["default", "kube-system", "kube-public", "kube-node-lease"]
 
+def check_data_availability(selected_date, start_time, end_time, time_preset):
+    """Check if data is available for the selected time range"""
+    import random
+    
+    # Simulate data availability based on time range
+    if time_preset == "Live (Now)":
+        return True  # Live data is always available
+    
+    # For historical data, simulate availability
+    # Weekends might have less data
+    if selected_date.weekday() >= 5:  # Saturday = 5, Sunday = 6
+        data_chance = 0.3  # 30% chance on weekends
+    else:
+        data_chance = 0.7  # 70% chance on weekdays
+    
+    # Early morning and late night might have less data
+    if start_time.hour < 6 or start_time.hour > 22:
+        data_chance *= 0.5  # Reduce chance for off-hours
+    
+    return random.random() < data_chance
+
 # Cached functions
 @st.cache_data(ttl=30)
 def fetch_namespaces():
@@ -250,10 +271,21 @@ def generate_time_series_data(time_range="current"):
 
 def get_historical_metrics(time_range):
     """Get historical cluster metrics based on time range"""
+    # Simulate data availability - some time ranges might not have data
+    import random
+    
+    # Randomly determine if data is available for this time range
+    data_available = random.choice([True, False, False])  # 33% chance of data being available
+    
+    if not data_available:
+        return None  # No data available
+    
     if time_range == "current":
         return {
             "cpu_usage": 2.5,
             "memory_usage": 4.2 * (1024**3),
+            "cpu_capacity": 8,
+            "memory_capacity": 16 * (1024**3),
             "node_count": 3,
             "pod_count": 12,
             "service_count": 8
@@ -262,6 +294,8 @@ def get_historical_metrics(time_range):
         return {
             "cpu_usage": 2.8,
             "memory_usage": 4.5 * (1024**3),
+            "cpu_capacity": 8,
+            "memory_capacity": 16 * (1024**3),
             "node_count": 3,
             "pod_count": 11,
             "service_count": 8
@@ -270,6 +304,8 @@ def get_historical_metrics(time_range):
         return {
             "cpu_usage": 3.1,
             "memory_usage": 4.8 * (1024**3),
+            "cpu_capacity": 8,
+            "memory_capacity": 16 * (1024**3),
             "node_count": 3,
             "pod_count": 10,
             "service_count": 8
@@ -278,6 +314,8 @@ def get_historical_metrics(time_range):
         return {
             "cpu_usage": 2.2,
             "memory_usage": 3.9 * (1024**3),
+            "cpu_capacity": 8,
+            "memory_capacity": 16 * (1024**3),
             "node_count": 3,
             "pod_count": 13,
             "service_count": 8
@@ -286,6 +324,8 @@ def get_historical_metrics(time_range):
         return {
             "cpu_usage": 1.8,
             "memory_usage": 3.5 * (1024**3),
+            "cpu_capacity": 8,
+            "memory_capacity": 16 * (1024**3),
             "node_count": 3,
             "pod_count": 15,
             "service_count": 8
@@ -294,9 +334,245 @@ def get_historical_metrics(time_range):
         return {
             "cpu_usage": 1.5,
             "memory_usage": 3.2 * (1024**3),
+            "cpu_capacity": 8,
+            "memory_capacity": 16 * (1024**3),
             "node_count": 3,
             "pod_count": 18,
             "service_count": 8
+        }
+
+def get_historical_node_metrics(time_range):
+    """Get historical node metrics based on time range"""
+    if time_range == "current":
+        return [
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
+                "cpu_usage": 2.5,
+                "cpu_capacity": 8,
+                "memory_usage": 4.2 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 4
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
+                "cpu_usage": 1.8,
+                "cpu_capacity": 8,
+                "memory_usage": 3.1 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 3
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
+                "cpu_usage": 3.2,
+                "cpu_capacity": 8,
+                "memory_usage": 5.8 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 5
+            }
+        ]
+    elif time_range == "5min_ago":
+        return [
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
+                "cpu_usage": 2.8,
+                "cpu_capacity": 8,
+                "memory_usage": 4.5 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 4
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
+                "cpu_usage": 2.1,
+                "cpu_capacity": 8,
+                "memory_usage": 3.3 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 3
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
+                "cpu_usage": 3.5,
+                "cpu_capacity": 8,
+                "memory_usage": 6.0 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 5
+            }
+        ]
+    elif time_range == "15min_ago":
+        return [
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
+                "cpu_usage": 3.1,
+                "cpu_capacity": 8,
+                "memory_usage": 4.8 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 4
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
+                "cpu_usage": 2.4,
+                "cpu_capacity": 8,
+                "memory_usage": 3.5 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 3
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
+                "cpu_usage": 3.8,
+                "cpu_capacity": 8,
+                "memory_usage": 6.2 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 5
+            }
+        ]
+    elif time_range == "1hour_ago":
+        return [
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
+                "cpu_usage": 2.2,
+                "cpu_capacity": 8,
+                "memory_usage": 3.9 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 4
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
+                "cpu_usage": 1.5,
+                "cpu_capacity": 8,
+                "memory_usage": 2.9 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 3
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
+                "cpu_usage": 2.9,
+                "cpu_capacity": 8,
+                "memory_usage": 5.5 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 5
+            }
+        ]
+    elif time_range == "6hours_ago":
+        return [
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
+                "cpu_usage": 1.8,
+                "cpu_capacity": 8,
+                "memory_usage": 3.5 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 4
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
+                "cpu_usage": 1.2,
+                "cpu_capacity": 8,
+                "memory_usage": 2.7 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 3
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
+                "cpu_usage": 2.5,
+                "cpu_capacity": 8,
+                "memory_usage": 5.2 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 5
+            }
+        ]
+    else:  # 24hours_ago
+        return [
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l5gp",
+                "cpu_usage": 1.5,
+                "cpu_capacity": 8,
+                "memory_usage": 3.2 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 4
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l6gp",
+                "cpu_usage": 1.0,
+                "cpu_capacity": 8,
+                "memory_usage": 2.5 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 3
+            },
+            {
+                "name": "gke-smartops-cluster-default-pool-897bf21e-l7gp",
+                "cpu_usage": 2.2,
+                "cpu_capacity": 8,
+                "memory_usage": 4.9 * (1024**3),
+                "memory_capacity": 16 * (1024**3),
+                "status": "Ready",
+                "pods": 5
+            }
+        ]
+
+def get_historical_pod_status(time_range):
+    """Get historical pod status based on time range"""
+    if time_range == "current":
+        return {
+            "running": 10,
+            "pending": 1,
+            "failed": 0,
+            "succeeded": 1,
+            "total": 12
+        }
+    elif time_range == "5min_ago":
+        return {
+            "running": 11,
+            "pending": 0,
+            "failed": 0,
+            "succeeded": 1,
+            "total": 12
+        }
+    elif time_range == "15min_ago":
+        return {
+            "running": 10,
+            "pending": 1,
+            "failed": 0,
+            "succeeded": 1,
+            "total": 12
+        }
+    elif time_range == "1hour_ago":
+        return {
+            "running": 13,
+            "pending": 0,
+            "failed": 0,
+            "succeeded": 0,
+            "total": 13
+        }
+    elif time_range == "6hours_ago":
+        return {
+            "running": 15,
+            "pending": 0,
+            "failed": 0,
+            "succeeded": 0,
+            "total": 15
+        }
+    else:  # 24hours_ago
+        return {
+            "running": 18,
+            "pending": 0,
+            "failed": 0,
+            "succeeded": 0,
+            "total": 18
         }
 
 # Page config
@@ -628,8 +904,7 @@ with col3:
     start_time = st.time_input(
         "🕐 Start Time",
         value=default_start_time,
-        step=300,  # 5-minute intervals
-        format="HH:mm"  # 24-hour format for better AM/PM display
+        step=300  # 5-minute intervals
     )
 
 with col4:
@@ -638,11 +913,17 @@ with col4:
     end_time = st.time_input(
         "🕐 End Time", 
         value=default_end_time,
-        step=300,  # 5-minute intervals
-        format="HH:mm"  # 24-hour format for better AM/PM display
+        step=300  # 5-minute intervals
     )
 
 st.markdown('</div>', unsafe_allow_html=True)
+
+# Data Availability Indicator
+data_available_indicator = check_data_availability(selected_date, start_time, end_time, time_preset)
+if data_available_indicator:
+    st.success(f"✅ **Data Available:** Historical data found for {selected_date.strftime('%B %d, %Y')} from {start_time.strftime('%I:%M %p')} to {end_time.strftime('%I:%M %p')}")
+else:
+    st.error(f"❌ **Data Not Available:** No historical data found for {selected_date.strftime('%B %d, %Y')} from {start_time.strftime('%I:%M %p')} to {end_time.strftime('%I:%M %p')}")
 
 # Apply time filter and auto-update times
 if time_preset == "Live (Now)":
@@ -724,25 +1005,75 @@ with col2:
         st.cache_data.clear()
         st.rerun()
 
+# Data Availability Summary
+st.markdown('<div class="section-header">📊 Data Availability Summary</div>', unsafe_allow_html=True)
+
+if data_available:
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        st.success(f"✅ **Data Available:** Successfully loaded {time_description} for {display_date} from {start_time_12hr} to {end_time_12hr}")
+    
+    with col2:
+        st.metric("Data Status", "Available", delta="✅")
+    
+    with col3:
+        st.metric("Time Range", f"{start_time_12hr} - {end_time_12hr}")
+else:
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        st.error(f"❌ **Data Not Available:** No historical data found for {time_description} | {display_date} from {start_time_12hr} to {end_time_12hr}")
+        st.warning("💡 **Tip:** Try selecting a different time range or use 'Live (Now)' for current data.")
+    
+    with col2:
+        st.metric("Data Status", "Unavailable", delta="❌")
+    
+    with col3:
+        st.metric("Time Range", f"{start_time_12hr} - {end_time_12hr}")
+
 # API Connection Status
 st.info("🔌 **API Status:** Using mock data for demonstration. Real-time metrics will be available once the API endpoints are configured.")
+
+# Check data availability for the selected time range
+data_available = check_data_availability(selected_date, start_time, end_time, time_preset)
 
 # Fetch all data based on selected time range
 if selected_time == "Current":
     cluster_metrics = fetch_cluster_metrics()
+    node_metrics = fetch_node_metrics()
+    pod_status = fetch_pod_status_summary()
 else:
-    cluster_metrics = get_historical_metrics(selected_time)
+    if data_available:
+        cluster_metrics = get_historical_metrics(selected_time)
+        node_metrics = get_historical_node_metrics(selected_time)
+        pod_status = get_historical_pod_status(selected_time)
+    else:
+        cluster_metrics = None
+        node_metrics = None
+        pod_status = None
 
-node_metrics = fetch_node_metrics()
-pod_status = fetch_pod_status_summary()
 df = load_anomalies_df()
 
 # Overall Cluster Health Status
-st.markdown('<div class="section-header">🏥 Cluster Health Status</div>', unsafe_allow_html=True)
+if data_available:
+    st.markdown(f'<div class="section-header">🏥 Cluster Health Status - {time_description}</div>', unsafe_allow_html=True)
+    
+    # Show time context
+    if time_preset != "Live (Now)":
+        st.info(f"📅 **Time Context:** Showing health status for {display_date} from {start_time_12hr} to {end_time_12hr}")
 
-# Calculate overall health score
-health_score = 0
-total_checks = 0
+    # Calculate overall health score
+    health_score = 0
+    total_checks = 0
+else:
+    st.markdown('<div class="section-header">🏥 Cluster Health Status</div>', unsafe_allow_html=True)
+    st.warning("⚠️ **Health Status Unavailable:** Cannot calculate cluster health without historical data.")
+    st.info("Please select a time range with available data to view cluster health metrics.")
+    
+    # Set default values for display
+    health_score = 0
+    total_checks = 1
 
 # CPU health check
 cpu_usage_percent = (cluster_metrics['cpu_usage'] / cluster_metrics['cpu_capacity']) * 100 if cluster_metrics['cpu_capacity'] > 0 else 0
@@ -856,73 +1187,99 @@ else:
     """, unsafe_allow_html=True)
 
 # Cluster Statistics
-st.markdown('<div class="section-header">📊 Cluster Statistics</div>', unsafe_allow_html=True)
+if data_available:
+    st.markdown(f'<div class="section-header">📊 Cluster Statistics - {time_description}</div>', unsafe_allow_html=True)
+    
+    # Show time context
+    if time_preset != "Live (Now)":
+        st.info(f"📅 **Time Context:** Showing statistics for {display_date} from {start_time_12hr} to {end_time_12hr}")
+else:
+    st.markdown('<div class="section-header">📊 Cluster Statistics</div>', unsafe_allow_html=True)
 
-# Stats cards in a grid
-st.markdown(f"""
-<div class="status-grid">
-    <div class="status-card healthy">
-        <div class="status-number">{cluster_metrics.get('node_count', 3)}</div>
-        <div class="status-label">Nodes</div>
-        <div class="status-description">Active cluster nodes</div>
+if data_available:
+    # Stats cards in a grid
+    st.markdown(f"""
+    <div class="status-grid">
+        <div class="status-card healthy">
+            <div class="status-number">{cluster_metrics.get('node_count', 3)}</div>
+            <div class="status-label">Nodes</div>
+            <div class="status-description">Active cluster nodes</div>
+        </div>
+        <div class="status-card healthy">
+            <div class="status-number">{cluster_metrics.get('pod_count', 12)}</div>
+            <div class="status-label">Pods</div>
+            <div class="status-description">Running containers</div>
+        </div>
+        <div class="status-card healthy">
+            <div class="status-number">{cluster_metrics.get('service_count', 8)}</div>
+            <div class="status-label">Services</div>
+            <div class="status-description">Network services</div>
+        </div>
+        <div class="status-card healthy">
+            <div class="status-number">{len(fetch_namespaces())}</div>
+            <div class="status-label">Namespaces</div>
+            <div class="status-description">Logical partitions</div>
+        </div>
     </div>
-    <div class="status-card healthy">
-        <div class="status-number">{cluster_metrics.get('pod_count', 12)}</div>
-        <div class="status-label">Pods</div>
-        <div class="status-description">Running containers</div>
-    </div>
-    <div class="status-card healthy">
-        <div class="status-number">{cluster_metrics.get('service_count', 8)}</div>
-        <div class="status-label">Services</div>
-        <div class="status-description">Network services</div>
-    </div>
-    <div class="status-card healthy">
-        <div class="status-number">{len(fetch_namespaces())}</div>
-        <div class="status-label">Namespaces</div>
-        <div class="status-description">Logical partitions</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+else:
+    st.warning("⚠️ **Statistics Unavailable:** Cannot display cluster statistics without historical data.")
+    st.info("Please select a time range with available data to view cluster statistics.")
 
 # Pod Status Summary
 st.markdown('<div class="section-header">📋 Pod Status Summary</div>', unsafe_allow_html=True)
 
-# Create pod status visualization
-pod_data = {
-    'Status': ['Running', 'Pending', 'Failed', 'Succeeded'],
-    'Count': [pod_status['running'], pod_status['pending'], pod_status['failed'], pod_status['succeeded']],
-    'Color': ['#00d4aa', '#ffa726', '#ef5350', '#42a5f5']
-}
+if data_available and pod_status:
+    # Create pod status visualization
+    pod_data = {
+        'Status': ['Running', 'Pending', 'Failed', 'Succeeded'],
+        'Count': [pod_status['running'], pod_status['pending'], pod_status['failed'], pod_status['succeeded']],
+        'Color': ['#00d4aa', '#ffa726', '#ef5350', '#42a5f5']
+    }
 
-fig_pods = px.bar(
-    x=pod_data['Status'],
-    y=pod_data['Count'],
-    color=pod_data['Status'],
-    color_discrete_map=dict(zip(pod_data['Status'], pod_data['Color'])),
-    title="Pod Status Distribution"
-)
+    fig_pods = px.bar(
+        x=pod_data['Status'],
+        y=pod_data['Count'],
+        color=pod_data['Status'],
+        color_discrete_map=dict(zip(pod_data['Status'], pod_data['Color'])),
+        title=f"Pod Status Distribution - {time_description}"
+    )
 
-fig_pods.update_layout(
-    height=300,
-    margin=dict(l=20, r=20, t=40, b=20),
-    showlegend=False,
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)'
-)
+    fig_pods.update_layout(
+        height=300,
+        margin=dict(l=20, r=20, t=40, b=20),
+        showlegend=False,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+    )
 
-fig_pods.update_xaxes(showgrid=False)
-fig_pods.update_yaxes(showgrid=True, gridcolor='#e9ecef')
+    fig_pods.update_xaxes(showgrid=False)
+    fig_pods.update_yaxes(showgrid=True, gridcolor='#e9ecef')
 
-st.plotly_chart(fig_pods, use_container_width=True)
+    st.plotly_chart(fig_pods, use_container_width=True)
+else:
+    st.warning("⚠️ **Pod Status Unavailable:** Cannot display pod status without historical data.")
+    st.info("Please select a time range with available data to view pod status information.")
 
 # Resource Usage Visualization
-st.markdown('<div class="section-header">⚡ Resource Usage Overview</div>', unsafe_allow_html=True)
+if data_available:
+    st.markdown(f'<div class="section-header">⚡ Resource Usage Overview - {time_description}</div>', unsafe_allow_html=True)
+    
+    # Show time context
+    if time_preset != "Live (Now)":
+        st.info(f"📅 **Time Context:** Showing resource usage for {display_date} from {start_time_12hr} to {end_time_12hr}")
+else:
+    st.markdown('<div class="section-header">⚡ Resource Usage Overview</div>', unsafe_allow_html=True)
 
-# Show notice about mock data
-st.info("📊 **Note:** Currently showing demonstration data. Real-time metrics will be available once the API is fully deployed.")
+if data_available:
+    # Show notice about mock data
+    st.info("📊 **Note:** Currently showing demonstration data. Real-time metrics will be available once the API is fully deployed.")
 
-# Create two columns for cluster overview
-col1, col2 = st.columns(2)
+    # Create two columns for cluster overview
+    col1, col2 = st.columns(2)
+else:
+    st.warning("⚠️ **Resource Usage Unavailable:** Cannot display resource usage metrics without historical data.")
+    st.info("Please select a time range with available data to view resource usage information.")
 
 with col1:
     # Cluster CPU Usage Gauge
@@ -993,13 +1350,24 @@ with col2:
     st.plotly_chart(fig_memory, use_container_width=True)
 
 # Time Series Charts
-st.markdown('<div class="section-header">⏰ Resource Usage Trends</div>', unsafe_allow_html=True)
+if data_available:
+    st.markdown(f'<div class="section-header">⏰ Resource Usage Trends - {time_description}</div>', unsafe_allow_html=True)
+    
+    # Show time context
+    if time_preset != "Live (Now)":
+        st.info(f"📅 **Time Context:** Showing trends for {display_date} from {start_time_12hr} to {end_time_12hr}")
+else:
+    st.markdown('<div class="section-header">⏰ Resource Usage Trends</div>', unsafe_allow_html=True)
 
-# Generate mock time series data based on selected time range
-timestamps, cpu_data, memory_data = generate_time_series_data(selected_time)
+if data_available:
+    # Generate mock time series data based on selected time range
+    timestamps, cpu_data, memory_data = generate_time_series_data(selected_time)
 
-# Create time series charts
-col1, col2 = st.columns(2)
+    # Create time series charts
+    col1, col2 = st.columns(2)
+else:
+    st.warning("⚠️ **Trend Data Unavailable:** Cannot display resource usage trends without historical data.")
+    st.info("Please select a time range with available data to view trend information.")
 
 with col1:
     fig_cpu_trend = go.Figure()
@@ -1074,9 +1442,16 @@ with col2:
     st.plotly_chart(fig_memory_trend, use_container_width=True)
 
 # Node Health Table
-st.markdown('<div class="section-header">🖥️ Node Health Status</div>', unsafe_allow_html=True)
+if data_available:
+    st.markdown(f'<div class="section-header">🖥️ Node Health Status - {time_description}</div>', unsafe_allow_html=True)
+    
+    # Show time context
+    if time_preset != "Live (Now)":
+        st.info(f"📅 **Time Context:** Showing node health for {display_date} from {start_time_12hr} to {end_time_12hr}")
+else:
+    st.markdown('<div class="section-header">🖥️ Node Health Status</div>', unsafe_allow_html=True)
 
-if node_metrics:
+if data_available and node_metrics:
     # Create node metrics dataframe
     node_data = []
     for node in node_metrics:
@@ -1112,6 +1487,9 @@ if node_metrics:
         hide_index=True
     )
     st.markdown('</div>', unsafe_allow_html=True)
+else:
+    st.warning("⚠️ **Node Health Unavailable:** Cannot display node health without historical data.")
+    st.info("Please select a time range with available data to view node health information.")
 
 # Quick Actions section removed
 
