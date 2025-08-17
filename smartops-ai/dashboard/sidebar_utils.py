@@ -1,14 +1,6 @@
 import streamlit as st
 
-# ---------- Page config ----------
-st.set_page_config(
-    page_title="SmartOps",
-    page_icon="🚀",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-def nav_only():
+def show_sidebar():
     # ---------- Hide everything except the sidebar ----------
     st.markdown(
         """
@@ -146,4 +138,4 @@ def nav_only():
     )
 
 # Run
-nav_only()
+show_sidebar()
