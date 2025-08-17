@@ -6,7 +6,7 @@ from sidebar_utils import show_sidebar
 with st.sidebar:
     show_sidebar()
 
-st.title("⚖️ Auto-Scaling Recommendations & Control")
+st.title("⚖️ Auto-Scaling Recommendations and Control")
 st.write("""
 This page uses AI to analyze CPU/memory usage trends and recommend optimal Horizontal Pod Autoscaler (HPA) settings for your workloads. You can also apply recommended changes directly from the dashboard.
 """)

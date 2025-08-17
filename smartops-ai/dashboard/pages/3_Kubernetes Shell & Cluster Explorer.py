@@ -6,7 +6,7 @@ from sidebar_utils import show_sidebar
 with st.sidebar:
     show_sidebar()
 
-st.title("🖥️ Kubernetes Shell & Cluster Explorer")
+st.title("🖥️ Kubernetes Shell and Cluster Explorer")
 tab1, tab2 = st.tabs(["Shell", "Cluster Explorer"])
 
 with tab1:
@@ -142,7 +142,7 @@ with tab1:
                 if st.session_state.history_index > 0:
                     st.session_state.history_index -= 1
                     st.session_state.current_command = st.session_state.kube_shell_history[-(st.session_state.history_index + 1)]
-                    st.experimental_rerun()
+                    st.rerun()
                 elif st.session_state.history_index == 0:
                     st.session_state.history_index = -1
                     st.session_state.current_command = ""

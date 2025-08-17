@@ -7,7 +7,7 @@ from sidebar_utils import show_sidebar
 with st.sidebar:
     show_sidebar()
 
-st.title("🕒 Incident Timeline & Postmortem Report Generator")
+st.title("🕒 Incident Timeline and Postmortem Report Generator")
 st.write("""
 This page auto-generates a timeline of incidents (anomalies, pod crashes, alerts) and lets you export postmortem PDF reports with root cause, impact, and remediation. You can also view the audit trail by namespace or app.
 """)

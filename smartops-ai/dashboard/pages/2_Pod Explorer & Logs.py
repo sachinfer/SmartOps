@@ -67,7 +67,7 @@ def load_anomalies_df():
         st.warning(f"Could not load anomalies data: {e}")
         return pd.DataFrame()
 
-st.title("🛰️ Pod Explorer & Logs")
+st.title("🛰️ Pod Explorer and Logs")
 st.write("Explore pods and view their logs in real time.")
 
 namespaces = fetch_namespaces()
@@ -106,12 +106,12 @@ with col2:
         if st.button("💔", key="remove_star", help=f"Remove {namespace} from favorites"):
             remove_favorite_namespace(namespace)
             st.success(f"Removed {namespace} from favorites!")
-            st.experimental_rerun()
+            st.rerun()
     else:
         if st.button("⭐", key="add_star", help=f"Add {namespace} to favorites"):
             add_favorite_namespace(namespace)
             st.success(f"Added {namespace} to favorites!")
-            st.experimental_rerun()
+            st.rerun()
 
 # Show current namespace info
 if namespace:
@@ -150,7 +150,7 @@ if auto_refresh_checkbox:
             st.session_state["log_last_refresh"] = time.time()
         if time.time() - st.session_state["log_last_refresh"] > interval_sec:
             st.session_state["log_last_refresh"] = time.time()
-            st.experimental_rerun()
+            st.rerun()
     log_auto_refresh(5)
 
 # Log search/filter UI
