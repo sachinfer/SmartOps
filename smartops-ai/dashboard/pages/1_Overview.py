@@ -872,25 +872,9 @@ col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
 with col_header1:
     # Display current time range selection
     if time_preset == "Live (Now)":
-        st.markdown(f"**~ Now → Now**")
+        st.markdown("**~ Now → Now**")
     else:
-        # Calculate relative time display
-        now = datetime.now()
-        selected_datetime = datetime.combine(selected_date, start_time)
-        time_diff = now - selected_datetime
-        
-        if time_diff.days > 0:
-            relative_text = f"~ {time_diff.days} days ago → ~ in {time_diff.days} days"
-        elif time_diff.seconds > 3600:
-            hours = time_diff.seconds // 3600
-            relative_text = f"~ {hours} hours ago → ~ in {hours} hours"
-        elif time_diff.seconds > 60:
-            minutes = time_diff.seconds // 60
-            relative_text = f"~ {minutes} minutes ago → ~ in {minutes} minutes"
-        else:
-            relative_text = "~ Now → Now"
-        
-        st.markdown(f"**{relative_text}**")
+        st.markdown("**~ Historical Data**")
 
 with col_header2:
     # Quick time presets dropdown
@@ -972,7 +956,7 @@ with col_rel3:
     else:  # Weeks ago
         start_datetime = datetime.now() - timedelta(weeks=relative_value)
     
-    st.markdown(f"**Start date:** {start_datetime.strftime('%b %d, %Y @ %H:%M:%S.%f')[:-3]}")
+    st.markdown(f"**Start date:** {start_datetime.strftime('%b %d, %Y @ %H:%M:%S')}")
 
 # Round to day toggle
 round_to_day = st.checkbox("Round to the day", value=True, key="round_to_day")
