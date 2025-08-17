@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 import plotly.graph_objects as go
+import plotly.express as px
 import pytz
 import requests
+import numpy as np
 
 # Timezone setup
 IST = pytz.timezone('Asia/Kolkata')
@@ -157,122 +159,267 @@ def fetch_pod_status_summary():
             "total": 12
         }
 
+def generate_time_series_data():
+    """Generate mock time series data for charts"""
+    now = datetime.now()
+    timestamps = [now - timedelta(minutes=i) for i in range(60, 0, -1)]
+    
+    # CPU usage with some variation
+    cpu_base = 65
+    cpu_data = [cpu_base + np.random.normal(0, 5) for _ in range(60)]
+    cpu_data = [max(0, min(100, x)) for x in cpu_data]
+    
+    # Memory usage with some variation
+    memory_base = 72
+    memory_data = [memory_base + np.random.normal(0, 3) for _ in range(60)]
+    memory_data = [max(0, min(100, x)) for x in memory_data]
+    
+    return timestamps, cpu_data, memory_data
+
 # Page config
 st.set_page_config(
-    page_title="Overview - SmartOps AI",
-    page_icon="🏠",
-    layout="wide"
+    page_title="Kubernetes Cluster Overview - SmartOps AI",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# Modern CSS styling
+# Professional Grafana-style CSS
 st.markdown("""
 <style>
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+}
+
+/* Main container */
+.main .block-container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    max-width: 1400px;
+}
+
+/* Header styling */
 .dashboard-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
     padding: 2rem;
-    border-radius: 15px;
+    border-radius: 8px;
     margin-bottom: 2rem;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
-    text-align: center;
-    color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e5e9;
 }
+
 .dashboard-header h1 {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     margin-bottom: 0.5rem;
-    font-weight: 700;
-}
-.dashboard-header p {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin: 0;
-}
-.stats-container {
-    display: flex;
-    gap: 1.5rem;
-    margin: 2rem 0;
-    flex-wrap: wrap;
-}
-.stat-card {
-    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    font-weight: 600;
     color: white;
-    padding: 1.5rem;
-    border-radius: 15px;
-    flex: 1;
-    min-width: 200px;
-    text-align: center;
-    box-shadow: 0 8px 25px rgba(0, 184, 148, 0.2);
-    transition: transform 0.3s ease;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-.stat-card.services {
-    background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
-    box-shadow: 0 8px 25px rgba(9, 132, 227, 0.2);
-}
-.stat-card.deployments {
-    background: linear-gradient(135deg, #e17055 0%, #fab1a0 100%);
-    box-shadow: 0 8px 25px rgba(225, 112, 85, 0.2);
-}
-.stat-card.nodes {
-    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-    box-shadow: 0 8px 25px rgba(108, 92, 231, 0.2);
-}
-.stat-number {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
-.stat-label {
+
+.dashboard-header p {
     font-size: 1rem;
     opacity: 0.9;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    margin: 0;
+    color: #e8f4fd;
 }
+
+/* Status cards */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.status-card {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-color: #2a5298;
+}
+
+.status-card.healthy {
+    border-left: 4px solid #00d4aa;
+}
+
+.status-card.warning {
+    border-left: 4px solid #ffa726;
+}
+
+.status-card.critical {
+    border-left: 4px solid #ef5350;
+}
+
+.status-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #1e3c72, #2a5298);
+}
+
+.status-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #1e3c72;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.status-description {
+    font-size: 0.85rem;
+    color: #495057;
+    margin-top: 0.5rem;
+}
+
+/* Section headers */
 .section-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    color: white;
+    background: #f8f9fa;
+    color: #495057;
     padding: 1rem 1.5rem;
-    border-radius: 10px;
+    border-radius: 6px;
     margin: 2rem 0 1rem 0;
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: 600;
+    border-left: 4px solid #2a5298;
     display: flex;
     align-items: center;
+    gap: 0.75rem;
+}
+
+/* Alert banners */
+.alert-banner {
+    background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    box-shadow: 0 4px 15px rgba(239, 83, 80, 0.2);
+    border: 1px solid #e53935;
+}
+
+.success-banner {
+    background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    box-shadow: 0 4px 15px rgba(0, 212, 170, 0.2);
+    border: 1px solid #00b894;
+}
+
+.warning-banner {
+    background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    box-shadow: 0 4px 15px rgba(255, 167, 38, 0.2);
+    border: 1px solid #ff9800;
+}
+
+/* Metric cards */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.metric-card {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e3c72;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Node table styling */
+.node-table {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Quick actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 0.5rem;
 }
-.alert-banner {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    margin: 1rem 0;
-    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(42, 82, 152, 0.3);
 }
-.success-banner {
-    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    margin: 1rem 0;
-    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.2);
-}
-.warning-banner {
-    background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    margin: 1rem 0;
-    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.2);
-}
+
+/* Hide Streamlit elements */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
 # Main content
 st.markdown("""
 <div class="dashboard-header">
-    <h1>🏠 SmartOps AI Overview</h1>
-    <p>Real-time Kubernetes cluster health monitoring with AI-powered insights</p>
+    <h1>📊 Kubernetes Cluster Overview</h1>
+    <p>Real-time monitoring dashboard powered by SmartOps AI</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -321,41 +468,61 @@ overall_health_percent = (health_score / total_checks) * 100
 
 # Display health status
 if overall_health_percent >= 80:
-    health_status = "✅ Excellent"
+    health_status = "Excellent"
     health_color = "success"
     health_icon = "🟢"
 elif overall_health_percent >= 60:
-    health_status = "⚠️ Good"
+    health_status = "Good"
     health_color = "warning"
     health_icon = "🟡"
 else:
-    health_status = "🚨 Needs Attention"
+    health_status = "Needs Attention"
     health_color = "error"
     health_icon = "🔴"
 
-if health_color == "success":
+# Health status display
+col1, col2, col3 = st.columns([2, 1, 1])
+
+with col1:
+    if health_color == "success":
+        st.markdown(f"""
+        <div class="success-banner">
+            <h3>{health_icon} Cluster Health: {overall_health_percent:.0f}% - {health_status}</h3>
+            <p>Your Kubernetes cluster is operating at optimal performance. All systems are healthy and running smoothly.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    elif health_color == "warning":
+        st.markdown(f"""
+        <div class="warning-banner">
+            <h3>{health_icon} Cluster Health: {overall_health_percent:.0f}% - {health_status}</h3>
+            <p>Your cluster is generally healthy but some areas need attention. Monitor resource usage closely.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="alert-banner">
+            <h3>{health_icon} Cluster Health: {overall_health_percent:.0f}% - {health_status}</h3>
+            <p>Your cluster requires immediate attention. Check resource usage, pod status, and node health.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+with col2:
     st.markdown(f"""
-    <div class="success-banner">
-        <h3>{health_icon} {health_status} - Cluster Health: {overall_health_percent:.0f}%</h3>
-        <p>Your Kubernetes cluster is operating at optimal performance. All systems are healthy and running smoothly.</p>
-    </div>
-    """, unsafe_allow_html=True)
-elif health_color == "warning":
-    st.markdown(f"""
-    <div class="warning-banner">
-        <h3>{health_icon} {health_status} - Cluster Health: {overall_health_percent:.0f}%</h3>
-        <p>Your cluster is generally healthy but some areas need attention. Monitor resource usage closely.</p>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(f"""
-    <div class="alert-banner">
-        <h3>{health_icon} {health_status} - Cluster Health: {overall_health_percent:.0f}%</h3>
-        <p>Your cluster requires immediate attention. Check resource usage, pod status, and node health.</p>
+    <div class="metric-card">
+        <div class="metric-value">{overall_health_percent:.0f}%</div>
+        <div class="metric-label">Health Score</div>
     </div>
     """, unsafe_allow_html=True)
 
-# Anomaly Detection Status
+with col3:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-value">{healthy_nodes}/{len(node_metrics)}</div>
+        <div class="metric-label">Healthy Nodes</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# SmartOps AI Status
 if not df.empty:
     latest = df.iloc[-1]
     if latest['prediction'].lower() == 'normal':
@@ -383,24 +550,28 @@ else:
 # Cluster Statistics
 st.markdown('<div class="section-header">📊 Cluster Statistics</div>', unsafe_allow_html=True)
 
-# Stats cards
+# Stats cards in a grid
 st.markdown(f"""
-<div class="stats-container">
-    <div class="stat-card nodes">
-        <div class="stat-number">{cluster_metrics.get('node_count', 3)}</div>
-        <div class="stat-label">Nodes</div>
+<div class="status-grid">
+    <div class="status-card healthy">
+        <div class="status-number">{cluster_metrics.get('node_count', 3)}</div>
+        <div class="status-label">Nodes</div>
+        <div class="status-description">Active cluster nodes</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number">{cluster_metrics.get('pod_count', 12)}</div>
-        <div class="stat-label">Pods</div>
+    <div class="status-card healthy">
+        <div class="status-number">{cluster_metrics.get('pod_count', 12)}</div>
+        <div class="status-label">Pods</div>
+        <div class="status-description">Running containers</div>
     </div>
-    <div class="stat-card services">
-        <div class="stat-number">{cluster_metrics.get('service_count', 8)}</div>
-        <div class="stat-label">Services</div>
+    <div class="status-card healthy">
+        <div class="status-number">{cluster_metrics.get('service_count', 8)}</div>
+        <div class="status-label">Services</div>
+        <div class="status-description">Network services</div>
     </div>
-    <div class="stat-card deployments">
-        <div class="stat-number">{len(fetch_namespaces())}</div>
-        <div class="stat-label">Namespaces</div>
+    <div class="status-card healthy">
+        <div class="status-number">{len(fetch_namespaces())}</div>
+        <div class="status-label">Namespaces</div>
+        <div class="status-description">Logical partitions</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -408,16 +579,33 @@ st.markdown(f"""
 # Pod Status Summary
 st.markdown('<div class="section-header">📋 Pod Status Summary</div>', unsafe_allow_html=True)
 
-col1, col2, col3, col4 = st.columns(4)
+# Create pod status visualization
+pod_data = {
+    'Status': ['Running', 'Pending', 'Failed', 'Succeeded'],
+    'Count': [pod_status['running'], pod_status['pending'], pod_status['failed'], pod_status['succeeded']],
+    'Color': ['#00d4aa', '#ffa726', '#ef5350', '#42a5f5']
+}
 
-with col1:
-    st.metric("Running", pod_status['running'], delta=None, delta_color="normal")
-with col2:
-    st.metric("Pending", pod_status['pending'], delta=None, delta_color="normal")
-with col3:
-    st.metric("Failed", pod_status['failed'], delta=None, delta_color="inverse")
-with col4:
-    st.metric("Total", pod_status['total'], delta=None, delta_color="normal")
+fig_pods = px.bar(
+    x=pod_data['Status'],
+    y=pod_data['Count'],
+    color=pod_data['Status'],
+    color_discrete_map=dict(zip(pod_data['Status'], pod_data['Color'])),
+    title="Pod Status Distribution"
+)
+
+fig_pods.update_layout(
+    height=300,
+    margin=dict(l=20, r=20, t=40, b=20),
+    showlegend=False,
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)'
+)
+
+fig_pods.update_xaxes(showgrid=False)
+fig_pods.update_yaxes(showgrid=True, gridcolor='#e9ecef')
+
+st.plotly_chart(fig_pods, use_container_width=True)
 
 # Resource Usage Visualization
 st.markdown('<div class="section-header">📈 Resource Usage Overview</div>', unsafe_allow_html=True)
@@ -434,15 +622,18 @@ with col1:
         mode = "gauge+number+delta",
         value = cpu_usage_percent,
         domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "Cluster CPU Usage (%)"},
+        title = {'text': "Cluster CPU Usage (%)", 'font': {'size': 16}},
         delta = {'reference': 80},
         gauge = {
-            'axis': {'range': [None, 100]},
-            'bar': {'color': "darkblue"},
+            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
+            'bar': {'color': "#2a5298"},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "gray",
             'steps': [
-                {'range': [0, 50], 'color': "lightgray"},
-                {'range': [50, 80], 'color': "yellow"},
-                {'range': [80, 100], 'color': "red"}
+                {'range': [0, 50], 'color': "#00d4aa"},
+                {'range': [50, 80], 'color': "#ffa726"},
+                {'range': [80, 100], 'color': "#ef5350"}
             ],
             'threshold': {
                 'line': {'color': "red", 'width': 4},
@@ -451,7 +642,12 @@ with col1:
             }
         }
     ))
-    fig_cpu.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20))
+    fig_cpu.update_layout(
+        height=300, 
+        margin=dict(l=20, r=20, t=40, b=20),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+    )
     st.plotly_chart(fig_cpu, use_container_width=True)
 
 with col2:
@@ -460,15 +656,18 @@ with col2:
         mode = "gauge+number+delta",
         value = memory_usage_percent,
         domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "Cluster RAM Usage (%)"},
+        title = {'text': "Cluster RAM Usage (%)", 'font': {'size': 16}},
         delta = {'reference': 80},
         gauge = {
-            'axis': {'range': [None, 100]},
-            'bar': {'color': "darkgreen"},
+            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkgreen"},
+            'bar': {'color': "#2a5298"},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "gray",
             'steps': [
-                {'range': [0, 50], 'color': "lightgray"},
-                {'range': [50, 80], 'color': "yellow"},
-                {'range': [80, 100], 'color': "red"}
+                {'range': [0, 50], 'color': "#00d4aa"},
+                {'range': [50, 80], 'color': "#ffa726"},
+                {'range': [80, 100], 'color': "#ef5350"}
             ],
             'threshold': {
                 'line': {'color': "red", 'width': 4},
@@ -477,8 +676,66 @@ with col2:
             }
         }
     ))
-    fig_memory.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20))
+    fig_memory.update_layout(
+        height=300, 
+        margin=dict(l=20, r=20, t=40, b=20),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+    )
     st.plotly_chart(fig_memory, use_container_width=True)
+
+# Time Series Charts
+st.markdown('<div class="section-header">⏰ Resource Usage Trends</div>', unsafe_allow_html=True)
+
+# Generate mock time series data
+timestamps, cpu_data, memory_data = generate_time_series_data()
+
+# Create time series charts
+col1, col2 = st.columns(2)
+
+with col1:
+    fig_cpu_trend = go.Figure()
+    fig_cpu_trend.add_trace(go.Scatter(
+        x=timestamps,
+        y=cpu_data,
+        mode='lines+markers',
+        name='CPU Usage %',
+        line=dict(color='#2a5298', width=3),
+        marker=dict(size=4)
+    ))
+    fig_cpu_trend.update_layout(
+        title="CPU Usage Trend (Last Hour)",
+        xaxis_title="Time",
+        yaxis_title="CPU Usage (%)",
+        height=300,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(showgrid=True, gridcolor='#e9ecef'),
+        yaxis=dict(showgrid=True, gridcolor='#e9ecef', range=[0, 100])
+    )
+    st.plotly_chart(fig_cpu_trend, use_container_width=True)
+
+with col2:
+    fig_memory_trend = go.Figure()
+    fig_memory_trend.add_trace(go.Scatter(
+        x=timestamps,
+        y=memory_data,
+        mode='lines+markers',
+        name='Memory Usage %',
+        line=dict(color='#00d4aa', width=3),
+        marker=dict(size=4)
+    ))
+    fig_memory_trend.update_layout(
+        title="Memory Usage Trend (Last Hour)",
+        xaxis_title="Time",
+        yaxis_title="Memory Usage (%)",
+        height=300,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(showgrid=True, gridcolor='#e9ecef'),
+        yaxis=dict(showgrid=True, gridcolor='#e9ecef', range=[0, 100])
+    )
+    st.plotly_chart(fig_memory_trend, use_container_width=True)
 
 # Node Health Table
 st.markdown('<div class="section-header">🖥️ Node Health Status</div>', unsafe_allow_html=True)
@@ -511,43 +768,32 @@ if node_metrics:
     
     node_df = pd.DataFrame(node_data)
     
-    # Color code the usage percentages
-    def color_usage(val):
-        if val > 80:
-            return 'background-color: #ff6b6b; color: white;'
-        elif val > 60:
-            return 'background-color: #fdcb6e; color: black;'
-        else:
-            return 'background-color: #00b894; color: white;'
-    
+    # Display node table with better styling
+    st.markdown('<div class="node-table">', unsafe_allow_html=True)
     st.dataframe(
-        node_df.style.applymap(color_usage, subset=['CPU Usage (%)', 'Memory Usage (%)']),
-        use_container_width=True
+        node_df,
+        use_container_width=True,
+        hide_index=True
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Quick Actions
 st.markdown('<div class="section-header">⚡ Quick Actions</div>', unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("🔄 Refresh Data", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-
-with col2:
-    if st.button("🔥 Anomaly Detection", use_container_width=True):
-        st.switch_page("pages/4_Anomaly_Detection.py")
-
-with col3:
-    if st.button("🤖 AI Actions", use_container_width=True):
-        st.switch_page("pages/8_AI_Actions.py")
+st.markdown("""
+<div class="quick-actions">
+    <button class="action-btn" onclick="window.location.href='?page=refresh'">🔄 Refresh Data</button>
+    <button class="action-btn" onclick="window.location.href='?page=anomaly'">🔥 Anomaly Detection</button>
+    <button class="action-btn" onclick="window.location.href='?page=ai'">🤖 AI Actions</button>
+    <button class="action-btn" onclick="window.location.href='?page=logs'">📋 Pod Logs</button>
+</div>
+""", unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #666; padding: 2rem;">
-    <p>🚀 Powered by SmartOps AI | Real-time Kubernetes Monitoring</p>
+<div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
+    <p>🚀 Powered by SmartOps AI | Enterprise Kubernetes Monitoring</p>
     <p>Last updated: """ + datetime.now().strftime('%Y-%m-%d %H:%M:%S IST') + """</p>
 </div>
 """, unsafe_allow_html=True)
