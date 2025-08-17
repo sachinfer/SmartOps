@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Kubernetes Cluster Overview - SmartOps AI
-Enhanced dashboard for monitoring cluster health and metrics
+New Relic-style monitoring dashboard
 """
 
 import streamlit as st
@@ -20,275 +20,282 @@ st.set_page_config(
 with st.sidebar:
     show_sidebar()
 
-# Enhanced CSS for better UI experience
+# New Relic-style CSS
 st.markdown("""
 <style>
-/* Main container styling */
+/* New Relic-style dark theme */
 .main .block-container {
     padding-top: 1rem;
     padding-bottom: 1rem;
     max-width: 1400px;
+    background-color: #1a1a1a;
 }
 
-/* Enhanced header styling */
+/* Dark theme background */
+.stApp {
+    background-color: #1a1a1a;
+}
+
+/* New Relic-style header */
 .dashboard-header {
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-    padding: 2.5rem;
-    border-radius: 16px;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #4a5568;
     position: relative;
-    overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
-    pointer-events: none;
 }
 
 .dashboard-header h1 {
-    font-size: 2.5rem;
+    font-size: 2rem;
     margin-bottom: 0.5rem;
-    font-weight: 700;
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-weight: 600;
+    color: #f7fafc;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .dashboard-header p {
-    font-size: 1.1rem;
-    opacity: 0.95;
+    font-size: 1rem;
+    opacity: 0.8;
     margin: 0;
-    color: #e8f4fd;
-    font-weight: 400;
+    color: #e2e8f0;
 }
 
-/* Enhanced section headers */
+/* New Relic-style section headers */
 .section-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    color: #495057;
-    padding: 1.2rem 1.8rem;
-    border-radius: 12px;
-    margin: 2.5rem 0 1.5rem 0;
-    font-size: 1.2rem;
-    font-weight: 700;
-    border-left: 5px solid #2a5298;
+    background: #2d3748;
+    color: #f7fafc;
+    padding: 1rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-left: 3px solid #3182ce;
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    gap: 0.75rem;
 }
 
-/* Enhanced metric cards */
+/* New Relic-style metric cards */
 .metric-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.8rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
     margin: 2rem 0;
 }
 
 .metric-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border: 1px solid #e9ecef;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
-    border-left: 4px solid #00d4aa;
 }
 
 .metric-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-    border-color: #2a5298;
-}
-
-.metric-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #00d4aa, #2a5298);
+    border-color: #3182ce;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .metric-value {
-    font-size: 3rem;
-    font-weight: 800;
-    color: #1e3c72;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #f7fafc;
     margin-bottom: 0.5rem;
     line-height: 1;
 }
 
 .metric-label {
-    font-size: 1rem;
-    color: #6c757d;
+    font-size: 0.875rem;
+    color: #a0aec0;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
 }
 
 .metric-status {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+    gap: 0.25rem;
+    background: #38a169;
     color: white;
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(0, 212, 170, 0.3);
 }
 
 .metric-status.arrow-up::before {
     content: '↑';
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: bold;
 }
 
-/* Enhanced resource usage cards */
+/* New Relic-style resource cards */
 .resource-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
     margin: 2rem 0;
 }
 
 .resource-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border: 1px solid #e9ecef;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
 }
 
 .resource-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+    border-color: #3182ce;
+    transform: translateY(-1px);
 }
 
 .resource-header {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 1.5rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .resource-icon {
-    font-size: 1.5rem;
-    color: #2a5298;
+    font-size: 1.25rem;
+    color: #3182ce;
 }
 
 .resource-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #495057;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f7fafc;
     margin: 0;
 }
 
 .resource-value {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #1e3c72;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f7fafc;
     margin-bottom: 0.5rem;
     text-align: center;
 }
 
-.resource-details {
-    text-align: center;
-    color: #6c757d;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-/* Enhanced charts and tables */
+/* New Relic-style containers */
 .chart-container {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 1.5rem;
     margin: 2rem 0;
 }
 
 .chart-header {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 1.5rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .chart-icon {
-    font-size: 1.5rem;
-    color: #2a5298;
+    font-size: 1.25rem;
+    color: #3182ce;
 }
 
 .chart-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #495057;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f7fafc;
     margin: 0;
 }
 
-/* Enhanced time selector */
+/* New Relic-style time selector */
 .time-selector {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
     padding: 1.5rem;
     margin: 2rem 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .time-header {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 1.5rem;
-    font-size: 1.1rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
     font-weight: 600;
-    color: #495057;
+    color: #f7fafc;
 }
 
-/* Enhanced status messages */
+/* New Relic-style status messages */
 .status-message {
-    background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
-    color: white;
-    padding: 1.5rem 2rem;
-    border-radius: 12px;
-    margin: 2rem 0;
-    box-shadow: 0 4px 20px rgba(0, 212, 170, 0.2);
-    border: 1px solid #00b894;
+    background: #2d3748;
+    border: 1px solid #38a169;
+    color: #f7fafc;
+    padding: 1rem 1.5rem;
+    border-radius: 6px;
+    margin: 1.5rem 0;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .status-icon {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    color: #38a169;
 }
 
 .status-text {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 500;
     margin: 0;
+    color: #e2e8f0;
+}
+
+/* New Relic-style buttons */
+.stButton > button {
+    background: #3182ce !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.stButton > button:hover {
+    background: #2c5aa0 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* New Relic-style selectboxes */
+.stSelectbox > div > div {
+    background: #2d3748 !important;
+    border: 1px solid #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+.stSelectbox > div > div:hover {
+    border-color: #3182ce !important;
+}
+
+/* New Relic-style number inputs */
+.stNumberInput > div > div > input {
+    background: #2d3748 !important;
+    border: 1px solid #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+.stNumberInput > div > div > input:focus {
+    border-color: #3182ce !important;
+}
+
+/* New Relic-style dataframes */
+.dataframe {
+    background: #2d3748 !important;
+    color: #f7fafc !important;
 }
 
 /* Hide Streamlit elements */
@@ -305,10 +312,6 @@ header {visibility: hidden;}
     .resource-grid {
         grid-template-columns: 1fr;
     }
-    
-    .dashboard-header h1 {
-        font-size: 2rem;
-    }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -321,7 +324,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Enhanced Time Selector
+# New Relic-style Time Selector
 st.markdown("""
 <div class="time-selector">
     <div class="time-header">⏰ Time Range Selection</div>
@@ -344,7 +347,7 @@ with col2:
         relative_unit = st.selectbox("Unit", ["Minutes ago", "Hours ago", "Days ago"], index=1, label_visibility="collapsed")
 
 with col3:
-    if st.button("🔄 Refresh", use_container_width=True, type="primary"):
+    if st.button("🔄 Refresh", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
@@ -366,7 +369,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Enhanced Cluster Status
+# New Relic-style Cluster Status
 st.markdown('<div class="section-header">🏥 Cluster Status & Health</div>', unsafe_allow_html=True)
 st.markdown("""
 <div class="status-message">
@@ -375,7 +378,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Enhanced Cluster Metrics
+# New Relic-style Cluster Metrics
 st.markdown('<div class="section-header">📊 Cluster Metrics</div>', unsafe_allow_html=True)
 
 st.markdown("""
@@ -403,7 +406,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Enhanced Resource Usage
+# New Relic-style Resource Usage
 st.markdown('<div class="section-header">⚡ Resource Usage</div>', unsafe_allow_html=True)
 
 st.markdown("""
@@ -427,7 +430,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Enhanced Pod Status
+# New Relic-style Pod Status
 st.markdown('<div class="section-header">📋 Pod Status</div>', unsafe_allow_html=True)
 
 st.markdown("""
@@ -443,7 +446,6 @@ pod_data = pd.DataFrame({
     'Count': [10, 1, 0, 1]
 })
 
-# Create a more visually appealing chart
 st.bar_chart(
     pod_data.set_index('Status'),
     use_container_width=True,
@@ -452,7 +454,7 @@ st.bar_chart(
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Enhanced Node Health
+# New Relic-style Node Health
 st.markdown('<div class="section-header">🖥️ Node Health Status</div>', unsafe_allow_html=True)
 
 st.markdown("""
@@ -472,7 +474,6 @@ node_data = pd.DataFrame({
     'Pods': [4, 3, 5]
 })
 
-# Enhanced dataframe display
 st.dataframe(
     node_data,
     use_container_width=True,
@@ -482,10 +483,10 @@ st.dataframe(
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Enhanced Footer
+# New Relic-style Footer
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
+<div style="text-align: center; color: #a0aec0; padding: 2rem; font-size: 0.9rem;">
     <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 Powered by SmartOps AI | Enterprise Kubernetes Monitoring</p>
     <p style="opacity: 0.8; margin: 0;">Last updated: """ + datetime.now().strftime('%Y-%m-%d %H:%M:%S IST') + """</p>
 </div>
