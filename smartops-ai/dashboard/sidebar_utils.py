@@ -5,8 +5,7 @@ def show_sidebar():
     st.markdown(
         """
         <style>
-        /* Hide main content + default chrome */
-        .block-container { display: none !important; }
+        /* Hide default chrome but keep main content visible */
         #MainMenu, header, footer { visibility: hidden; }
 
         /* Sidebar sizing */

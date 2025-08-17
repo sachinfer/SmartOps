@@ -12,7 +12,7 @@ from sidebar_utils import show_sidebar
 # Page config
 st.set_page_config(
     page_title="Kubernetes Cluster Overview - SmartOps AI",
-    page_icon="��",
+    page_icon="📊",
     layout="wide"
 )
 
@@ -23,7 +23,7 @@ with st.sidebar:
 # Main content
 st.markdown("""
 <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 2rem; border-radius: 8px; margin-bottom: 2rem;">
-    <h1 style="color: white; margin: 0;">�� Kubernetes Cluster Overview</h1>
+    <h1 style="color: white; margin: 0;">📊 Kubernetes Cluster Overview</h1>
     <p style="color: #e8f4fd; margin: 0.5rem 0 0 0;">Real-time monitoring dashboard powered by SmartOps AI</p>
 </div>
 """, unsafe_allow_html=True)
@@ -60,7 +60,7 @@ st.header("🏥 Cluster Status & Health")
 st.success("✅ **SmartOps AI Status:** No anomalies detected. All systems are running smoothly!")
 
 # Simple Metrics
-st.header("�� Cluster Metrics")
+st.header("📊 Cluster Metrics")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -103,5 +103,5 @@ st.dataframe(node_data, use_container_width=True, hide_index=True)
 
 # Footer
 st.markdown("---")
-st.markdown("�� **Powered by SmartOps AI | Enterprise Kubernetes Monitoring**")
+st.markdown("🚀 **Powered by SmartOps AI | Enterprise Kubernetes Monitoring**")
 st.markdown(f"*Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}*")
