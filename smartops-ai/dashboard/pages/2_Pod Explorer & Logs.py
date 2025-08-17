@@ -75,51 +75,42 @@ if not namespaces:
     st.warning("No namespaces found.")
     st.stop()
 
-# Favorite Namespaces Section
-st.markdown("### ⭐ Favorite Namespaces")
-if st.session_state.favorite_namespaces:
-    # Show favorite namespaces with quick access buttons
-    fav_cols = st.columns(min(len(st.session_state.favorite_namespaces), 4))
-    for i, fav_ns in enumerate(st.session_state.favorite_namespaces):
-        with fav_cols[i]:
-            if st.button(f"🚀 {fav_ns}", key=f"fav_{fav_ns}"):
-                st.session_state.selected_namespace = fav_ns
-                st.experimental_rerun()
-            if st.button(f"❌", key=f"remove_{fav_ns}", help=f"Remove {fav_ns} from favorites"):
-                remove_favorite_namespace(fav_ns)
-                st.experimental_rerun()
-
-# Namespace Selection with Favorites
-st.markdown("### 📁 Namespace Selection")
-col1, col2 = st.columns([3, 1])
+# Simple star mark for favorites
+st.markdown("### 📁 Select Namespace")
+col1, col2 = st.columns([4, 1])
 
 with col1:
-    # Initialize selected namespace from session state or use first available
-    if 'selected_namespace' not in st.session_state:
-        st.session_state.selected_namespace = namespaces[0] if namespaces else None
+    # Sort namespaces: favorites first, then others
+    favorite_namespaces = [ns for ns in namespaces if ns in st.session_state.favorite_namespaces]
+    other_namespaces = [ns for ns in namespaces if ns not in st.session_state.favorite_namespaces]
+    sorted_namespaces = favorite_namespaces + other_namespaces
+    
+    # Add star marks to favorite namespaces
+    display_namespaces = []
+    for ns in sorted_namespaces:
+        if ns in st.session_state.favorite_namespaces:
+            display_namespaces.append(f"⭐ {ns}")
+        else:
+            display_namespaces.append(ns)
     
     namespace = st.selectbox(
-        "Select Namespace", 
-        namespaces, 
-        index=namespaces.index(st.session_state.selected_namespace) if st.session_state.selected_namespace in namespaces else 0,
+        "Choose namespace", 
+        sorted_namespaces,
+        format_func=lambda x: f"⭐ {x}" if x in st.session_state.favorite_namespaces else x,
         key="namespace_selector"
     )
-    
-    # Update session state when namespace changes
-    if namespace != st.session_state.selected_namespace:
-        st.session_state.selected_namespace = namespace
 
 with col2:
-    # Add to favorites button
-    if namespace not in st.session_state.favorite_namespaces:
-        if st.button("⭐ Add to Favorites", key="add_fav"):
-            add_favorite_namespace(namespace)
-            st.success(f"Added {namespace} to favorites!")
-            st.experimental_rerun()
-    else:
-        if st.button("💔 Remove from Favorites", key="remove_fav"):
+    # Simple star toggle button
+    if namespace in st.session_state.favorite_namespaces:
+        if st.button("💔", key="remove_star", help=f"Remove {namespace} from favorites"):
             remove_favorite_namespace(namespace)
             st.success(f"Removed {namespace} from favorites!")
+            st.experimental_rerun()
+    else:
+        if st.button("⭐", key="add_star", help=f"Add {namespace} to favorites"):
+            add_favorite_namespace(namespace)
+            st.success(f"Added {namespace} to favorites!")
             st.experimental_rerun()
 
 # Show current namespace info
