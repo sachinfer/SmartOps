@@ -42,6 +42,55 @@ def create_overview_page():
         {'name': 'gke-cluster-1-default-pool-ghi789', 'cpu': 35, 'memory': 50, 'pods': 3, 'status': 'Healthy'}
     ]
     
+    # Create chart figures
+    # Health pie chart
+    health_fig = px.pie(
+        values=[pod_status['Running'], pod_status['Pending'], pod_status['Failed']],
+        names=['Running', 'Pending', 'Failed'],
+        title="Pod Status Distribution",
+        color_discrete_map={'Running': '#28a745', 'Pending': '#ffc107', 'Failed': '#dc3545'}
+    )
+    health_fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white')
+    )
+    
+    # Resource usage line chart
+    resource_fig = go.Figure()
+    resource_fig.add_trace(go.Scatter(
+        x=['CPU', 'Memory'],
+        y=[cpu_usage, memory_usage],
+        mode='lines+markers',
+        name='Usage %',
+        line=dict(color='#17a2b8', width=3),
+        marker=dict(size=10)
+    ))
+    resource_fig.update_layout(
+        title="Resource Usage",
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white'),
+        yaxis=dict(range=[0, 100])
+    )
+    
+    # Node performance bar chart
+    node_fig = px.bar(
+        x=[node['name'] for node in node_data],
+        y=[node['cpu'] for node in node_data],
+        title="Node CPU Usage",
+        color=[node['cpu'] for node in node_data],
+        color_continuous_scale='RdYlGn_r'
+    )
+    node_fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white')
+    )
+    
     # Determine health status color
     if cluster_health_score >= 80:
         health_color = "success"
