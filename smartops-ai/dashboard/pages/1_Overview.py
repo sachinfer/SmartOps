@@ -795,6 +795,8 @@ st.markdown("""
     display: flex;
     border-bottom: 2px solid #e1e5e9;
     margin: 1rem 0;
+    position: relative;
+    z-index: 10;
 }
 
 .tab {
@@ -825,7 +827,33 @@ st.markdown("""
 }
 
 .tab-content.active {
-    display: block;
+    display: block !important;
+}
+
+/* Ensure tabs are clickable */
+.tab {
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    color: #6c757d;
+    background: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.tab:hover {
+    color: #2a5298;
+    background: rgba(42, 82, 152, 0.05);
+}
+
+.tab.active {
+    color: #2a5298;
+    border-bottom-color: #2a5298;
+    background: rgba(42, 82, 152, 0.1);
 }
 
 /* Time input styling */
@@ -898,27 +926,73 @@ st.markdown("""
 
 <script>
 function switchTab(tabName) {
+    console.log('Switching to tab:', tabName);
+    
     // Hide all tab contents
     var contents = document.querySelectorAll('.tab-content');
+    console.log('Found', contents.length, 'tab contents');
     for (var i = 0; i < contents.length; i++) {
+        contents[i].style.display = 'none';
         contents[i].classList.remove('active');
+        console.log('Hidden content:', contents[i].id);
     }
     
     // Remove active class from all tabs
     var tabs = document.querySelectorAll('.tab');
+    console.log('Found', tabs.length, 'tabs');
     for (var i = 0; i < tabs.length; i++) {
         tabs[i].classList.remove('active');
+        console.log('Removed active from tab:', tabs[i].id);
     }
     
     // Show selected tab content and activate tab
-    document.getElementById(tabName + '-content').classList.add('active');
-    document.getElementById(tabName + '-tab').classList.add('active');
+    var selectedContent = document.getElementById(tabName + '-content');
+    var selectedTab = document.getElementById(tabName + '-tab');
+    
+    console.log('Looking for:', tabName + '-content', 'and', tabName + '-tab');
+    console.log('Selected content:', selectedContent);
+    console.log('Selected tab:', selectedTab);
+    
+    if (selectedContent && selectedTab) {
+        selectedContent.style.display = 'block';
+        selectedContent.classList.add('active');
+        selectedTab.classList.add('active');
+        console.log('Tab switched successfully to:', tabName);
+    } else {
+        console.error('Tab elements not found:', tabName);
+        // Try to find any elements with similar IDs
+        var allElements = document.querySelectorAll('[id*="' + tabName + '"]');
+        console.log('Found elements with similar IDs:', allElements);
+    }
 }
+
+// Initialize tabs on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing tabs...');
+    // Ensure relative tab is shown by default
+    var relativeContent = document.getElementById('relative-content');
+    var relativeTab = document.getElementById('relative-tab');
+    
+    if (relativeContent && relativeTab) {
+        relativeContent.style.display = 'block';
+        relativeContent.classList.add('active');
+        relativeTab.classList.add('active');
+        console.log('Relative tab initialized successfully');
+    } else {
+        console.error('Relative tab elements not found');
+    }
+});
+
+// Also try to initialize when the page is fully loaded
+window.addEventListener('load', function() {
+    console.log('Page fully loaded, initializing tabs...');
+    switchTab('relative');
+});
 </script>
 """, unsafe_allow_html=True)
 
 # Relative time selection (default active tab)
-st.markdown('<div class="tab-content active" id="relative-content">', unsafe_allow_html=True)
+st.markdown('<div class="tab-content active" id="relative-content" style="display: block;">', unsafe_allow_html=True)
 
 col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 1])
 
@@ -1021,6 +1095,10 @@ if time_preset == "Live (Now)":
     start_time = datetime.now().time()
     end_time = datetime.now().time()
     selected_date = datetime.now().date()
+    
+    # Format for display (Live mode)
+    start_time_12hr = start_time.strftime("%I:%M %p")
+    end_time_12hr = end_time.strftime("%I:%M %p")
 else:
     # For relative time, use the calculated start time
     if relative_unit == "Minutes ago":

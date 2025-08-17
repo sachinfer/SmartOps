@@ -12,6 +12,17 @@ def show_sidebar():
         border-bottom-right-radius: 20px;
         box-shadow: 2px 0 16px rgba(102,126,234,0.08);
     }
+    
+    /* Hide the default Streamlit sidebar header */
+    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
+        display: none !important;
+    }
+    
+    /* Alternative way to hide the header if the above doesn't work */
+    section[data-testid="stSidebar"] > div:first-child > div:first-child {
+        display: none !important;
+    }
+    
     .sidebar-section-title {
         font-size: 1.1rem;
         font-weight: bold;
