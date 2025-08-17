@@ -36,7 +36,7 @@ The anomaly detection service is deployed as a multi-container pod:
 - **Container 2:** Runs the anomaly loop script, which fetches metrics and calls the FastAPI endpoint via `localhost:8000/predict`
 - This pattern ensures clean separation of API and background logic, and is robust for cloud-native deployments.
 
----hi
+---
 
 ## 📊 Current Project Status
 
