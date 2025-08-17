@@ -73,7 +73,7 @@ def format_timestamp(timestamp_str):
             # Try other formats
             dt = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
         
-        # Convert to IST
+        # Convert to IST (UTC+05:30)
         ist = pytz.timezone('Asia/Kolkata')
         if dt.tzinfo is None:
             dt = pytz.utc.localize(dt)
@@ -81,7 +81,7 @@ def format_timestamp(timestamp_str):
         
         # Return clean format: YYYY-MM-DD HH:MM:SS
         return dt_ist.strftime('%Y-%m-%d %H:%M:%S')
-    except:
+    except Exception as e:
         # If parsing fails, return original but clean
         return timestamp_str.split('+')[0].replace('T', ' ')
 
@@ -107,21 +107,75 @@ st.markdown("""
 # Deployment Workflow Events Summary
 st.markdown('<div class="section-header">🚀 Deployment Workflow Events</div>', unsafe_allow_html=True)
 
-try:
-    db_path = "data/deployment_events.db"
-    conn = sqlite3.connect(db_path)
-    events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
-    conn.close()
+# Manual event logging test
+st.markdown("### 🧪 Test Event Logging")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    test_status = st.selectbox("Test Status", ["success", "failed"], key="test_status")
     
-    if not events.empty:
+with col2:
+    test_message = st.text_input("Test Message", "Test deployment event", key="test_message")
+    
+with col3:
+    if st.button("📝 Log Test Event", key="log_test"):
+        try:
+            import requests
+            test_event = {
+                "status": test_status,
+                "message": test_message,
+                "namespace": "smartops"
+            }
+            response = requests.post("http://localhost:8000/log_event", json=test_event, timeout=5)
+            if response.status_code == 200:
+                st.success("✅ Test event logged successfully!")
+                st.rerun()
+            else:
+                st.error(f"❌ Failed to log test event: {response.status_code}")
+        except Exception as e:
+            st.error(f"❌ Error logging test event: {str(e)}")
+
+st.markdown("---")
+
+try:
+    # Try multiple possible database paths
+    db_paths = [
+        "data/deployment_events.db",
+        "/app/dashboard/data/deployment_events.db",
+        "smartops-ai/dashboard/data/deployment_events.db"
+    ]
+    
+    events = None
+    used_path = None
+    
+    for db_path in db_paths:
+        try:
+            conn = sqlite3.connect(db_path)
+            events = pd.read_sql_query("SELECT * FROM deployment_events ORDER BY timestamp DESC", conn)
+            conn.close()
+            used_path = db_path
+            break
+        except Exception as e:
+            continue
+    
+    if events is not None and not events.empty:
+        # Filter out "started" events, keep only success and failed
+        events = events[events['status'].isin(['success', 'failed'])]
+        
+        # Debug: Show raw data
+        st.markdown("### 🔍 Debug: Raw Events Data")
+        st.write(f"Database path used: {used_path}")
+        st.write(f"Total events found: {len(events)} (success + failed only)")
+        st.write(f"Status distribution: {events['status'].value_counts().to_dict()}")
+        
         # Count by status
         status_counts = events["status"].value_counts().to_dict()
         
-        # Display summary statistics
-        col1, col2, col3, col4 = st.columns(4)
+        # Display summary statistics (only success and failed)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Total Events", len(events))
+            st.metric("Total Deployments", len(events))
         
         with col2:
             st.metric("Successful", status_counts.get('success', 0), delta=None)
@@ -129,18 +183,15 @@ try:
         with col3:
             st.metric("Failed", status_counts.get('failed', 0), delta=None)
         
-        with col4:
-            st.metric("Started", status_counts.get('started', 0), delta=None)
-        
-        # Filter options
+        # Filter options (only success and failed)
         st.markdown("### 📊 Filter Events")
         col1, col2 = st.columns(2)
         
         with col1:
             status_filter = st.multiselect(
                 "Filter by Status",
-                options=['success', 'failed', 'started'],
-                default=['success', 'failed', 'started'],
+                options=['success', 'failed'],
+                default=['success', 'failed'],
                 help="Select which status types to display"
             )
         
@@ -166,22 +217,11 @@ try:
         
         # Display filtered events
         if not filtered_events.empty:
-            st.markdown(f"### 📋 Showing {len(filtered_events)} Events")
+            st.markdown(f"### 📋 Showing {len(filtered_events)} Events (Success + Failed Only)")
             
             # Create display dataframe with clean columns
             display_df = filtered_events[['timestamp_clean', 'status_indicator', 'status', 'message', 'namespace']].copy()
             display_df.columns = ['Timestamp', 'Status', 'Status Type', 'Message', 'Namespace']
-            
-            # Apply row styling based on status
-            def highlight_rows(row):
-                if row['Status Type'] == 'failed':
-                    return ['background-color: rgba(220, 53, 69, 0.1)'] * len(row)
-                elif row['Status Type'] == 'success':
-                    return ['background-color: rgba(40, 167, 69, 0.1)'] * len(row)
-                elif row['Status Type'] == 'started':
-                    return ['background-color: rgba(255, 193, 7, 0.1)'] * len(row)
-                else:
-                    return [''] * len(row)
             
             # Display the dataframe with styling
             st.dataframe(
@@ -215,27 +255,33 @@ try:
                         st.write(f"**Message:** {event['message']}")
                         st.write(f"**Namespace:** {event['namespace']}")
             
-            # Recent activity
-            st.markdown("#### 📈 Recent Activity")
+            # Recent activity (only success and failed)
+            st.markdown("#### 📈 Recent Activity (Success + Failed)")
             recent_events = filtered_events.head(10)
             for _, event in recent_events.iterrows():
-                status_icon = "🟢" if event['status'] == 'success' else "🔴" if event['status'] == 'failed' else "🟡"
+                status_icon = "🟢" if event['status'] == 'success' else "🔴"
                 st.write(f"{status_icon} **{event['timestamp_clean']}** - {event['status'].upper()}: {event['message'][:80]}...")
                 
         else:
             st.info("No events match the selected filters.")
             
     else:
-        st.info("No deployment events found.")
+        st.info("No deployment events found in any database location.")
+        st.write("Tried these paths:")
+        for path in db_paths:
+            st.write(f"- {path}")
         
 except Exception as e:
     st.warning(f"Could not load deployment events: {e}")
+    st.error(f"Error details: {str(e)}")
+    import traceback
+    st.code(traceback.format_exc())
 
 # Deployment Statistics
 if 'events' in locals() and not events.empty:
     st.markdown('<div class="section-header">📊 Deployment Statistics</div>', unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         total_deployments = len(events)
@@ -249,21 +295,11 @@ if 'events' in locals() and not events.empty:
         failed_rate = (status_counts.get('failed', 0) / total_deployments * 100) if total_deployments > 0 else 0
         st.metric("Failure Rate", f"{failed_rate:.1f}%")
     
-    with col4:
-        # Calculate last 7 days
-        try:
-            recent_cutoff = pd.Timestamp.now() - pd.Timedelta(days=7)
-            recent_events = events[pd.to_datetime(events['timestamp']) >= recent_cutoff]
-            recent_count = len(recent_events)
-        except:
-            recent_count = 0
-        st.metric("Last 7 Days", recent_count)
-    
     # Additional insights
     if 'status_counts' in locals():
         st.markdown("### 📈 Status Distribution")
         
-        # Create a simple bar chart
+        # Create a simple bar chart (only success and failed)
         status_data = pd.DataFrame(list(status_counts.items()), columns=['Status', 'Count'])
         st.bar_chart(status_data.set_index('Status'))
         
@@ -274,4 +310,11 @@ if 'events' in locals() and not events.empty:
             failure_reasons = failed_events['message'].value_counts().head(5)
             
             for reason, count in failure_reasons.items():
-                st.write(f"🔴 **{count}x** - {reason}") 
+                st.write(f"🔴 **{count}x** - {reason}")
+        
+        # Show recent successful deployments
+        if status_counts.get('success', 0) > 0:
+            st.markdown("### ✅ Recent Successful Deployments")
+            success_events = events[events['status'] == 'success'].head(3)
+            for _, event in success_events.iterrows():
+                st.write(f"🟢 **{event['timestamp_clean']}** - {event['message'][:60]}...") 
