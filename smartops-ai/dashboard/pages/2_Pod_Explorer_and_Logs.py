@@ -163,14 +163,15 @@ else:
 st.markdown('<div class="section-header">🔍 Pod List</div>', unsafe_allow_html=True)
 
 if pods:
-    # Create a more compact display
-    for i, pod in enumerate(pods):
+    # Create a compact table display
+    pod_data = []
+    for pod in pods:
         pod_name = pod.get('name', 'Unknown')
         pod_status = pod.get('status', 'Unknown')
         pod_age = pod.get('age', 'Unknown')
         pod_ready = pod.get('ready', 'Unknown')
         
-        # Status styling
+        # Status icon
         if pod_status == 'Running':
             status_icon = '🟢'
         elif pod_status == 'Pending':
@@ -180,12 +181,22 @@ if pods:
         else:
             status_icon = '⚪'
         
-        # Compact display - all info on one line
-        st.write(f"{status_icon} **{pod_name}** | Status: {pod_status} | Age: {pod_age} | Ready: {pod_ready}")
-        
-        # Only add separator if not the last pod
-        if i < len(pods) - 1:
-            st.markdown("---")
+        pod_data.append({
+            'Status': status_icon,
+            'Name': pod_name,
+            'Status': pod_status,
+            'Age': pod_age,
+            'Ready': pod_ready
+        })
+    
+    # Convert to DataFrame and display as compact table
+    df = pd.DataFrame(pod_data)
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        height=200  # Compact height
+    )
 else:
     st.info("No pods available to display.")
 
