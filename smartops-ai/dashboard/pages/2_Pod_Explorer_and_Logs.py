@@ -129,7 +129,8 @@ else:
 st.markdown('<div class="section-header">🔍 Pod List</div>', unsafe_allow_html=True)
 
 if pods:
-    for pod in pods:
+    # Create a more compact display
+    for i, pod in enumerate(pods):
         pod_name = pod.get('name', 'Unknown')
         pod_status = pod.get('status', 'Unknown')
         pod_age = pod.get('age', 'Unknown')
@@ -145,9 +146,12 @@ if pods:
         else:
             status_icon = '⚪'
         
-        st.write(f"{status_icon} **{pod_name}** - Status: {pod_status}")
-        st.write(f"   Age: {pod_age} | Ready: {pod_ready}")
-        st.markdown("---")
+        # Compact display - all info on one line
+        st.write(f"{status_icon} **{pod_name}** | Status: {pod_status} | Age: {pod_age} | Ready: {pod_ready}")
+        
+        # Only add separator if not the last pod
+        if i < len(pods) - 1:
+            st.markdown("---")
 else:
     st.info("No pods available to display.")
 
