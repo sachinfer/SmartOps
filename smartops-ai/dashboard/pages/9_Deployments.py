@@ -3,143 +3,48 @@ import pandas as pd
 import sqlite3
 from datetime import datetime
 import pytz
-from sidebar_utils import show_sidebar
 
 # Page configuration
 st.set_page_config(
-    page_title="Deployments - SmartOps AI",
+    page_title="Deployments",
     page_icon="🚀",
     layout="wide"
 )
 
-# Sidebar
-with st.sidebar:
-    show_sidebar()
-
-# Custom CSS for better styling - matching Pod Explorer
+# Custom CSS for better styling
 st.markdown("""
 <style>
-.main .block-container {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    max-width: 1200px;
-}
-
-.stApp {
-    background-color: #f8f9fa;
+.section-header {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1rem 0;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
 .dashboard-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
     color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin: 1rem 0;
     text-align: center;
 }
 
 .dashboard-header h1 {
+    margin: 0;
     font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    font-weight: 700;
+    font-weight: bold;
 }
 
 .dashboard-header p {
-    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    font-size: 1.2rem;
     opacity: 0.9;
-    margin: 0;
 }
-
-.section-box {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin: 1rem 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.section-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin: 1rem 0;
-}
-
-.metric-card {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: center;
-}
-
-.metric-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #667eea;
-    margin-bottom: 0.25rem;
-}
-
-.metric-label {
-    font-size: 0.8rem;
-    color: #6c757d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.event-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0.5rem 0;
-    transition: all 0.2s ease;
-}
-
-.event-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.event-status {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-}
-
-.status-success {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-failed {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.status-started {
-    background: #fff3cd;
-    color: #856404;
-}
-
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -191,10 +96,8 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-    # Real-time updates section
-    st.markdown('<div class="section-box">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">🔄 Real-time Updates</div>', unsafe_allow_html=True)
-    
+    # Real-time updates
+    st.markdown("### 🔄 Real-time Updates")
     col1, col2 = st.columns([2, 1])
 
     with col1:
@@ -217,46 +120,30 @@ try:
     # Show last refresh time
     if 'last_refresh' in st.session_state:
         st.info(f"🕐 Last updated: {datetime.fromtimestamp(st.session_state.last_refresh).strftime('%I:%M:%S %p')}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Live status section
-    st.markdown('<div class="section-box">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">📊 Live Status</div>', unsafe_allow_html=True)
-    
+    # Live status indicator
+    if 'last_event_count' not in st.session_state:
+        st.session_state.last_event_count = 0
+
+    # Show live status
+    st.markdown("### 📊 Live Status")
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{'ON' if auto_refresh else 'OFF'}</div>
-            <div class="metric-label">Auto-refresh</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("🔄 Auto-refresh", "ON" if auto_refresh else "OFF")
         
     with col2:
         if 'last_event_count' in st.session_state:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{st.session_state.last_event_count}</div>
-                <div class="metric-label">Events Monitored</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("📈 Events Monitored", st.session_state.last_event_count)
             
     with col3:
         current_time = datetime.now().strftime('%I:%M:%S %p')
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{current_time.split()[0]}</div>
-            <div class="metric-label">Current Time</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.metric("🕐 Current Time", current_time)
+
+    st.markdown("---")
 
     # Deployment Workflow Events Summary
-    st.markdown('<div class="section-box">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">🚀 Deployment Workflow Events</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">🚀 Deployment Workflow Events</div>', unsafe_allow_html=True)
 
     # Load and process events
     try:
@@ -312,37 +199,16 @@ try:
                 status_counts = events["status"].value_counts().to_dict()
                 
                 # Display summary statistics (only success and failed)
-                st.markdown("""
-                <div class="metric-grid">
-                """, unsafe_allow_html=True)
-                
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{len(events)}</div>
-                        <div class="metric-label">Total Deployments</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.metric("Total Deployments", len(events))
                 
                 with col2:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{status_counts.get('success', 0)}</div>
-                        <div class="metric-label">Successful</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.metric("Successful", status_counts.get('success', 0), delta=None)
                 
                 with col3:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{status_counts.get('failed', 0)}</div>
-                        <div class="metric-label">Failed</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("</div>", unsafe_allow_html=True)
+                    st.metric("Failed", status_counts.get('failed', 0), delta=None)
                 
                 # Filter options (only success and failed)
                 st.markdown("### 📊 Filter Events")
@@ -432,42 +298,24 @@ try:
     except Exception as e:
         st.warning(f"Could not load deployment events: {e}")
         st.info("Please check if the deployment events database is accessible")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # Deployment Statistics
     if 'events' in locals() and not events.empty:
-        st.markdown('<div class="section-box">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">📊 Deployment Statistics</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">📊 Deployment Statistics</div>', unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
         
         with col1:
             total_deployments = len(events)
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{total_deployments}</div>
-                <div class="metric-label">Total Deployments</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("Total Deployments", total_deployments)
         
         with col2:
             success_rate = (status_counts.get('success', 0) / total_deployments * 100) if total_deployments > 0 else 0
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{success_rate:.1f}%</div>
-                <div class="metric-label">Success Rate</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("Success Rate", f"{success_rate:.1f}%")
         
         with col3:
             failed_rate = (status_counts.get('failed', 0) / total_deployments * 100) if total_deployments > 0 else 0
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{failed_rate:.1f}%</div>
-                <div class="metric-label">Failure Rate</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("Failure Rate", f"{failed_rate:.1f}%")
         
         # Additional insights
         if 'status_counts' in locals():
@@ -492,17 +340,6 @@ try:
                 success_events = filtered_events[filtered_events['status'] == 'success'].head(3)
                 for _, event in success_events.iterrows():
                     st.write(f"🟢 **{event['timestamp_clean']}** - {event['message'][:60]}...")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
-        <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Deployment Workflow Events</p>
-        <p style="opacity: 0.8; margin: 0;">Last updated: """ + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + """</p>
-    </div>
-    """, unsafe_allow_html=True)
 
 except Exception as e:
     st.error("❌ An unexpected error occurred while loading the page")
