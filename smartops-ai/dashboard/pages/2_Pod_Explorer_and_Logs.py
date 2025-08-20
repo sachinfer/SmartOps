@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Pod Explorer and Logs - SmartOps AI
-Simple Preview Page
+Updated to match Deployment page styling
 """
 
 import streamlit as st
 import pandas as pd
 import requests
 import time
-from sidebar_utils import show_sidebar
 
 # Page config
 st.set_page_config(
@@ -17,140 +16,40 @@ st.set_page_config(
     layout="wide"
 )
 
-# Sidebar
-with st.sidebar:
-    show_sidebar()
-
-# Simple CSS for clean look
+# Custom CSS for better styling - matching Deployment page
 st.markdown("""
 <style>
-.main .block-container {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    max-width: 1200px;
-}
-
-.stApp {
-    background-color: #f8f9fa;
+.section-header {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1rem 0;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
 .dashboard-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
     color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin: 1rem 0;
     text-align: center;
 }
 
 .dashboard-header h1 {
+    margin: 0;
     font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    font-weight: 700;
+    font-weight: bold;
 }
 
 .dashboard-header p {
-    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    font-size: 1.2rem;
     opacity: 0.9;
-    margin: 0;
 }
-
-.section-box {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin: 1rem 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.section-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.pod-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0.5rem 0;
-    transition: all 0.2s ease;
-}
-
-.pod-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.pod-name {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
-}
-
-.pod-status {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-}
-
-.status-running {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-pending {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.status-failed {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin: 1rem 0;
-}
-
-.metric-card {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: center;
-}
-
-.metric-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #667eea;
-    margin-bottom: 0.25rem;
-}
-
-.metric-label {
-    font-size: 0.8rem;
-    color: #6c757d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -190,8 +89,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Namespace selector
-st.markdown('<div class="section-box">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">📁 Select Namespace</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">📁 Select Namespace</div>', unsafe_allow_html=True)
 
 namespaces = fetch_namespaces()
 if not namespaces:
@@ -199,11 +97,9 @@ if not namespaces:
     st.stop()
 
 namespace = st.selectbox("Choose namespace", namespaces, key="namespace_selector")
-st.markdown('</div>', unsafe_allow_html=True)
 
 # Pod metrics
-st.markdown('<div class="section-box">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">📊 Pod Overview</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">📊 Pod Overview</div>', unsafe_allow_html=True)
 
 pods = fetch_pods(namespace)
 if pods:
@@ -213,33 +109,24 @@ if pods:
     pending_pods = len([p for p in pods if p.get('status') == 'Pending'])
     failed_pods = len([p for p in pods if p.get('status') == 'Failed'])
     
-    st.markdown(f"""
-    <div class="metric-grid">
-        <div class="metric-card">
-            <div class="metric-value">{total_pods}</div>
-            <div class="metric-label">Total Pods</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-value">{running_pods}</div>
-            <div class="metric-label">Running</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-value">{pending_pods}</div>
-            <div class="metric-label">Pending</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-value">{failed_pods}</div>
-            <div class="metric-label">Failed</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Pods", total_pods)
+    
+    with col2:
+        st.metric("Running", running_pods)
+    
+    with col3:
+        st.metric("Pending", pending_pods)
+    
+    with col4:
+        st.metric("Failed", failed_pods)
 else:
     st.info("No pods found in this namespace.")
-st.markdown('</div>', unsafe_allow_html=True)
 
 # Pod list
-st.markdown('<div class="section-box">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">🔍 Pod List</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">🔍 Pod List</div>', unsafe_allow_html=True)
 
 if pods:
     for pod in pods:
@@ -250,30 +137,22 @@ if pods:
         
         # Status styling
         if pod_status == 'Running':
-            status_class = 'status-running'
+            status_icon = '🟢'
         elif pod_status == 'Pending':
-            status_class = 'status-pending'
+            status_icon = '🟡'
         elif pod_status == 'Failed':
-            status_class = 'status-failed'
+            status_icon = '🔴'
         else:
-            status_class = 'status-running'
+            status_icon = '⚪'
         
-        st.markdown(f"""
-        <div class="pod-card">
-            <div class="pod-name">{pod_name}</div>
-            <div class="pod-status {status_class}">{pod_status}</div>
-            <div style="color: #6c757d; font-size: 0.9rem;">
-                Age: {pod_age} | Ready: {pod_ready}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.write(f"{status_icon} **{pod_name}** - Status: {pod_status}")
+        st.write(f"   Age: {pod_age} | Ready: {pod_ready}")
+        st.markdown("---")
 else:
     st.info("No pods available to display.")
-st.markdown('</div>', unsafe_allow_html=True)
 
 # Simple log viewer
-st.markdown('<div class="section-box">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">📋 Log Viewer</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">📋 Log Viewer</div>', unsafe_allow_html=True)
 
 if pods:
     pod_names = [pod.get('name', 'Unknown') for pod in pods]
@@ -286,13 +165,12 @@ if pods:
         st.info("Select a pod and click 'Load Logs' to view its logs.")
 else:
     st.info("No pods available for log viewing.")
-st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
-    <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Simple Pod Explorer</p>
+    <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Pod Explorer</p>
     <p style="opacity: 0.8; margin: 0;">Last updated: """ + time.strftime('%Y-%m-%d %H:%M:%S') + """</p>
 </div>
 """, unsafe_allow_html=True) 
