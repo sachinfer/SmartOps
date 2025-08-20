@@ -136,5 +136,5 @@ def show_sidebar():
         unsafe_allow_html=True
     )
 
-# Run
-show_sidebar()
+# Note: This function should be called from individual pages, not run here
+# show_sidebar()
