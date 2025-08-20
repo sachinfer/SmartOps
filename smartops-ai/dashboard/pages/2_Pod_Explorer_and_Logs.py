@@ -80,6 +80,40 @@ def fetch_pods(namespace):
         st.warning(f"Could not fetch pods: {e}")
         return []
 
+@st.cache_data(ttl=10)
+def fetch_pod_logs(pod_name, namespace, container_name=None, tail_lines=100):
+    """Fetch logs for a specific pod"""
+    try:
+        url = "http://localhost:8000/pod-logs"
+        params = {
+            "pod_name": pod_name,
+            "namespace": namespace,
+            "tail_lines": tail_lines
+        }
+        if container_name:
+            params["container_name"] = container_name
+            
+        resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code == 200:
+            return resp.json().get("logs", "")
+        else:
+            return f"Error fetching logs: {resp.status_code}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@st.cache_data(ttl=30)
+def fetch_pod_containers(pod_name, namespace):
+    """Fetch container names for a pod"""
+    try:
+        url = "http://localhost:8000/pod-containers"
+        resp = requests.get(url, params={"pod_name": pod_name, "namespace": namespace}, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get("containers", [])
+        else:
+            return []
+    except Exception as e:
+        return []
+
 # Main content
 st.markdown("""
 <div class="dashboard-header">
@@ -162,11 +196,57 @@ if pods:
     pod_names = [pod.get('name', 'Unknown') for pod in pods]
     selected_pod = st.selectbox("Select a pod to view logs", pod_names, key="pod_selector")
     
+    # Get containers for the selected pod
+    containers = fetch_pod_containers(selected_pod, namespace)
+    
+    # Log viewing options
+    col1, col2 = st.columns(2)
+    with col1:
+        tail_lines = st.selectbox("Number of lines", [50, 100, 200, 500, 1000], index=1, key="tail_lines")
+    
+    with col2:
+        container_name = None
+        if containers:
+            container_name = st.selectbox("Container", ["All"] + containers, key="container_selector")
+            if container_name == "All":
+                container_name = None
+    
     if st.button("📥 Load Logs", key="load_logs"):
-        st.info(f"Loading logs for {selected_pod}...")
-        st.write("**Note:** This is a preview. Log loading functionality would be implemented here.")
+        with st.spinner(f"Loading logs for {selected_pod}..."):
+            # Fetch actual logs
+            logs = fetch_pod_logs(selected_pod, namespace, container_name, tail_lines)
+            
+            if logs and not logs.startswith("Error"):
+                st.success(f"✅ Logs loaded successfully!")
+                
+                # Log display options
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.markdown("**Log Content:**")
+                with col2:
+                    if st.button("🔄 Refresh", key="refresh_logs"):
+                        st.rerun()
+                
+                # Display logs in a scrollable text area
+                st.text_area(
+                    "Pod Logs",
+                    value=logs,
+                    height=400,
+                    disabled=True,
+                    key="logs_display"
+                )
+                
+                # Log statistics
+                log_lines = len(logs.split('\n')) if logs else 0
+                st.info(f"📊 Log Statistics: {log_lines} lines loaded | Pod: {selected_pod} | Container: {container_name or 'All'}")
+                
+            else:
+                st.error(f"❌ Failed to load logs: {logs}")
+                st.info("💡 Make sure the pod is running and the Kubernetes API is accessible")
     else:
         st.info("Select a pod and click 'Load Logs' to view its logs.")
+        if containers:
+            st.info(f"📦 Available containers: {', '.join(containers)}")
 else:
     st.info("No pods available for log viewing.")
 
