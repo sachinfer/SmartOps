@@ -27,6 +27,102 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "SmartOps API", "timestamp": str(datetime.now())}
 
+@app.get("/debug/nodes")
+async def debug_nodes():
+    """Debug endpoint to test node data fetching"""
+    try:
+        config.load_incluster_config()
+    except Exception:
+        try:
+            config.load_kube_config()
+        except Exception as config_error:
+            return JSONResponse(
+                status_code=500,
+                content={"error": f"Failed to load Kubernetes config: {str(config_error)}"}
+            )
+    
+    try:
+        v1 = client.CoreV1Api()
+        nodes = v1.list_node()
+        
+        debug_info = {
+            "total_nodes": len(nodes.items),
+            "node_details": []
+        }
+        
+        for i, node in enumerate(nodes.items):
+            try:
+                node_info = {
+                    "index": i,
+                    "name": getattr(node.metadata, 'name', 'Unknown'),
+                    "has_status": hasattr(node, 'status'),
+                    "has_conditions": hasattr(node.status, 'conditions') if hasattr(node, 'status') else False,
+                    "conditions_count": len(node.status.conditions) if hasattr(node, 'status') and hasattr(node.status, 'conditions') else 0,
+                    "has_addresses": hasattr(node.status, 'addresses') if hasattr(node, 'status') else False,
+                    "addresses_count": len(node.status.addresses) if hasattr(node, 'status') and hasattr(node.status, 'addresses') else 0,
+                    "has_node_info": hasattr(node.status, 'node_info') if hasattr(node, 'status') else False
+                }
+                debug_info["node_details"].append(node_info)
+            except Exception as node_error:
+                debug_info["node_details"].append({
+                    "index": i,
+                    "error": str(node_error)
+                })
+        
+        return debug_info
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Debug endpoint error: {str(e)}"}
+        )
+
+@app.get("/debug/logs")
+async def debug_logs():
+    """Debug endpoint to test logs functionality"""
+    try:
+        config.load_incluster_config()
+    except Exception:
+        try:
+            config.load_kube_config()
+        except Exception as config_error:
+            return JSONResponse(
+                status_code=500,
+                content={"error": f"Failed to load Kubernetes config: {str(config_error)}"}
+            )
+    
+    try:
+        v1 = client.CoreV1Api()
+        
+        # Get some basic cluster info
+        debug_info = {
+            "kubernetes_config": "Loaded successfully",
+            "api_available": True,
+            "sample_pods": []
+        }
+        
+        # Try to get a few pods to test access
+        try:
+            pods = v1.list_pod_for_all_namespaces(limit=3)
+            for pod in pods.items:
+                pod_info = {
+                    "name": pod.metadata.name,
+                    "namespace": pod.metadata.namespace,
+                    "status": pod.status.phase,
+                    "containers": [c.name for c in pod.spec.containers] if pod.spec.containers else []
+                }
+                debug_info["sample_pods"].append(pod_info)
+        except Exception as pod_error:
+            debug_info["sample_pods"] = [{"error": str(pod_error)}]
+        
+        return debug_info
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Debug logs endpoint error: {str(e)}"}
+        )
+
 # Simulated HPA data (replace with real DB/API integration)
 hpa_data = [
     {"pod": "sample-pod-1", "cpu_avg": 0.45, "mem_avg": 0.60, "min_replicas": 1, "max_replicas": 5},
@@ -132,15 +228,70 @@ def get_pod_logs(namespace: str = Query(..., description="Namespace of the pod")
     Fetch logs for a given pod in a given namespace. Optionally specify container.
     """
     try:
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+        except Exception:
+            try:
+                config.load_kube_config()
+            except Exception as config_error:
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Failed to load Kubernetes config: {str(config_error)}", "logs": ""}
+                )
+        
+        v1 = client.CoreV1Api()
+        
+        # First check if the pod exists
+        try:
+            pod_obj = v1.read_namespaced_pod(name=pod, namespace=namespace)
+        except Exception as pod_error:
+            return JSONResponse(
+                status_code=404,
+                content={"error": f"Pod not found: {str(pod_error)}", "logs": ""}
+            )
+        
+        # Check if pod is running
+        if pod_obj.status.phase != 'Running':
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Pod is not running (status: {pod_obj.status.phase})", "logs": ""}
+            )
+        
+        # Get logs
+        try:
+            logs = v1.read_namespaced_pod_log(name=pod, namespace=namespace, container=container)
+            if not logs:
+                logs = "No logs available for this pod/container"
+            return {"logs": logs}
+        except Exception as log_error:
+            return JSONResponse(
+                status_code=500,
+                content={"error": f"Failed to fetch logs: {str(log_error)}", "logs": ""}
+            )
+            
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Unexpected error: {str(e)}", "logs": ""}
+        )
+
+@app.get("/pod-containers")
+def get_pod_containers(pod_name: str = Query(..., description="Pod name"), namespace: str = Query(..., description="Namespace of the pod")):
+    """
+    Get container names for a specific pod
+    """
+    try:
         config.load_incluster_config()
     except Exception:
         config.load_kube_config()
     v1 = client.CoreV1Api()
     try:
-        logs = v1.read_namespaced_pod_log(name=pod, namespace=namespace, container=container)
+        pod_obj = v1.read_namespaced_pod(name=pod_name, namespace=namespace)
+        containers = [container.name for container in pod_obj.spec.containers]
+        return {"containers": containers}
     except Exception as e:
-        return {"error": str(e), "logs": ""}
-    return {"logs": logs}
+        return {"error": str(e), "containers": []}
 
 @app.post("/restart_pod")
 def restart_pod(namespace: str = Query(...), pod: str = Query(...)):
@@ -285,12 +436,21 @@ def kubectl_get(resource_type: str = Query(..., description="Resource type: pods
                 all_namespaces: bool = Query(False),
                 namespace: str = Query("default", description="Namespace to query (ignored if all_namespaces=True)")):
     try:
-        config.load_incluster_config()
-    except Exception:
-        config.load_kube_config()
-    v1 = client.CoreV1Api()
-    apps_v1 = client.AppsV1Api()
-    items = []
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+        except Exception:
+            try:
+                config.load_kube_config()
+            except Exception as config_error:
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Failed to load Kubernetes config: {str(config_error)}"}
+                )
+        
+        v1 = client.CoreV1Api()
+        apps_v1 = client.AppsV1Api()
+        items = []
     if resource_type == "pods":
         if all_namespaces:
             pods = v1.list_pod_for_all_namespaces().items
@@ -333,14 +493,79 @@ def kubectl_get(resource_type: str = Query(..., description="Resource type: pods
     elif resource_type == "nodes":
         nodes = v1.list_node().items
         for node in nodes:
-            items.append({
-                "name": node.metadata.name,
-                "status": node.status.conditions[-1].type if node.status.conditions else '',
-                "addresses": str([a.address for a in node.status.addresses])
-            })
+            try:
+                # Safe access to node status with proper error handling
+                node_name = getattr(node.metadata, 'name', 'Unknown')
+                
+                # Safe access to conditions
+                status = 'Unknown'
+                if hasattr(node.status, 'conditions') and node.status.conditions:
+                    try:
+                        # Look for Ready condition first
+                        ready_condition = None
+                        for condition in node.status.conditions:
+                            if condition.type == 'Ready':
+                                ready_condition = condition
+                                break
+                        
+                        if ready_condition:
+                            status = ready_condition.type
+                        else:
+                            # Fallback to last condition
+                            status = node.status.conditions[-1].type
+                    except (IndexError, AttributeError):
+                        status = 'Unknown'
+                
+                # Safe access to addresses
+                addresses = []
+                if hasattr(node.status, 'addresses') and node.status.addresses:
+                    try:
+                        addresses = [a.address for a in node.status.addresses if hasattr(a, 'address')]
+                    except (AttributeError, TypeError):
+                        addresses = []
+                
+                # Extract internal IP from addresses
+                internal_ip = "Unknown"
+                if addresses:
+                    for addr in addresses:
+                        if isinstance(addr, str) and addr.replace('.', '').replace('-', '').isdigit():
+                            internal_ip = addr
+                            break
+                
+                # Get version information if available
+                version = "Unknown"
+                if hasattr(node.status, 'node_info') and node.status.node_info:
+                    try:
+                        version = getattr(node.status.node_info, 'kubelet_version', 'Unknown')
+                    except (AttributeError, TypeError):
+                        version = "Unknown"
+                
+                items.append({
+                    "name": node_name,
+                    "status": status,
+                    "roles": "<none>",  # Default value for roles
+                    "age": "",  # Default value for age
+                    "version": version,
+                    "internal_ip": internal_ip,
+                    "addresses": str(addresses) if addresses else 'No addresses'
+                })
+            except Exception as node_error:
+                # If there's an error processing a specific node, log it and continue
+                items.append({
+                    "name": "Error processing node",
+                    "status": "Error",
+                    "addresses": f"Error: {str(node_error)}"
+                })
     else:
         return JSONResponse(status_code=400, content={"error": "Unsupported resource type"})
-    return {"items": items}
+    
+    return {"output": items, "items": items}  # Support both formats for backward compatibility
+    
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Internal server error: {str(e)}"}
+        )
 
 @app.post("/kubectl_raw")
 def kubectl_raw(command: str = Query(..., description="kubectl command after 'kubectl' (e.g., 'get pods -A')")):

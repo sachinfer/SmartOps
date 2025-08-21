@@ -107,14 +107,13 @@ def fetch_pod_logs(pod_name, namespace, container_name=None, tail_lines=100):
     """Fetch logs for a specific pod with fallback methods"""
     try:
         # Try the main API endpoint first
-        url = "http://localhost:8000/pod-logs"
+        url = "http://localhost:8000/logs"
         params = {
-            "pod_name": pod_name,
-            "namespace": namespace,
-            "tail_lines": tail_lines
+            "pod": pod_name,
+            "namespace": namespace
         }
-        if container_name:
-            params["container_name"] = container_name
+        if container_name and container_name != "All":
+            params["container"] = container_name
             
         resp = requests.get(url, params=params, timeout=10)
         if resp.status_code == 200:
@@ -130,9 +129,8 @@ def fetch_pod_logs(pod_name, namespace, container_name=None, tail_lines=100):
 def try_alternative_log_endpoints(pod_name, namespace, tail_lines):
     """Try alternative log endpoints if main one fails"""
     alternative_urls = [
-        f"http://localhost:8000/logs/{namespace}/{pod_name}",
-        f"http://localhost:8000/api/pods/{namespace}/{pod_name}/logs",
-        f"http://localhost:8000/k8s/logs/{namespace}/{pod_name}"
+        f"http://localhost:8000/logs?namespace={namespace}&pod={pod_name}",
+        f"http://localhost:8000/logs?pod={pod_name}&namespace={namespace}"
     ]
     
     for url in alternative_urls:
@@ -380,18 +378,17 @@ def parse_log_line(line, pod_name, namespace):
 def test_api_connection():
     """Test if the backend API is accessible"""
     try:
-        # Try to connect to a simple endpoint
-        url = "http://localhost:8000/health"
+        # Try to connect to the health check endpoint
+        url = "http://localhost:8000/"
         resp = requests.get(url, timeout=5)
-        return resp.status_code == 200
-    except:
-        try:
-            # Try the namespaces endpoint as fallback
-            url = "http://localhost:8000/namespaces"
-            resp = requests.get(url, timeout=5)
-            return resp.status_code == 200
-        except:
+        if resp.status_code == 200:
+            return True
+        else:
+            st.warning(f"⚠️ API responded with status {resp.status_code}")
             return False
+    except Exception as e:
+        st.error(f"❌ Connection failed: {str(e)}")
+        return False
 
 @st.cache_data(ttl=30)
 def fetch_pod_containers(pod_name, namespace):
@@ -617,6 +614,25 @@ try:
                     
                 else:
                     st.error(f"❌ Failed to load logs from all available sources")
+                    
+                    # Try to get more detailed error information
+                    try:
+                        test_response = requests.get("http://localhost:8000/logs", 
+                                                  params={"namespace": namespace, "pod": selected_pod}, 
+                                                  timeout=5)
+                        if test_response.status_code != 200:
+                            st.error(f"🔍 **API Error Details**: Status {test_response.status_code}")
+                            try:
+                                error_data = test_response.json()
+                                if "error" in error_data:
+                                    st.error(f"**Error Message**: {error_data['error']}")
+                            except:
+                                st.error(f"**Response**: {test_response.text[:200]}...")
+                        else:
+                            st.error("🔍 **Unexpected**: API returned 200 but no logs")
+                    except Exception as api_error:
+                        st.error(f"🔍 **Connection Error**: {str(api_error)}")
+                    
                     st.info("💡 **Troubleshooting Tips:**")
                     st.info("1. Check if the backend service is running on port 8000")
                     st.info("2. Verify the API endpoints are properly configured")
