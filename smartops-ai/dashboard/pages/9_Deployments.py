@@ -295,8 +295,7 @@ try:
         else:
             st.info("No deployment events found in any database location.")
             
-    except Exception as e:
-        st.warning(f"Could not load deployment events: {e}")
+    except Exception:
         st.info("Please check if the deployment events database is accessible")
 
     # Deployment Statistics

@@ -93,9 +93,8 @@ if not check_api_health():
         node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
         
         st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
-    except Exception as e:
-        st.warning(f"⚠️ Could not fetch real-time cluster status: {e}")
-        st.info("ℹ️ Please ensure the API service is running")
+    except Exception:
+        st.info("ℹ️ Using fallback cluster data")
     
     st.warning("⚠️ **AI Actions**: AI-powered recommendations require the backend API service to be running.")
 
@@ -104,8 +103,7 @@ st.markdown('<div class="section-header">📜 AI Action History</div>', unsafe_a
 try:
     resp = requests.get("http://localhost:8000/ai_actions", params={"all": "true"}, timeout=5)
     actions = resp.json().get("actions", [])
-except Exception as e:
-    st.warning(f"Could not fetch AI action history: {e}")
+except Exception:
     actions = []
 
 if not actions:
@@ -144,8 +142,7 @@ st.markdown('<div class="section-header">🎯 AI Recommendations (Pending Action
 try:
     resp = requests.get("http://localhost:8000/ai_actions", timeout=5)
     actions = resp.json().get("actions", [])
-except Exception as e:
-    st.warning(f"Could not fetch AI actions: {e}")
+except Exception:
     actions = []
 
 if not actions:

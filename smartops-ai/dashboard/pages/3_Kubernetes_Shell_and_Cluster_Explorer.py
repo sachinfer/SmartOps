@@ -95,8 +95,7 @@ with tab1:
                                         st.dataframe(df, use_container_width=True)
                                     else:
                                         st.info("Could not parse output as table - showing raw output above")
-                                except Exception as e:
-                                    st.warning(f"Could not parse as table: {e}")
+                                except Exception:
                                     st.info("Showing raw output above")
                             else:
                                 st.info("Output is too short to parse as table - showing raw output above")
@@ -284,10 +283,8 @@ with tab2:
             if resp.status_code == 200:
                 return resp.json().get("resource_types", [])
             else:
-                st.warning(f"Could not fetch resource types: {resp.status_code}")
                 return ["pods", "services", "deployments", "nodes", "events"]
-        except Exception as e:
-            st.warning(f"Could not fetch resource types: {e}")
+        except Exception:
             return ["pods", "services", "deployments", "nodes", "events"]
     
     @st.cache_data(ttl=30)
@@ -298,10 +295,8 @@ with tab2:
             if resp.status_code == 200:
                 return resp.json().get('namespaces', [])
             else:
-                st.warning(f"Could not fetch namespaces: {resp.status_code}")
                 return []
-        except Exception as e:
-            st.warning(f"Could not fetch namespaces: {e}")
+        except Exception:
             return []
 
     # Fetch available resources and namespaces

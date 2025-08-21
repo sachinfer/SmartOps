@@ -85,8 +85,7 @@ def fetch_namespaces():
             return resp.json().get('namespaces', [])
         else:
             return []
-    except Exception as e:
-        st.warning(f"Could not fetch namespaces: {e}")
+    except Exception:
         return []
 
 @st.cache_data(ttl=30)
@@ -98,8 +97,7 @@ def fetch_pods(namespace):
             return resp.json().get("pods", [])
         else:
             return []
-    except Exception as e:
-        st.warning(f"Could not fetch pods: {e}")
+    except Exception:
         return []
 
 @st.cache_data(ttl=10)
