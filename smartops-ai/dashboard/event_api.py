@@ -29,9 +29,9 @@ async def health_check():
 
 # Simulated HPA data (replace with real DB/API integration)
 hpa_data = [
-    {"pod": "app-1", "cpu_avg": 0.45, "mem_avg": 0.60, "min_replicas": 1, "max_replicas": 5},
-    {"pod": "app-2", "cpu_avg": 0.80, "mem_avg": 0.70, "min_replicas": 2, "max_replicas": 10},
-    {"pod": "app-3", "cpu_avg": 0.30, "mem_avg": 0.25, "min_replicas": 1, "max_replicas": 3},
+    {"pod": "sample-pod-1", "cpu_avg": 0.45, "mem_avg": 0.60, "min_replicas": 1, "max_replicas": 5},
+    {"pod": "sample-pod-2", "cpu_avg": 0.80, "mem_avg": 0.70, "min_replicas": 2, "max_replicas": 10},
+    {"pod": "sample-pod-3", "cpu_avg": 0.30, "mem_avg": 0.25, "min_replicas": 1, "max_replicas": 3},
 ]
 
 class HPAUpdateRequest(BaseModel):
@@ -556,9 +556,9 @@ def kubectl_resource_types():
 
 # Simulated incident data (replace with real DB/API integration)
 incident_data = [
-    {"timestamp": "2024-05-01 10:00:00", "namespace": "default", "app": "app-1", "type": "CPU Spike", "details": "CPU > 90% for 5m", "root_cause": "Traffic surge", "impact": "Slow response", "remediation": "Scaled up replicas"},
-    {"timestamp": "2024-05-01 11:30:00", "namespace": "default", "app": "app-2", "type": "Pod Crash", "details": "OOMKilled", "root_cause": "Memory leak", "impact": "Pod restart", "remediation": "Fixed memory leak"},
-    {"timestamp": "2024-05-02 09:15:00", "namespace": "smartops", "app": "app-3", "type": "Alert Sent", "details": "Telegram alert", "root_cause": "Manual scale down", "impact": "Reduced capacity", "remediation": "Restored replicas"},
+    {"timestamp": "2024-05-01 10:00:00", "namespace": "default", "app": "sample-app-1", "type": "CPU Spike", "details": "CPU > 90% for 5m", "root_cause": "Traffic surge", "impact": "Slow response", "remediation": "Scaled up replicas"},
+    {"timestamp": "2024-05-01 11:30:00", "namespace": "default", "app": "sample-app-2", "type": "Pod Crash", "details": "OOMKilled", "root_cause": "Memory leak", "impact": "Pod restart", "remediation": "Fixed memory leak"},
+    {"timestamp": "2024-05-02 09:15:00", "namespace": "smartops", "app": "sample-app-3", "type": "Alert Sent", "details": "Telegram alert", "root_cause": "Manual scale down", "impact": "Reduced capacity", "remediation": "Restored replicas"},
 ]
 
 class PostmortemReport(BaseModel):

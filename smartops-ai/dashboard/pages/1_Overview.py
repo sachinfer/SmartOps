@@ -401,7 +401,30 @@ except Exception:
     st.info("ℹ️ **Getting Started**: To enable real-time data, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
     
     # Show current cluster status based on what we know
-    st.success("✅ **Current Cluster Status**:\n- **Nodes**: 1 (gke-smartops-cluster-default-pool-897bf21e-i5jt)\n- **Pods**: 18 (all Running)\n- **Namespaces**: 11\n- **Services**: 16")
+                # Get real cluster status
+            try:
+                node_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes", "all_namespaces": "true"}, timeout=5)
+                pod_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "pods", "all_namespaces": "true"}, timeout=5)
+                namespace_response = requests.get("http://localhost:8000/namespaces", timeout=5)
+                service_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "services", "all_namespaces": "true"}, timeout=5)
+                
+                node_count = len(node_response.json().get("items", [])) if node_response.status_code == 200 else 0
+                pod_count = len(pod_response.json().get("items", [])) if pod_response.status_code == 200 else 0
+                namespace_count = len(namespace_response.json().get("namespaces", [])) if namespace_response.status_code == 200 else 0
+                service_count = len(service_response.json().get("items", [])) if service_response.status_code == 200 else 0
+                
+                # Get actual node names
+                node_names = []
+                if node_response.status_code == 200:
+                    nodes = node_response.json().get("items", [])
+                    node_names = [node.get("name", "") for node in nodes if node.get("name")]
+                
+                node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
+                
+                st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
+            except Exception as e:
+                st.warning(f"⚠️ Could not fetch real-time cluster status: {e}")
+                st.info("ℹ️ Please ensure the API service is running")
 
 # New Relic-style Time Selector
 st.markdown("""
@@ -640,12 +663,12 @@ try:
         st.error(f"Failed to get node data: {response.status_code}")
         # Fallback to basic node info
         node_data = pd.DataFrame({
-            'Node Name': ['gke-smartops-cluster-default-pool-897bf21e-i5jt'],
-            'Status': ['Ready'],
-            'Health': ['🟢 Healthy'],
-            'Info': ['GKE Node - Ready (5h11m)'],
-            'Version': ['v1.32.6-gke.1096000'],
-            'Internal IP': ['10.128.15.201']
+            'Node Name': ['Cluster Node'],
+            'Status': ['Unknown'],
+            'Health': ['⚪ Unknown'],
+            'Info': ['No data available'],
+            'Version': ['Unknown'],
+            'Internal IP': ['Unknown']
         })
         st.dataframe(node_data, use_container_width=True, hide_index=True, height=200)
         
@@ -653,12 +676,12 @@ except Exception as e:
     st.error(f"Error fetching node data: {e}")
     # Fallback to basic node info
     node_data = pd.DataFrame({
-        'Node Name': ['gke-smartops-cluster-default-pool-897bf21e-i5jt'],
-        'Status': ['Ready'],
-        'Health': ['🟢 Healthy'],
-        'Info': ['GKE Node - Ready (5h11m)'],
-        'Version': ['v1.32.6-gke.1096000'],
-        'Internal IP': ['10.128.15.201']
+        'Node Name': ['Cluster Node'],
+        'Status': ['Unknown'],
+        'Health': ['⚪ Unknown'],
+        'Info': ['No data available'],
+        'Version': ['Unknown'],
+        'Internal IP': ['Unknown']
     })
     st.dataframe(node_data, use_container_width=True, hide_index=True, height=200)
 

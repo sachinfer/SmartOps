@@ -422,7 +422,30 @@ try:
         st.info("ℹ️ **Getting Started**: To enable real-time pod data and logs, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
         
         # Show current cluster status based on what we know
-        st.success("✅ **Current Cluster Status**:\n- **Nodes**: 1 (gke-smartops-cluster-default-pool-897bf21e-i5jt)\n- **Pods**: 18 (all Running)\n- **Namespaces**: 11\n- **Services**: 16")
+                    # Get real cluster status
+            try:
+                node_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes", "all_namespaces": "true"}, timeout=5)
+                pod_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "pods", "all_namespaces": "true"}, timeout=5)
+                namespace_response = requests.get("http://localhost:8000/namespaces", timeout=5)
+                service_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "services", "all_namespaces": "true"}, timeout=5)
+                
+                node_count = len(node_response.json().get("items", [])) if node_response.status_code == 200 else 0
+                pod_count = len(pod_response.json().get("items", [])) if pod_response.status_code == 200 else 0
+                namespace_count = len(namespace_response.json().get("namespaces", [])) if namespace_response.status_code == 200 else 0
+                service_count = len(service_response.json().get("items", [])) if service_response.status_code == 200 else 0
+                
+                # Get actual node names
+                node_names = []
+                if node_response.status_code == 200:
+                    nodes = node_response.json().get("items", [])
+                    node_names = [node.get("name", "") for node in nodes if node.get("name")]
+                
+                node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
+                
+                st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
+            except Exception as e:
+                st.warning(f"⚠️ Could not fetch real-time cluster status: {e}")
+                st.info("ℹ️ Please ensure the API service is running")
         
         # Show sample pod data for demonstration
         st.markdown('<div class="section-header">📊 Sample Pod Data (Demo Mode)</div>', unsafe_allow_html=True)
@@ -431,26 +454,26 @@ try:
         # Create sample pod data
         sample_pods = [
             {
-                "name": "smartops-anomaly-deployment-76b47b4c76-lpxsf",
+                "name": "sample-pod-1",
                 "namespace": "smartops",
                 "status": "Running",
-                "node": "gke-smartops-cluster-default-pool-897bf21e-i5jt",
+                "node": "cluster-node",
                 "restarts": 0,
                 "age": "5h11m"
             },
             {
-                "name": "smartops-app-65dc497c58-6xtmn",
+                "name": "sample-pod-2",
                 "namespace": "smartops", 
                 "status": "Running",
-                "node": "gke-smartops-cluster-default-pool-897bf21e-i5jt",
+                "node": "cluster-node",
                 "restarts": 0,
                 "age": "5h11m"
             },
             {
-                "name": "smartops-dashboard-79d6f9d6f8-8dfp5",
+                "name": "sample-pod-3",
                 "namespace": "smartops",
                 "status": "Running", 
-                "node": "gke-smartops-cluster-default-pool-897bf21e-i5jt",
+                "node": "cluster-node",
                 "restarts": 0,
                 "age": "5h11m"
             }

@@ -10,8 +10,9 @@ v1 = client.CoreV1Api()
 apps_v1 = client.AppsV1Api()
 
 # Telegram setup
-TELEGRAM_BOT_TOKEN = "7740618650:AAEMnkAevBQMZ_fBf5tqjh4c"
-TELEGRAM_CHAT_ID = "-1002761935159"
+# Load from environment variables or config file
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "your_bot_token_here")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "your_chat_id_here")
 STATUS_FILE = "monitor_status.json"
 # Get dashboard URL from environment variable or use service discovery
 DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "http://smartops-dashboard-service.smartops.svc.cluster.local:8000")
