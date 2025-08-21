@@ -19,6 +19,7 @@ st.title("🖥️ Kubernetes Shell and Cluster Explorer")
 # Check if API service is running and show helpful message
 if not check_api_health():
     st.warning("⚠️ **Shell Commands**: Kubernetes shell commands require the backend API service to be running.")
+
 tab1, tab2 = st.tabs(["Shell", "Cluster Explorer"])
 
 with tab1:
@@ -48,9 +49,6 @@ with tab1:
                     stdout = data.get("stdout", "")
                     stderr = data.get("stderr", "")
                     returncode = data.get("returncode", 0)
-                    
-                    # Debug: Show what we received from API
-                    st.info(f"🔍 **API Response Debug**:\n- Status: {resp.status_code}\n- Data keys: {list(data.keys())}\n- stdout length: {len(stdout) if stdout else 0}\n- stderr length: {len(stderr) if stderr else 0}\n- returncode: {returncode}")
                     
                     # Store the result in session state
                     st.session_state.last_command_output = {
@@ -110,7 +108,6 @@ with tab1:
                         st.info("1. The command didn't return any data")
                         st.info("2. There's an issue with the API response")
                         st.info("3. The namespace or resource doesn't exist")
-                        st.info("4. Check the debug info above for more details")
                     
                     if stderr:
                         st.error(f"⚠️ stderr: {stderr}")
@@ -325,19 +322,11 @@ with tab2:
                 else:
                     params = {"resource_type": resource, "all_namespaces": "false", "namespace": ns}
                 
-                # Debug: Show what we're requesting
-                st.info(f"🔍 **Requesting**: {resource} from namespace '{ns}' (all_namespaces={all_ns})")
-                st.info(f"🔍 **API Parameters**: {params}")
-                
                 resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
-                
-                # Debug: Show API response info
-                st.info(f"🔍 **API Response**: Status {resp.status_code}")
                 
                 if resp.status_code == 200:
                     data = resp.json()
                     items = data.get("items", [])
-                    st.info(f"🔍 **Items received**: {len(items)} items")
                     
                     if not items:
                         st.info("No results found.")
@@ -345,7 +334,6 @@ with tab2:
                         st.info("1. The namespace doesn't exist")
                         st.info("2. The namespace is empty")
                         st.info("3. There's an issue with the API call")
-                        st.info("4. Check the debug info above")
                     else:
                         df = pd.DataFrame(items)
                         st.dataframe(df, use_container_width=True)
@@ -358,7 +346,6 @@ with tab2:
                 st.error("Cannot connect to backend API. Please ensure the API service is running.")
             except Exception as e:
                 st.error(f"Error fetching data: {e}")
-                st.info(f"🔍 **Exception details**: {type(e).__name__}: {str(e)}")
     
     # Quick access buttons for common resources
     st.markdown("#### 🚀 Quick Access")
@@ -398,17 +385,12 @@ with tab2:
         with st.spinner(f"Fetching {resource}..."):
             try:
                 params = {"resource_type": resource, "all_namespaces": "true"}
-                st.info(f"🔍 **Quick Access**: Fetching {resource} from all namespaces")
-                st.info(f"🔍 **API Parameters**: {params}")
                 
                 resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
-                
-                st.info(f"🔍 **API Response**: Status {resp.status_code}")
                 
                 if resp.status_code == 200:
                     data = resp.json()
                     items = data.get("items", [])
-                    st.info(f"🔍 **Items received**: {len(items)} items")
                     
                     if not items:
                         st.info(f"No {resource} found in any namespace.")
@@ -419,5 +401,4 @@ with tab2:
                     st.error(f"API Error: {resp.status_code} - {resp.text}")
                     
             except Exception as e:
-                st.error(f"Error fetching {resource}: {e}")
-                st.info(f"🔍 **Exception details**: {type(e).__name__}: {str(e)}") 
+                st.error(f"Error fetching {resource}: {e}") 
