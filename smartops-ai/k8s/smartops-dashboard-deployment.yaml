@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartops-dashboard
+  namespace: smartops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartops-dashboard
+  template:
+    metadata:
+      labels:
+        app: smartops-dashboard
+    spec:
+      serviceAccountName: dashboard-metrics-reader
+      containers:
+      - name: dashboard
+        image: smartops-dashboard:latest
+        ports:
+        - containerPort: 8501
+        volumeMounts:
+        - name: dashboard-data
+          mountPath: /app/dashboard/data
+      volumes:
+      - name: dashboard-data
+        persistentVolumeClaim:
+          claimName: dashboard-data-pvc 

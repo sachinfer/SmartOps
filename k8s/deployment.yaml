@@ -2,9 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: smartops-app
-  namespace: smartops
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: smartops-app
@@ -14,7 +13,7 @@ spec:
         app: smartops-app
     spec:
       containers:
-      - name: smartops-app
-        image: sachinfe/smartops-app:latest  
-        ports:
-        - containerPort: 80
+        - name: smartops-app
+          image: gcr.io/icbt-465109/smartops-app:latest
+          ports:
+            - containerPort: 80

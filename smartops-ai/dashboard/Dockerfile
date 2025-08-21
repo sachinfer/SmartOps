@@ -4,6 +4,7 @@ FROM python:3.9-slim as base
 # Install system dependencies in a single layer
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    supervisor \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -18,11 +19,16 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app.py .
+# Copy application code and configuration
+COPY . ./dashboard/
+COPY supervisord.conf ./
 
-# Expose port
-EXPOSE 80
+# Set working directory to dashboard
+WORKDIR /app/dashboard
 
-# Use uvicorn with optimized settings
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "80", "--workers", "1"]
+# Expose ports
+EXPOSE 8501
+EXPOSE 8000
+
+# Use supervisord for process management
+CMD ["/usr/bin/supervisord", "-c", "/app/dashboard/supervisord.conf"] 
