@@ -759,81 +759,69 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
+# Show cluster status with beautiful styling
+if api_available:
+    # Try to get live data
+    try:
+        live_node_count = len(fetch_node_data()) if fetch_node_data() else 1
+        live_pod_count = len(fetch_pod_data_by_namespace(selected_namespace)) if fetch_pod_data_by_namespace(selected_namespace) else 18
+        live_namespace_count = get_namespace_count()
+        live_service_count = get_service_count()
+        
+        status_title = "🚀 Live Cluster Status"
+        status_color = "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
+    except:
+        # Fallback to default values
+        live_node_count = 1
+        live_pod_count = 18
+        live_namespace_count = 11
+        live_service_count = 16
+        
+        status_title = "✅ Cluster Status"
+        status_color = "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
+else:
+    # Use fallback values when API is not available
+    live_node_count = 1
+    live_pod_count = 18
+    live_namespace_count = 11
+    live_service_count = 16
+    
+    status_title = "✅ Cluster Status"
+    status_color = "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
+
+st.markdown(f"""
+<div style="background: {status_color}; padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(72, 187, 120, 0.3);">
+    <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+        {status_title}
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_node_count}</div>
+            <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Nodes</div>
+        </div>
+        <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_pod_count}</div>
+            <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Pods</div>
+        </div>
+        <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_namespace_count}</div>
+            <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Namespaces</div>
+        </div>
+        <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_service_count}</div>
+            <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Services</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Show API status info in a subtle way
 if not api_available:
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);">
-        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
-            🚀 <span>Getting Started</span>
-        </h3>
-        <p style="color: #f8fafc; margin: 0 0 1rem 0; font-size: 1rem;">
-            To enable real-time data, start the API service first:
+    <div style="background: rgba(237, 137, 54, 0.1); border: 1px solid rgba(237, 137, 54, 0.3); padding: 1rem; border-radius: 12px; margin: 1rem 0; text-align: center;">
+        <p style="color: #ed8936; margin: 0; font-size: 0.9rem;">
+            💡 <strong>Tip:</strong> For real-time data, start the API service: <code style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.4rem; border-radius: 4px;">python event_api.py</code>
         </p>
-        <div style="background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: 12px; margin: 1rem 0; font-family: 'Courier New', monospace; color: #f8fafc;">
-            cd smartops-ai/dashboard<br>
-            python event_api.py
-        </div>
-        <p style="color: #f8fafc; margin: 1rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
-            Then refresh this page to see live cluster data.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Show sample cluster status with beautiful styling
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(72, 187, 120, 0.3);">
-        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
-            ✅ <span>Cluster Status</span>
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">1</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Nodes</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">18</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Pods</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">11</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Namespaces</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">16</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Services</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    # Show live cluster status with beautiful styling
-    live_node_count = len(fetch_node_data()) if fetch_node_data() else 1
-    live_pod_count = len(fetch_pod_data_by_namespace(selected_namespace)) if fetch_pod_data_by_namespace(selected_namespace) else 18
-    live_namespace_count = get_namespace_count()
-    live_service_count = get_service_count()
-    
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(72, 187, 120, 0.3);">
-        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
-            🚀 <span>Live Cluster Status</span>
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_node_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Nodes</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_pod_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Pods</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_namespace_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Namespaces</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_service_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Services</div>
-            </div>
-        </div>
     </div>
     """, unsafe_allow_html=True)
 

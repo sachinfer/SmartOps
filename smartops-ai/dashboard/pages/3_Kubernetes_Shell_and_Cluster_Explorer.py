@@ -18,7 +18,13 @@ st.title("🖥️ Kubernetes Shell and Cluster Explorer")
 
 # Check if API service is running and show helpful message
 if not check_api_health():
-    st.info("ℹ️ **Getting Started**: To enable Kubernetes shell commands, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
+    st.markdown("""
+    <div style="background: rgba(237, 137, 54, 0.1); border: 1px solid rgba(237, 137, 54, 0.3); padding: 1rem; border-radius: 12px; margin: 1rem 0; text-align: center;">
+        <p style="color: #ed8936; margin: 0; font-size: 0.9rem;">
+            💡 <strong>Tip:</strong> For real-time data, start the API service: <code style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.4rem; border-radius: 4px;">python event_api.py</code>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Show current cluster status based on what we know
     # Get real cluster status
@@ -47,7 +53,6 @@ if not check_api_health():
         st.info("ℹ️ Please ensure the API service is running")
     
     st.warning("⚠️ **Shell Commands**: Kubernetes shell commands require the backend API service to be running.")
-    st.stop()  # Stop execution here since API is not available
 tab1, tab2 = st.tabs(["Shell", "Cluster Explorer"])
 
 with tab1:

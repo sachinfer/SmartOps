@@ -414,74 +414,17 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-    # Check if API service is running and show helpful message
-    if not check_api_health():
-        st.info("ℹ️ **Getting Started**: To enable real-time pod data and logs, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
-        
-        # Show current cluster status based on what we know
-        # Get real cluster status
-        try:
-            node_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes", "all_namespaces": "true"}, timeout=5)
-            pod_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "pods", "all_namespaces": "true"}, timeout=5)
-            namespace_response = requests.get("http://localhost:8000/namespaces", timeout=5)
-            service_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "services", "all_namespaces": "true"}, timeout=5)
-            
-            node_count = len(node_response.json().get("items", [])) if node_response.status_code == 200 else 0
-            pod_count = len(pod_response.json().get("items", [])) if pod_response.status_code == 200 else 0
-            namespace_count = len(namespace_response.json().get("namespaces", [])) if namespace_response.status_code == 200 else 0
-            service_count = len(service_response.json().get("items", [])) if service_response.status_code == 200 else 0
-            
-            # Get actual node names
-            node_names = []
-            if node_response.status_code == 200:
-                nodes = node_response.json().get("items", [])
-                node_names = [node.get("name", "") for node in nodes if node.get("name")]
-            
-            node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
-            
-            st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
-        except Exception as e:
-            st.warning(f"⚠️ Could not fetch real-time cluster status: {e}")
-            st.info("ℹ️ Please ensure the API service is running")
-        
-        # Show sample pod data for demonstration
-        st.markdown('<div class="section-header">📊 Sample Pod Data (Demo Mode)</div>', unsafe_allow_html=True)
-        st.info("🔍 **Demo Mode**: Since the API service is not running, showing sample pod data for demonstration purposes.")
-        
-        # Create sample pod data
-        sample_pods = [
-            {
-                "name": "sample-pod-1",
-                "namespace": "smartops",
-                "status": "Running",
-                "node": "cluster-node",
-                "restarts": 0,
-                "age": "5h11m"
-            },
-            {
-                "name": "sample-pod-2",
-                "namespace": "smartops", 
-                "status": "Running",
-                "node": "cluster-node",
-                "restarts": 0,
-                "age": "5h11m"
-            },
-            {
-                "name": "sample-pod-3",
-                "namespace": "smartops",
-                "status": "Running", 
-                "node": "cluster-node",
-                "restarts": 0,
-                "age": "5h11m"
-            }
-        ]
-        
-        # Display sample pods
-        df = pd.DataFrame(sample_pods)
-        st.dataframe(df, use_container_width=True, hide_index=True, height=200)
-        
-        st.info("💡 **To see real data**: Start the API service and refresh this page.")
-        st.stop()  # Stop execution here since API is not available
+    # Check if API service is running but don't block functionality
+    api_available = check_api_health()
+    
+    if not api_available:
+        st.markdown("""
+        <div style="background: rgba(237, 137, 54, 0.1); border: 1px solid rgba(237, 137, 54, 0.3); padding: 1rem; border-radius: 12px; margin: 1rem 0; text-align: center;">
+            <p style="color: #ed8936; margin: 0; font-size: 0.9rem;">
+                💡 <strong>Tip:</strong> For real-time data, start the API service: <code style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.4rem; border-radius: 4px;">python event_api.py</code>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     # Namespace selector
     st.markdown('<div class="section-header">📁 Select Namespace</div>', unsafe_allow_html=True)
