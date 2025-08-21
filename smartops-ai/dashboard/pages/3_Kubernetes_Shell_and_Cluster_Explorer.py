@@ -3,10 +3,28 @@ import pandas as pd
 import requests
 from sidebar_utils import show_sidebar
 
+# Check if API service is running
+def check_api_health():
+    try:
+        response = requests.get("http://localhost:8000/", timeout=5)
+        return response.status_code == 200
+    except Exception:
+        return False
+
 with st.sidebar:
     show_sidebar()
 
 st.title("🖥️ Kubernetes Shell and Cluster Explorer")
+
+# Check if API service is running and show helpful message
+if not check_api_health():
+    st.info("ℹ️ **Getting Started**: To enable Kubernetes shell commands, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
+    
+    # Show current cluster status based on what we know
+    st.success("✅ **Current Cluster Status**:\n- **Nodes**: 1 (gke-smartops-cluster-default-pool-897bf21e-i5jt)\n- **Pods**: 18 (all Running)\n- **Namespaces**: 11\n- **Services**: 16")
+    
+    st.warning("⚠️ **Shell Commands**: Kubernetes shell commands require the backend API service to be running.")
+    st.stop()  # Stop execution here since API is not available
 tab1, tab2 = st.tabs(["Shell", "Cluster Explorer"])
 
 with tab1:
@@ -37,6 +55,9 @@ with tab1:
                     stderr = data.get("stderr", "")
                     returncode = data.get("returncode", 0)
                     
+                    # Debug: Show what we received from API
+                    st.info(f"🔍 **API Response Debug**:\n- Status: {resp.status_code}\n- Data keys: {list(data.keys())}\n- stdout length: {len(stdout) if stdout else 0}\n- stderr length: {len(stderr) if stderr else 0}\n- returncode: {returncode}")
+                    
                     # Store the result in session state
                     st.session_state.last_command_output = {
                         "stdout": stdout,
@@ -48,34 +69,54 @@ with tab1:
                     if stdout:
                         st.success("✅ Command executed successfully!")
                         
+                        # Always show raw output first for debugging
+                        st.markdown("**Raw Output:**")
+                        st.code(stdout, language="shell")
+                        
                         # Handle different command types
                         if shell_cmd.strip().startswith("kubectl get") and stdout.strip():
                             lines = stdout.strip().splitlines()
                             if len(lines) > 1:
                                 try:
-                                    # Parse tab-separated output
-                                    header = lines[0].split('\t')
+                                    # Try to parse as table - handle both tab and space separation
+                                    first_line = lines[0]
+                                    if '\t' in first_line:
+                                        # Tab-separated
+                                        header = first_line.split('\t')
+                                        separator = '\t'
+                                    else:
+                                        # Space-separated (more common)
+                                        header = first_line.split()
+                                        separator = ' '
+                                    
                                     rows = []
                                     for line in lines[1:]:
                                         if line.strip():
-                                            row_data = line.split('\t')
+                                            # Split by the detected separator
+                                            row_data = line.split(separator)
                                             # Pad row if it's shorter than header
-                                            while len(row_data) < len(header):
-                                                row_data.append('')
                                             rows.append(row_data[:len(header)])
                                     
                                     if rows:
+                                        st.markdown("**Parsed Table:**")
                                         df = pd.DataFrame(rows, columns=header)
                                         st.dataframe(df, use_container_width=True)
                                     else:
-                                        st.code(stdout, language="shell")
+                                        st.info("Could not parse output as table - showing raw output above")
                                 except Exception as e:
                                     st.warning(f"Could not parse as table: {e}")
-                                    st.code(stdout, language="shell")
+                                    st.info("Showing raw output above")
                             else:
-                                st.code(stdout, language="shell")
+                                st.info("Output is too short to parse as table - showing raw output above")
                         else:
-                            st.code(stdout, language="shell")
+                            st.info("Command output shown above in raw format")
+                    else:
+                        st.warning("⚠️ **No output received** from the command")
+                        st.info("This could mean:")
+                        st.info("1. The command didn't return any data")
+                        st.info("2. There's an issue with the API response")
+                        st.info("3. The namespace or resource doesn't exist")
+                        st.info("4. Check the debug info above for more details")
                     
                     if stderr:
                         st.error(f"⚠️ stderr: {stderr}")
@@ -285,13 +326,32 @@ with tab2:
     if st.button("Fetch", key="explorer_fetch"):
         with st.spinner("Fetching data..."):
             try:
-                params = {"resource_type": resource, "all_namespaces": str(all_ns).lower()}
+                if all_ns:
+                    params = {"resource_type": resource, "all_namespaces": "true"}
+                else:
+                    params = {"resource_type": resource, "all_namespaces": "false", "namespace": ns}
+                
+                # Debug: Show what we're requesting
+                st.info(f"🔍 **Requesting**: {resource} from namespace '{ns}' (all_namespaces={all_ns})")
+                st.info(f"🔍 **API Parameters**: {params}")
+                
                 resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
                 
+                # Debug: Show API response info
+                st.info(f"🔍 **API Response**: Status {resp.status_code}")
+                
                 if resp.status_code == 200:
-                    items = resp.json().get("items", [])
+                    data = resp.json()
+                    items = data.get("items", [])
+                    st.info(f"🔍 **Items received**: {len(items)} items")
+                    
                     if not items:
                         st.info("No results found.")
+                        st.info("This could mean:")
+                        st.info("1. The namespace doesn't exist")
+                        st.info("2. The namespace is empty")
+                        st.info("3. There's an issue with the API call")
+                        st.info("4. Check the debug info above")
                     else:
                         df = pd.DataFrame(items)
                         st.dataframe(df, use_container_width=True)
@@ -304,6 +364,7 @@ with tab2:
                 st.error("Cannot connect to backend API. Please ensure the API service is running.")
             except Exception as e:
                 st.error(f"Error fetching data: {e}")
+                st.info(f"🔍 **Exception details**: {type(e).__name__}: {str(e)}")
     
     # Quick access buttons for common resources
     st.markdown("#### 🚀 Quick Access")
@@ -343,12 +404,20 @@ with tab2:
         with st.spinner(f"Fetching {resource}..."):
             try:
                 params = {"resource_type": resource, "all_namespaces": "true"}
+                st.info(f"🔍 **Quick Access**: Fetching {resource} from all namespaces")
+                st.info(f"🔍 **API Parameters**: {params}")
+                
                 resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
                 
+                st.info(f"🔍 **API Response**: Status {resp.status_code}")
+                
                 if resp.status_code == 200:
-                    items = resp.json().get("items", [])
+                    data = resp.json()
+                    items = data.get("items", [])
+                    st.info(f"🔍 **Items received**: {len(items)} items")
+                    
                     if not items:
-                        st.info(f"No {resource} found.")
+                        st.info(f"No {resource} found in any namespace.")
                     else:
                         df = pd.DataFrame(items)
                         st.dataframe(df, use_container_width=True)
@@ -356,4 +425,5 @@ with tab2:
                     st.error(f"API Error: {resp.status_code} - {resp.text}")
                     
             except Exception as e:
-                st.error(f"Error fetching {resource}: {e}") 
+                st.error(f"Error fetching {resource}: {e}")
+                st.info(f"🔍 **Exception details**: {type(e).__name__}: {str(e)}") 

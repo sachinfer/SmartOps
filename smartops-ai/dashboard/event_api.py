@@ -281,7 +281,9 @@ def ignore_ai_action(action_id: int = Query(...)):
     return {"result": "action ignored", "action_id": action_id}
 
 @app.get("/kubectl_get")
-def kubectl_get(resource_type: str = Query(..., description="Resource type: pods, services, deployments, nodes"), all_namespaces: bool = Query(False)):
+def kubectl_get(resource_type: str = Query(..., description="Resource type: pods, services, deployments, nodes"), 
+                all_namespaces: bool = Query(False),
+                namespace: str = Query("default", description="Namespace to query (ignored if all_namespaces=True)")):
     try:
         config.load_incluster_config()
     except Exception:
@@ -293,7 +295,7 @@ def kubectl_get(resource_type: str = Query(..., description="Resource type: pods
         if all_namespaces:
             pods = v1.list_pod_for_all_namespaces().items
         else:
-            pods = v1.list_namespaced_pod("default").items
+            pods = v1.list_namespaced_pod(namespace).items
         for pod in pods:
             items.append({
                 "name": pod.metadata.name,
@@ -306,7 +308,7 @@ def kubectl_get(resource_type: str = Query(..., description="Resource type: pods
         if all_namespaces:
             svcs = v1.list_service_for_all_namespaces().items
         else:
-            svcs = v1.list_namespaced_service("default").items
+            svcs = v1.list_namespaced_service(namespace).items
         for svc in svcs:
             items.append({
                 "name": svc.metadata.name,
@@ -319,7 +321,7 @@ def kubectl_get(resource_type: str = Query(..., description="Resource type: pods
         if all_namespaces:
             deps = apps_v1.list_deployment_for_all_namespaces().items
         else:
-            deps = apps_v1.list_namespaced_deployment("default").items
+            deps = apps_v1.list_namespaced_deployment(namespace).items
         for dep in deps:
             items.append({
                 "name": dep.metadata.name,
@@ -410,11 +412,24 @@ def handle_kubectl_get(args):
         resource_type = args[0]
         all_namespaces = "-A" in args or "--all-namespaces" in args
         
+        # Parse namespace from args (e.g., -n smartops)
+        target_namespace = "default"
+        for i, arg in enumerate(args):
+            if arg == "-n" and i + 1 < len(args):
+                target_namespace = args[i + 1]
+                break
+            elif arg.startswith("--namespace="):
+                target_namespace = arg.split("=", 1)[1]
+                break
+        
+        # Debug logging
+        print(f"DEBUG: resource_type={resource_type}, all_namespaces={all_namespaces}, target_namespace={target_namespace}, args={args}")
+        
         if resource_type == "pods":
             if all_namespaces:
                 items = v1.list_pod_for_all_namespaces().items
             else:
-                items = v1.list_namespaced_pod("default").items
+                items = v1.list_namespaced_pod(target_namespace).items
             
             output_lines = ["NAME\tNAMESPACE\tSTATUS\tNODE\tSTART_TIME"]
             for pod in items:
@@ -422,13 +437,15 @@ def handle_kubectl_get(args):
                 node = getattr(pod.spec, 'node_name', '')
                 output_lines.append(f"{pod.metadata.name}\t{pod.metadata.namespace}\t{pod.status.phase}\t{node}\t{start_time}")
             
-            return {"stdout": "\n".join(output_lines), "stderr": "", "returncode": 0}
+            output = "\n".join(output_lines)
+            print(f"DEBUG: pods output length={len(output)}, lines={len(output_lines)}")
+            return {"stdout": output, "stderr": "", "returncode": 0}
             
         elif resource_type == "services":
             if all_namespaces:
                 items = v1.list_service_for_all_namespaces().items
             else:
-                items = v1.list_namespaced_service("default").items
+                items = v1.list_namespaced_service(target_namespace).items
             
             output_lines = ["NAME\tNAMESPACE\tTYPE\tCLUSTER-IP\tPORTS"]
             for svc in items:
@@ -441,7 +458,7 @@ def handle_kubectl_get(args):
             if all_namespaces:
                 items = apps_v1.list_deployment_for_all_namespaces().items
             else:
-                items = apps_v1.list_namespaced_deployment("default").items
+                items = apps_v1.list_deployment_for_all_namespaces().items
             
             output_lines = ["NAME\tNAMESPACE\tREPLICAS\tAVAILABLE\tUPDATED"]
             for dep in items:
@@ -460,7 +477,7 @@ def handle_kubectl_get(args):
             return {"stdout": "\n".join(output_lines), "stderr": "", "returncode": 0}
             
         else:
-            return {"stdout": "", "stderr": f"Unsupported resource type: {resource_type}", "returncode": 1}
+            return {"stdout": "", "stderr": f"Unsupported resource type: {resource_type}. Supported: pods, services, deployments, nodes", "returncode": 1}
             
     except Exception as e:
         return {"stdout": "", "stderr": str(e), "returncode": 1}

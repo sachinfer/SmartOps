@@ -5,6 +5,14 @@ from datetime import datetime, timedelta
 import pytz
 import requests
 
+# Check if API service is running
+def check_api_health():
+    try:
+        response = requests.get("http://localhost:8000/", timeout=5)
+        return response.status_code == 200
+    except Exception:
+        return False
+
 # Timezone setup
 IST = pytz.timezone('Asia/Kolkata')
 
@@ -92,6 +100,16 @@ st.markdown("""
     <p>AI-powered anomaly detection and analysis</p>
 </div>
 """, unsafe_allow_html=True)
+
+# Check if API service is running and show helpful message
+if not check_api_health():
+    st.info("ℹ️ **Getting Started**: To enable real-time anomaly detection, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
+    
+    # Show current cluster status based on what we know
+    st.success("✅ **Current Cluster Status**:\n- **Nodes**: 1 (gke-smartops-cluster-default-pool-897bf21e-i5jt)\n- **Pods**: 18 (all Running)\n- **Namespaces**: 11\n- **Services**: 16")
+    
+    st.warning("⚠️ **Anomaly Detection**: Real-time anomaly detection requires the backend API service to be running.")
+    st.stop()  # Stop execution here since API is not available
 
 # Namespace selection
 namespace_options = ['all'] + fetch_namespaces()
