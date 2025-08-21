@@ -138,38 +138,236 @@ def try_alternative_log_endpoints(pod_name, namespace, tail_lines):
     return None
 
 def generate_fallback_logs(pod_name, namespace):
-    """Generate fallback logs when API is not available"""
+    """Generate fallback logs when API is not available in Kibana-like format"""
     import random
     from datetime import datetime, timedelta
     
-    # Generate sample log entries
+    # Generate sample log entries in structured format
     log_entries = []
     current_time = datetime.now()
     
-    # Sample log patterns
+    # Sample log patterns with structured data
     log_patterns = [
-        f"[{current_time.strftime('%Y-%m-%d %H:%M:%S')}] INFO: Pod {pod_name} started successfully",
-        f"[{(current_time - timedelta(seconds=30)).strftime('%Y-%m-%d %H:%M:%S')}] INFO: Container ready",
-        f"[{(current_time - timedelta(seconds=60)).strftime('%Y-%m-%d %H:%M:%S')}] INFO: Health check passed",
-        f"[{(current_time - timedelta(seconds=90)).strftime('%Y-%m-%d %H:%M:%S')}] INFO: Service registered",
-        f"[{(current_time - timedelta(seconds=120)).strftime('%Y-%m-%d %H:%M:%S')}] INFO: Pod initialization complete"
+        {
+            "timestamp": current_time.strftime('%Y-%m-%d %H:%M:%S'),
+            "level": "INFO",
+            "message": f"Pod {pod_name} started successfully",
+            "component": "pod-lifecycle",
+            "namespace": namespace,
+            "pod": pod_name
+        },
+        {
+            "timestamp": (current_time - timedelta(seconds=30)).strftime('%Y-%m-%d %H:%M:%S'),
+            "level": "INFO", 
+            "message": "Container ready and accepting traffic",
+            "component": "container-health",
+            "namespace": namespace,
+            "pod": pod_name
+        },
+        {
+            "timestamp": (current_time - timedelta(seconds=60)).strftime('%Y-%m-%d %H:%M:%S'),
+            "level": "INFO",
+            "message": "Health check passed - all systems operational",
+            "component": "health-check",
+            "namespace": namespace,
+            "pod": pod_name
+        },
+        {
+            "timestamp": (current_time - timedelta(seconds=90)).strftime('%Y-%m-%d %H:%M:%S'),
+            "level": "INFO",
+            "message": "Service registered with service mesh",
+            "component": "service-discovery",
+            "namespace": namespace,
+            "pod": pod_name
+        },
+        {
+            "timestamp": (current_time - timedelta(seconds=120)).strftime('%Y-%m-%d %H:%M:%S'),
+            "level": "INFO",
+            "message": "Pod initialization complete - ready for production traffic",
+            "component": "pod-lifecycle",
+            "namespace": namespace,
+            "pod": pod_name
+        }
     ]
     
     # Add some random log entries
-    for i in range(random.randint(5, 15)):
+    for i in range(random.randint(8, 20)):
         time_offset = random.randint(120, 600)  # 2-10 minutes ago
         log_time = current_time - timedelta(seconds=time_offset)
         log_level = random.choice(["INFO", "DEBUG", "WARN"])
-        log_message = random.choice([
-            "Processing request",
-            "Memory usage normal",
-            "CPU utilization stable",
-            "Network connection established",
-            "Cache hit ratio optimal"
-        ])
-        log_entries.append(f"[{log_time.strftime('%Y-%m-%d %H:%M:%S')}] {log_level}: {log_message}")
+        log_component = random.choice(["request-handler", "memory-manager", "cpu-monitor", "network-stack", "cache-engine"])
+        
+        log_messages = {
+            "request-handler": ["Processing incoming request", "Request completed successfully", "Rate limit check passed"],
+            "memory-manager": ["Memory usage within normal range", "Garbage collection completed", "Memory allocation successful"],
+            "cpu-monitor": ["CPU utilization stable", "Load average normal", "Thread count optimal"],
+            "network-stack": ["Network connection established", "Packet loss minimal", "Latency within acceptable range"],
+            "cache-engine": ["Cache hit ratio optimal", "Cache miss handled gracefully", "Cache warming completed"]
+        }
+        
+        log_message = random.choice(log_messages.get(log_component, ["System operation completed"]))
+        
+        log_entries.append({
+            "timestamp": log_time.strftime('%Y-%m-%d %H:%M:%S'),
+            "level": log_level,
+            "message": log_message,
+            "component": log_component,
+            "namespace": namespace,
+            "pod": pod_name
+        })
     
-    return "\n".join(log_patterns + log_entries)
+    # Combine and format as structured logs
+    all_logs = log_patterns + log_entries
+    # Sort by timestamp (newest first)
+    all_logs.sort(key=lambda x: x["timestamp"], reverse=True)
+    
+    return all_logs
+
+def display_logs_kibana_style(logs, pod_name, namespace):
+    """Display logs in Kibana-like format with search and filtering"""
+    
+    # Check if logs are structured or plain text
+    if isinstance(logs, list) and logs and isinstance(logs[0], dict):
+        # Structured logs (from fallback)
+        structured_logs = logs
+    else:
+        # Plain text logs (from API) - convert to structured format
+        structured_logs = parse_plain_logs(logs, pod_name, namespace)
+    
+    if not structured_logs:
+        st.error("No logs to display")
+        return
+    
+    # Log controls and search
+    st.markdown("### 🔍 Log Controls")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        search_query = st.text_input("🔍 Search logs", placeholder="Enter search term...", key="log_search")
+    
+    with col2:
+        log_level_filter = st.multiselect(
+            "📊 Filter by Level",
+            options=["INFO", "DEBUG", "WARN", "ERROR"],
+            default=["INFO", "DEBUG", "WARN", "ERROR"],
+            key="level_filter"
+        )
+    
+    with col3:
+        component_filter = st.multiselect(
+            "🏗️ Filter by Component",
+            options=list(set(log.get("component", "unknown") for log in structured_logs)),
+            default=list(set(log.get("component", "unknown") for log in structured_logs)),
+            key="component_filter"
+        )
+    
+    # Filter logs based on search and filters
+    filtered_logs = structured_logs.copy()
+    
+    if search_query:
+        filtered_logs = [log for log in filtered_logs if search_query.lower() in log.get("message", "").lower()]
+    
+    if log_level_filter:
+        filtered_logs = [log for log in filtered_logs if log.get("level") in log_level_filter]
+    
+    if component_filter:
+        filtered_logs = [log for log in filtered_logs if log.get("component") in component_filter]
+    
+    # Log statistics
+    st.markdown(f"**📊 Log Statistics**: {len(filtered_logs)} of {len(structured_logs)} logs shown")
+    
+    # Display logs in Kibana-style table
+    if filtered_logs:
+        # Create display dataframe
+        display_data = []
+        for log in filtered_logs:
+            # Color code the level
+            level_emoji = {
+                "INFO": "🟢",
+                "DEBUG": "🔵", 
+                "WARN": "🟡",
+                "ERROR": "🔴"
+            }.get(log.get("level", "INFO"), "⚪")
+            
+            display_data.append({
+                "Time": log.get("timestamp", ""),
+                "Level": f"{level_emoji} {log.get('level', '')}",
+                "Component": log.get("component", ""),
+                "Message": log.get("message", ""),
+                "Namespace": log.get("namespace", ""),
+                "Pod": log.get("pod", "")
+            })
+        
+        df = pd.DataFrame(display_data)
+        
+        # Display with custom styling
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            height=400
+        )
+        
+        # Log details expander
+        with st.expander("📋 View Raw Log Data"):
+            st.json(structured_logs[:10])  # Show first 10 logs in JSON format
+            
+    else:
+        st.info("No logs match the current filters. Try adjusting your search criteria.")
+
+def parse_plain_logs(plain_logs, pod_name, namespace):
+    """Parse plain text logs into structured format"""
+    if not plain_logs:
+        return []
+    
+    structured_logs = []
+    lines = plain_logs.split('\n')
+    
+    for line in lines:
+        if line.strip():
+            # Try to parse common log formats
+            structured_log = parse_log_line(line, pod_name, namespace)
+            if structured_log:
+                structured_logs.append(structured_log)
+    
+    return structured_logs
+
+def parse_log_line(line, pod_name, namespace):
+    """Parse a single log line into structured format"""
+    import re
+    
+    # Common log patterns
+    patterns = [
+        # Timestamp [YYYY-MM-DD HH:MM:SS] LEVEL: message
+        r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (\w+): (.+)',
+        # ISO timestamp LEVEL message
+        r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z) (\w+) (.+)',
+        # Simple timestamp LEVEL message
+        r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (\w+) (.+)'
+    ]
+    
+    for pattern in patterns:
+        match = re.match(pattern, line.strip())
+        if match:
+            timestamp, level, message = match.groups()
+            return {
+                "timestamp": timestamp,
+                "level": level.upper(),
+                "message": message,
+                "component": "unknown",
+                "namespace": namespace,
+                "pod": pod_name
+            }
+    
+    # If no pattern matches, create a basic structure
+    return {
+        "timestamp": "Unknown",
+        "level": "INFO",
+        "message": line.strip(),
+        "component": "unknown", 
+        "namespace": namespace,
+        "pod": pod_name
+    }
 
 def test_api_connection():
     """Test if the backend API is accessible"""
@@ -332,19 +530,8 @@ try:
                         if st.button("🔄 Refresh", key="refresh_logs"):
                             st.rerun()
                     
-                    # Display logs in a scrollable text area
-                    st.text_area(
-                        "Pod Logs",
-                        value=logs,
-                        height=400,
-                        disabled=True,
-                        key="logs_display"
-                    )
-                    
-                    # Log statistics
-                    log_lines = len(logs.split('\n')) if logs else 0
-                    log_source = "Sample (API unavailable)" if logs == generate_fallback_logs(selected_pod, namespace) else "API"
-                    st.info(f"📊 Log Statistics: {log_lines} lines loaded | Pod: {selected_pod} | Container: {container_name or 'All'} | Source: {log_source}")
+                    # Display logs in Kibana-like format
+                    display_logs_kibana_style(logs, selected_pod, namespace)
                     
                     # Show API status
                     if logs == generate_fallback_logs(selected_pod, namespace):

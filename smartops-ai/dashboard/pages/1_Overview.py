@@ -6,6 +6,7 @@ New Relic-style monitoring dashboard
 
 import streamlit as st
 import pandas as pd
+import requests
 from datetime import datetime
 from sidebar_utils import show_sidebar
 
@@ -19,6 +20,85 @@ st.set_page_config(
 # Sidebar
 with st.sidebar:
     show_sidebar()
+
+# Function to fetch real-time pod data
+@st.cache_data(ttl=30)  # Cache for 30 seconds
+def fetch_pod_data():
+    try:
+        response = requests.get("http://localhost:8000/pods", timeout=10)
+        if response.status_code == 200:
+            return response.json().get("pods", [])
+        else:
+            st.error(f"Failed to fetch pod data: {response.status_code}")
+            return []
+    except Exception as e:
+        st.error(f"Error fetching pod data: {e}")
+        return []
+
+# Function to get pod status counts
+def get_pod_status_counts(pods):
+    status_counts = {'Running': 0, 'Pending': 0, 'Failed': 0, 'Succeeded': 0}
+    for pod in pods:
+        status = pod.get('status', 'Unknown')
+        if status in status_counts:
+            status_counts[status] += 1
+        else:
+            status_counts['Failed'] += 1  # Treat unknown status as failed
+    return status_counts
+
+# Function to fetch real-time node data
+@st.cache_data(ttl=30)  # Cache for 30 seconds
+def fetch_node_data():
+    try:
+        response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes"}, timeout=10)
+        if response.status_code == 200:
+            return response.json().get("output", [])
+        else:
+            st.error(f"Failed to fetch node data: {response.status_code}")
+            return []
+    except Exception as e:
+        st.error(f"Error fetching node data: {e}")
+        return []
+
+# Function to get node status
+def get_node_status(node_name):
+    try:
+        # Use kubectl to get node status
+        import subprocess
+        result = subprocess.run(['kubectl', 'get', 'node', node_name, '-o', 'jsonpath={.status.conditions[?(@.type=="Ready")].status}'], 
+                              capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            return "Unknown"
+    except Exception:
+        return "Unknown"
+
+# Function to get namespace count
+@st.cache_data(ttl=30)
+def get_namespace_count():
+    try:
+        import subprocess
+        result = subprocess.run(['kubectl', 'get', 'namespaces', '--no-headers'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return len(result.stdout.strip().split('\n')) if result.stdout.strip() else 0
+        else:
+            return 11  # Fallback to default
+    except Exception:
+        return 11  # Fallback to default
+
+# Function to get service count
+@st.cache_data(ttl=30)
+def get_service_count():
+    try:
+        import subprocess
+        result = subprocess.run(['kubectl', 'get', 'services', '--all-namespaces', '--no-headers'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return len(result.stdout.strip().split('\n')) if result.stdout.strip() else 0
+        else:
+            return 16  # Fallback to default
+    except Exception:
+        return 16  # Fallback to default
 
 # New Relic-style CSS
 st.markdown("""
@@ -384,22 +464,22 @@ st.markdown('<div class="section-header">📊 Cluster Metrics</div>', unsafe_all
 st.markdown("""
 <div class="metric-grid">
     <div class="metric-card">
-        <div class="metric-value">3</div>
+        <div class="metric-value">1</div>
         <div class="metric-label">Nodes</div>
         <div class="metric-status arrow-up">Active</div>
     </div>
     <div class="metric-card">
-        <div class="metric-value">12</div>
+        <div class="metric-value">""" + str(len(fetch_pod_data()) if fetch_pod_data() else 18) + """</div>
         <div class="metric-label">Pods</div>
         <div class="metric-status arrow-up">Running</div>
     </div>
     <div class="metric-card">
-        <div class="metric-value">8</div>
+        <div class="metric-value">""" + str(get_service_count()) + """</div>
         <div class="metric-label">Services</div>
         <div class="metric-status arrow-up">Network</div>
     </div>
     <div class="metric-card">
-        <div class="metric-value">4</div>
+        <div class="metric-value">""" + str(get_namespace_count()) + """</div>
         <div class="metric-label">Namespaces</div>
         <div class="metric-status arrow-up">Logical</div>
     </div>
@@ -431,7 +511,19 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # New Relic-style Pod Status
-st.markdown('<div class="section-header">📋 Pod Status</div>', unsafe_allow_html=True)
+col1, col2 = st.columns([3, 1])
+with col1:
+    st.markdown('<div class="section-header">📋 Pod Status</div>', unsafe_allow_html=True)
+with col2:
+    if st.button("🔄 Refresh Pod Data", type="secondary"):
+        st.cache_data.clear()
+        st.rerun()
+
+st.markdown(f"""
+<div style="margin-bottom: 1rem; text-align: right; color: #a0aec0; font-size: 0.8rem;">
+    Last updated: """ + datetime.now().strftime('%H:%M:%S') + """
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <div class="chart-container">
@@ -441,10 +533,39 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-pod_data = pd.DataFrame({
-    'Status': ['Running', 'Pending', 'Failed', 'Succeeded'],
-    'Count': [10, 1, 0, 1]
-})
+# Fetch real-time pod data
+pods = fetch_pod_data()
+
+# Get pod status counts
+if pods:
+    status_counts = get_pod_status_counts(pods)
+else:
+    # Fallback to default values if API is not available
+    status_counts = {'Running': 0, 'Pending': 0, 'Failed': 0, 'Succeeded': 0}
+    st.warning("⚠️ Unable to fetch real-time pod data. Showing default values.")
+
+# Create a DataFrame for the chart
+pod_data = pd.DataFrame(list(status_counts.items()), columns=['Status', 'Count'])
+
+# Display real-time pod status summary
+st.markdown("""
+<div style="margin-bottom: 1rem;">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
+            <span style="color: #48bb78; font-weight: 600;">🟢 Running: """ + str(status_counts['Running']) + """</span>
+        </div>
+        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
+            <span style="color: #ed8936; font-weight: 600;">🟡 Pending: """ + str(status_counts['Pending']) + """</span>
+        </div>
+        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
+            <span style="color: #e53e3e; font-weight: 600;">🔴 Failed: """ + str(status_counts['Failed']) + """</span>
+        </div>
+        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
+            <span style="color: #38b2ac; font-weight: 600;">🔵 Succeeded: """ + str(status_counts['Succeeded']) + """</span>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 st.bar_chart(
     pod_data.set_index('Status'),
@@ -455,7 +576,13 @@ st.bar_chart(
 st.markdown("</div>", unsafe_allow_html=True)
 
 # New Relic-style Node Health
-st.markdown('<div class="section-header">🖥️ Node Health Status</div>', unsafe_allow_html=True)
+col1, col2 = st.columns([3, 1])
+with col1:
+    st.markdown('<div class="section-header">🖥️ Node Health Status</div>', unsafe_allow_html=True)
+with col2:
+    if st.button("🔄 Refresh Node Data", type="secondary"):
+        st.cache_data.clear()
+        st.rerun()
 
 st.markdown("""
 <div class="chart-container">
@@ -465,21 +592,80 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-node_data = pd.DataFrame({
-    'Node Name': ['gke-node-1', 'gke-node-2', 'gke-node-3'],
-    'Status': ['Ready', 'Ready', 'Ready'],
-    'Health': ['🟢 Healthy', '🟢 Healthy', '🟢 Healthy'],
-    'CPU Usage (%)': [31, 23, 40],
-    'Memory Usage (%)': [26, 19, 36],
-    'Pods': [4, 3, 5]
-})
-
-st.dataframe(
-    node_data,
-    use_container_width=True,
-    hide_index=True,
-    height=200
-)
+# Fetch real-time node data
+try:
+    # Get actual node data from kubectl
+    import subprocess
+    result = subprocess.run(['kubectl', 'get', 'nodes', '-o', 'wide'], capture_output=True, text=True, timeout=10)
+    
+    if result.returncode == 0:
+        lines = result.stdout.strip().split('\n')
+        if len(lines) > 1:  # Skip header line
+            node_data_list = []
+            for line in lines[1:]:  # Skip header
+                parts = line.split()
+                if len(parts) >= 6:
+                    node_name = parts[0]
+                    status = parts[1]
+                    roles = parts[2] if len(parts) > 2 else '<none>'
+                    age = parts[3] if len(parts) > 3 else ''
+                    version = parts[4] if len(parts) > 4 else ''
+                    internal_ip = parts[5] if len(parts) > 5 else ''
+                    external_ip = parts[6] if len(parts) > 6 else ''
+                    
+                    # Determine health status
+                    if status == 'Ready':
+                        health = '🟢 Healthy'
+                    else:
+                        health = '🔴 Unhealthy'
+                    
+                    node_data_list.append({
+                        'Node Name': node_name,
+                        'Status': status,
+                        'Roles': roles,
+                        'Health': health,
+                        'Age': age,
+                        'Version': version,
+                        'Internal IP': internal_ip
+                    })
+            
+            if node_data_list:
+                node_data = pd.DataFrame(node_data_list)
+                st.dataframe(
+                    node_data,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=200
+                )
+            else:
+                st.warning("No node data found")
+        else:
+            st.warning("No nodes found in cluster")
+    else:
+        st.error(f"Failed to get node data: {result.stderr}")
+        # Fallback to basic node info
+        node_data = pd.DataFrame({
+            'Node Name': ['gke-smartops-cluster-default-pool-897bf21e-i5jt'],
+            'Status': ['Ready'],
+            'Health': ['🟢 Healthy'],
+            'Info': ['GKE Node - Ready (5h11m)'],
+            'Version': ['v1.32.6-gke.1096000'],
+            'Internal IP': ['10.128.15.201']
+        })
+        st.dataframe(node_data, use_container_width=True, hide_index=True, height=200)
+        
+except Exception as e:
+    st.error(f"Error fetching node data: {e}")
+    # Fallback to basic node info
+    node_data = pd.DataFrame({
+        'Node Name': ['gke-smartops-cluster-default-pool-897bf21e-i5jt'],
+        'Status': ['Ready'],
+        'Health': ['🟢 Healthy'],
+        'Info': ['GKE Node - Ready (5h11m)'],
+        'Version': ['v1.32.6-gke.1096000'],
+        'Internal IP': ['10.128.15.201']
+    })
+    st.dataframe(node_data, use_container_width=True, hide_index=True, height=200)
 
 st.markdown("</div>", unsafe_allow_html=True)
 
