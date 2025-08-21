@@ -716,6 +716,49 @@ st.markdown("""
 # Check if API service is running and show helpful message
 api_available = check_api_health()
 
+# Namespace Selector - Place this first so it's available for all sections
+st.markdown("""
+<div class="time-selector">
+    <div class="time-header">🏷️ Namespace Selection</div>
+    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1rem; align-items: end;">
+""", unsafe_allow_html=True)
+
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    # Get available namespaces
+    available_namespaces = get_available_namespaces()
+    selected_namespace = st.selectbox(
+        "Select Namespace",
+        ["all"] + available_namespaces,
+        index=0,
+        label_visibility="collapsed",
+        help="Choose a specific namespace or 'all' to view all namespaces"
+    )
+
+with col2:
+    if st.button("🔄 Refresh Namespace Data", type="secondary", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+st.markdown("</div></div>", unsafe_allow_html=True)
+
+# Display namespace info
+if selected_namespace == "all":
+    st.markdown(f"""
+    <div class="status-message">
+        <div class="status-icon">🏷️</div>
+        <div class="status-text">Viewing: All namespaces | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown(f"""
+    <div class="status-message">
+        <div class="status-icon">🏷️</div>
+        <div class="status-text">Viewing: Namespace '{selected_namespace}' | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 if not api_available:
     st.markdown("""
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);">
@@ -823,48 +866,7 @@ with col3:
 
 st.markdown("</div></div>", unsafe_allow_html=True)
 
-# Namespace Selector
-st.markdown("""
-<div class="time-selector">
-    <div class="time-header">🏷️ Namespace Selection</div>
-    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1rem; align-items: end;">
-""", unsafe_allow_html=True)
 
-col1, col2 = st.columns([3, 1])
-
-with col1:
-    # Get available namespaces
-    available_namespaces = get_available_namespaces()
-    selected_namespace = st.selectbox(
-        "Select Namespace",
-        ["all"] + available_namespaces,
-        index=0,
-        label_visibility="collapsed",
-        help="Choose a specific namespace or 'all' to view all namespaces"
-    )
-
-with col2:
-    if st.button("🔄 Refresh Namespace Data", type="secondary", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-
-st.markdown("</div></div>", unsafe_allow_html=True)
-
-# Display namespace info
-if selected_namespace == "all":
-    st.markdown(f"""
-    <div class="status-message">
-        <div class="status-icon">🏷️</div>
-        <div class="status-text">Viewing: All namespaces | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(f"""
-    <div class="status-message">
-        <div class="status-icon">🏷️</div>
-        <div class="status-text">Viewing: Namespace '{selected_namespace}' | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
-    </div>
-    """, unsafe_allow_html=True)
 
 # Display time info
 if time_preset == "Live (Now)":
@@ -1128,4 +1130,4 @@ st.markdown(f"""
         Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}
     </div>
 </div>
-""", unsafe_allow_html=True).
+""", unsafe_allow_html=True)
