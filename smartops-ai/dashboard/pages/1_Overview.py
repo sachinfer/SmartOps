@@ -73,6 +73,39 @@ def get_namespace_count():
     except Exception:
         return 11  # Fallback to default
 
+# Function to get available namespaces
+@st.cache_data(ttl=30)
+def get_available_namespaces():
+    try:
+        response = requests.get("http://localhost:8000/namespaces", timeout=10)
+        if response.status_code == 200:
+            namespaces = response.json().get("namespaces", [])
+            return [ns.get('name', '') for ns in namespaces if ns.get('name')]
+        else:
+            return ['default', 'kube-system', 'smartops']  # Fallback namespaces
+    except Exception:
+        return ['default', 'kube-system', 'smartops']  # Fallback namespaces
+
+# Function to fetch real-time pod data with namespace filter
+@st.cache_data(ttl=30)  # Cache for 30 seconds
+def fetch_pod_data_by_namespace(namespace="all"):
+    try:
+        if namespace == "all":
+            response = requests.get("http://localhost:8000/pods", timeout=10)
+        else:
+            response = requests.get("http://localhost:8000/kubectl_get", 
+                                 params={"resource_type": "pods", "namespace": namespace}, timeout=10)
+        
+        if response.status_code == 200:
+            if namespace == "all":
+                return response.json().get("pods", [])
+            else:
+                return response.json().get("output", [])
+        else:
+            return []
+    except Exception as e:
+        return []
+
 # Function to check if API service is running
 def check_api_health():
     """Check if the backend API service is accessible"""
@@ -98,285 +131,427 @@ def get_service_count():
 # New Relic-style CSS
 st.markdown("""
 <style>
-/* New Relic-style dark theme */
+/* Beautiful modern dark theme */
 .main .block-container {
     padding-top: 1rem;
     padding-bottom: 1rem;
     max-width: 1400px;
-    background-color: #1a1a1a;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
 }
 
-/* Dark theme background */
+/* Dark theme background with subtle pattern */
 .stApp {
-    background-color: #1a1a1a;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    background-attachment: fixed;
 }
 
-/* New Relic-style header */
+/* Beautiful gradient header with glow effect */
 .dashboard-header {
-    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
-    padding: 2rem;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    padding: 2.5rem;
+    border-radius: 20px;
     margin-bottom: 2rem;
-    border: 1px solid #4a5568;
+    border: none;
     position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
 }
 
 .dashboard-header h1 {
-    font-size: 2rem;
+    font-size: 2.5rem;
     margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #f7fafc;
+    font-weight: 700;
+    color: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 2;
 }
 
 .dashboard-header p {
-    font-size: 1rem;
-    opacity: 0.8;
-    margin: 0;
-    color: #e2e8f0;
-}
-
-/* New Relic-style section headers */
-.section-header {
-    background: #2d3748;
-    color: #f7fafc;
-    padding: 1rem 1.5rem;
-    border-radius: 6px;
-    margin: 2rem 0 1rem 0;
     font-size: 1.1rem;
-    font-weight: 600;
-    border-left: 3px solid #3182ce;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    opacity: 0.95;
+    margin: 0;
+    color: #f8fafc;
+    font-weight: 500;
+    position: relative;
+    z-index: 2;
 }
 
-/* New Relic-style metric cards */
+/* Beautiful section headers with gradient borders */
+.section-header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: #f7fafc;
+    padding: 1.2rem 1.8rem;
+    border-radius: 15px;
+    margin: 2.5rem 0 1.5rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border: none;
+    position: relative;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.section-header::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    border-radius: 0 3px 3px 0;
+}
+
+/* Beautiful metric cards with glassmorphism */
 .metric-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin: 2rem 0;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin: 2.5rem 0;
 }
 
 .metric-card {
-    background: #2d3748;
-    border: 1px solid #4a5568;
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: all 0.2s ease;
+    background: rgba(45, 55, 72, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
 }
 
 .metric-card:hover {
-    border-color: #3182ce;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    border-color: rgba(102, 126, 234, 0.5);
 }
 
 .metric-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #f7fafc;
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
     line-height: 1;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .metric-label {
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     color: #a0aec0;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 500;
-    margin-bottom: 0.75rem;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 1rem;
 }
 
 .metric-status {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    background: #38a169;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
     color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.8rem;
+    font-weight: 700;
     text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
 }
 
 .metric-status.arrow-up::before {
     content: '↑';
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: bold;
+    animation: bounce 2s infinite;
 }
 
-/* New Relic-style resource cards */
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+    60% { transform: translateY(-3px); }
+}
+
+/* Beautiful resource cards */
 .resource-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1.5rem;
-    margin: 2rem 0;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 2rem;
+    margin: 2.5rem 0;
 }
 
 .resource-card {
-    background: #2d3748;
-    border: 1px solid #4a5568;
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: all 0.2s ease;
+    background: rgba(45, 55, 72, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.resource-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
 }
 
 .resource-card:hover {
-    border-color: #3182ce;
-    transform: translateY(-1px);
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(240, 147, 251, 0.5);
 }
 
 .resource-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .resource-icon {
-    font-size: 1.25rem;
-    color: #3182ce;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .resource-title {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #f7fafc;
     margin: 0;
 }
 
 .resource-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #f7fafc;
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
     text-align: center;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* New Relic-style containers */
+/* Beautiful chart containers */
 .chart-container {
-    background: #2d3748;
-    border: 1px solid #4a5568;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin: 2rem 0;
+    background: rgba(45, 55, 72, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 2.5rem 0;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 .chart-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .chart-icon {
-    font-size: 1.25rem;
-    color: #3182ce;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .chart-title {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: #f7fafc;
     margin: 0;
 }
 
-/* New Relic-style time selector */
+/* Beautiful time selector */
 .time-selector {
-    background: #2d3748;
-    border: 1px solid #4a5568;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin: 2rem 0;
+    background: rgba(45, 55, 72, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 2.5rem 0;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 .time-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    font-size: 1rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #f7fafc;
 }
 
-/* New Relic-style status messages */
+/* Beautiful status messages */
 .status-message {
-    background: #2d3748;
-    border: 1px solid #38a169;
+    background: rgba(45, 55, 72, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(56, 178, 172, 0.3);
     color: #f7fafc;
-    padding: 1rem 1.5rem;
-    border-radius: 6px;
-    margin: 1.5rem 0;
+    padding: 1.5rem 2rem;
+    border-radius: 15px;
+    margin: 2rem 0;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 .status-icon {
-    font-size: 1.25rem;
-    color: #38a169;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .status-text {
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 500;
     margin: 0;
     color: #e2e8f0;
 }
 
-/* New Relic-style buttons */
+/* Beautiful buttons with gradients */
 .stButton > button {
-    background: #3182ce !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     color: white !important;
     border: none !important;
-    border-radius: 6px !important;
+    border-radius: 12px !important;
     font-weight: 600 !important;
-    transition: all 0.2s ease !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 0.75rem 1.5rem !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
 }
 
 .stButton > button:hover {
-    background: #2c5aa0 !important;
-    transform: translateY(-1px) !important;
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
 }
 
-/* New Relic-style selectboxes */
+/* Beautiful selectboxes */
 .stSelectbox > div > div {
-    background: #2d3748 !important;
-    border: 1px solid #4a5568 !important;
+    background: rgba(45, 55, 72, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     color: #f7fafc !important;
+    border-radius: 12px !important;
 }
 
 .stSelectbox > div > div:hover {
-    border-color: #3182ce !important;
+    border-color: rgba(102, 126, 234, 0.5) !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2) !important;
 }
 
-/* New Relic-style number inputs */
+/* Beautiful number inputs */
 .stNumberInput > div > div > input {
-    background: #2d3748 !important;
-    border: 1px solid #4a5568 !important;
+    background: rgba(45, 55, 72, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     color: #f7fafc !important;
+    border-radius: 12px !important;
 }
 
 .stNumberInput > div > div > input:focus {
-    border-color: #3182ce !important;
+    border-color: rgba(102, 126, 234, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
 }
 
-/* New Relic-style dataframes */
+/* Beautiful dataframes */
 .dataframe {
-    background: #2d3748 !important;
+    background: rgba(45, 55, 72, 0.8) !important;
     color: #f7fafc !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
 }
 
 /* Hide Streamlit elements */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
+
+/* Beautiful pod status badges */
+.pod-status-badge {
+    background: rgba(45, 55, 72, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    padding: 0.75rem 1.5rem;
+    margin: 0.5rem;
+    display: inline-block;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.pod-status-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.pod-status-running {
+    border-color: rgba(72, 187, 120, 0.5);
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.2);
+}
+
+.pod-status-pending {
+    border-color: rgba(237, 137, 54, 0.5);
+    box-shadow: 0 4px 15px rgba(237, 137, 54, 0.2);
+}
+
+.pod-status-failed {
+    border-color: rgba(229, 62, 62, 0.5);
+    box-shadow: 0 4px 15px rgba(229, 62, 62, 0.2);
+}
+
+.pod-status-succeeded {
+    border-color: rgba(56, 178, 172, 0.5);
+    box-shadow: 0 4px 15px rgba(56, 178, 172, 0.2);
+}
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -387,6 +562,134 @@ header {visibility: hidden;}
     .resource-grid {
         grid-template-columns: 1fr;
     }
+    
+    .dashboard-header {
+        padding: 2rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 2rem;
+    }
+}
+
+/* Beautiful scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(45, 55, 72, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+/* Beautiful animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.metric-card, .resource-card, .chart-container {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Beautiful glow effects */
+.glow-effect {
+    position: relative;
+}
+
+.glow-effect::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #667eea);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.glow-effect:hover::after {
+    opacity: 0.3;
+}
+
+/* Floating particles animation */
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+.floating-particle {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+    z-index: 1;
+    opacity: 0.6;
+}
+
+.floating-particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+.floating-particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+.floating-particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+.floating-particle:nth-child(4) { left: 40%; animation-delay: 1s; }
+.floating-particle:nth-child(5) { left: 50%; animation-delay: 3s; }
+.floating-particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+.floating-particle:nth-child(7) { left: 70%; animation-delay: 2s; }
+.floating-particle:nth-child(8) { left: 80%; animation-delay: 4s; }
+.floating-particle:nth-child(9) { left: 90%; animation-delay: 1s; }
+
+/* Beautiful hover effects for all interactive elements */
+.metric-card:hover .metric-value,
+.resource-card:hover .resource-value {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* Enhanced button animations */
+.stButton > button:active {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Beautiful focus states */
+.stSelectbox > div > div:focus-within,
+.stNumberInput > div > div > input:focus {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+    border-color: rgba(102, 126, 234, 0.8) !important;
+}
+
+/* Smooth transitions for all elements */
+* {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced dataframes */
+.dataframe {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dataframe:hover {
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -397,24 +700,99 @@ st.markdown("""
     <h1>📊 Kubernetes Cluster Overview</h1>
     <p>Real-time monitoring dashboard powered by SmartOps AI</p>
 </div>
+
+<!-- Floating particles for visual appeal -->
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
+<div class="floating-particle"></div>
 """, unsafe_allow_html=True)
 
 # Check if API service is running and show helpful message
 api_available = check_api_health()
 
 if not api_available:
-    st.info("ℹ️ **Getting Started**: To enable real-time data, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);">
+        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+            🚀 <span>Getting Started</span>
+        </h3>
+        <p style="color: #f8fafc; margin: 0 0 1rem 0; font-size: 1rem;">
+            To enable real-time data, start the API service first:
+        </p>
+        <div style="background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: 12px; margin: 1rem 0; font-family: 'Courier New', monospace; color: #f8fafc;">
+            cd smartops-ai/dashboard<br>
+            python event_api.py
+        </div>
+        <p style="color: #f8fafc; margin: 1rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
+            Then refresh this page to see live cluster data.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Show sample cluster status
-    st.success("✅ **Cluster Status**:\n- **Nodes**: 1\n- **Pods**: 18\n- **Namespaces**: 11\n- **Services**: 16")
+    # Show sample cluster status with beautiful styling
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(72, 187, 120, 0.3);">
+        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+            ✅ <span>Cluster Status</span>
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">1</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Nodes</div>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">18</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Pods</div>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">11</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Namespaces</div>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">16</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Services</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 else:
-    # Show live cluster status
+    # Show live cluster status with beautiful styling
     live_node_count = len(fetch_node_data()) if fetch_node_data() else 1
-    live_pod_count = len(fetch_pod_data()) if fetch_pod_data() else 18
+    live_pod_count = len(fetch_pod_data_by_namespace(selected_namespace)) if fetch_pod_data_by_namespace(selected_namespace) else 18
     live_namespace_count = get_namespace_count()
     live_service_count = get_service_count()
     
-    st.success(f"✅ **Cluster Status**:\n- **Nodes**: {live_node_count}\n- **Pods**: {live_pod_count}\n- **Namespaces**: {live_namespace_count}\n- **Services**: {live_service_count}")
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(72, 187, 120, 0.3);">
+        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+            🚀 <span>Live Cluster Status</span>
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_node_count}</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Nodes</div>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_pod_count}</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Pods</div>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_namespace_count}</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Namespaces</div>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_service_count}</div>
+                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Services</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # New Relic-style Time Selector
 st.markdown("""
@@ -444,6 +822,49 @@ with col3:
         st.rerun()
 
 st.markdown("</div></div>", unsafe_allow_html=True)
+
+# Namespace Selector
+st.markdown("""
+<div class="time-selector">
+    <div class="time-header">🏷️ Namespace Selection</div>
+    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1rem; align-items: end;">
+""", unsafe_allow_html=True)
+
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    # Get available namespaces
+    available_namespaces = get_available_namespaces()
+    selected_namespace = st.selectbox(
+        "Select Namespace",
+        ["all"] + available_namespaces,
+        index=0,
+        label_visibility="collapsed",
+        help="Choose a specific namespace or 'all' to view all namespaces"
+    )
+
+with col2:
+    if st.button("🔄 Refresh Namespace Data", type="secondary", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+st.markdown("</div></div>", unsafe_allow_html=True)
+
+# Display namespace info
+if selected_namespace == "all":
+    st.markdown(f"""
+    <div class="status-message">
+        <div class="status-icon">🏷️</div>
+        <div class="status-text">Viewing: All namespaces | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown(f"""
+    <div class="status-message">
+        <div class="status-icon">🏷️</div>
+        <div class="status-text">Viewing: Namespace '{selected_namespace}' | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Display time info
 if time_preset == "Live (Now)":
@@ -475,7 +896,7 @@ st.markdown('<div class="section-header">📊 Cluster Metrics</div>', unsafe_all
 
 # Get live or fallback data for metrics
 node_count = 1 if not api_available else len(fetch_node_data()) if fetch_node_data() else 1
-pod_count = len(fetch_pod_data()) if fetch_pod_data() and api_available else 18
+pod_count = len(fetch_pod_data_by_namespace(selected_namespace)) if fetch_pod_data_by_namespace(selected_namespace) and api_available else 18
 service_count = get_service_count()
 namespace_count = get_namespace_count()
 
@@ -551,8 +972,8 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Fetch real-time pod data
-pods = fetch_pod_data()
+# Fetch real-time pod data based on selected namespace
+pods = fetch_pod_data_by_namespace(selected_namespace)
 
 # Get pod status counts
 if pods and api_available:
@@ -564,21 +985,21 @@ else:
 # Create a DataFrame for the chart
 pod_data = pd.DataFrame(list(status_counts.items()), columns=['Status', 'Count'])
 
-# Display real-time pod status summary
+# Display real-time pod status summary with beautiful badges
 st.markdown(f"""
-<div style="margin-bottom: 1rem;">
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
-            <span style="color: #48bb78; font-weight: 600;">🟢 Running: {status_counts['Running']}</span>
+<div style="margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div class="pod-status-badge pod-status-running">
+            <span style="color: #48bb78; font-weight: 700; font-size: 1.1rem;">🟢 Running: {status_counts['Running']}</span>
         </div>
-        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
-            <span style="color: #ed8936; font-weight: 600;">🟡 Pending: {status_counts['Pending']}</span>
+        <div class="pod-status-badge pod-status-pending">
+            <span style="color: #ed8936; font-weight: 700; font-size: 1.1rem;">🟡 Pending: {status_counts['Pending']}</span>
         </div>
-        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
-            <span style="color: #e53e3e; font-weight: 600;">🔴 Failed: {status_counts['Failed']}</span>
+        <div class="pod-status-badge pod-status-failed">
+            <span style="color: #e53e3e; font-weight: 700; font-size: 1.1rem;">🔴 Failed: {status_counts['Failed']}</span>
         </div>
-        <div style="background: #2d3748; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #4a5568;">
-            <span style="color: #38b2ac; font-weight: 600;">🔵 Succeeded: {status_counts['Succeeded']}</span>
+        <div class="pod-status-badge pod-status-succeeded">
+            <span style="color: #38b2ac; font-weight: 700; font-size: 1.1rem;">🔵 Succeeded: {status_counts['Succeeded']}</span>
         </div>
     </div>
 </div>
@@ -692,11 +1113,19 @@ else:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# New Relic-style Footer
+# Beautiful Footer with gradient
 st.markdown("---")
 st.markdown(f"""
-<div style="text-align: center; color: #a0aec0; padding: 2rem; font-size: 0.9rem;">
-    <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 Powered by SmartOps AI | Enterprise Kubernetes Monitoring</p>
-    <p style="opacity: 0.8; margin: 0;">Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}</p>
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 3rem 2rem; border-radius: 20px; margin: 3rem 0; text-align: center; box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);">
+    <div style="margin-bottom: 1rem;">
+        <span style="font-size: 2rem; margin: 0 0.5rem;">🚀</span>
+        <span style="font-size: 2rem; margin: 0 0.5rem;">⚡</span>
+        <span style="font-size: 2rem; margin: 0 0.5rem;">🔮</span>
+    </div>
+    <p style="font-weight: 700; margin-bottom: 0.5rem; color: white; font-size: 1.1rem;">Powered by SmartOps AI</p>
+    <p style="color: #f8fafc; margin: 0; opacity: 0.9; font-size: 0.9rem;">Enterprise Kubernetes Monitoring & AI-Powered Operations</p>
+    <div style="margin-top: 1rem; opacity: 0.8; color: #f8fafc; font-size: 0.8rem;">
+        Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}
+    </div>
 </div>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True).
