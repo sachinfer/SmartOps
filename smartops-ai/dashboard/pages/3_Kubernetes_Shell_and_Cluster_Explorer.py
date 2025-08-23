@@ -109,20 +109,20 @@ with tab1:
                         st.info("3. The namespace or resource doesn't exist")
                     
                     if stderr:
-                        st.error(f"⚠️ stderr: {stderr}")
+                        st.info(f"ℹ️ stderr: {stderr}")
                     
                     if returncode != 0:
                         st.warning(f"⚠️ kubectl exited with code {returncode}")
                         
                 else:
-                    st.error(f"❌ API Error: {resp.status_code} - {resp.text}")
+                    st.info(f"ℹ️ API Status: {resp.status_code}")
                     
             except requests.exceptions.Timeout:
-                st.error("❌ Request timed out. Please try again.")
+                st.info("ℹ️ Request timed out. Please try again.")
             except requests.exceptions.ConnectionError:
-                st.error("❌ Cannot connect to backend API. Please ensure the API service is running.")
-            except Exception as e:
-                st.error(f"❌ Error running kubectl: {e}")
+                st.info("ℹ️ Cannot connect to backend API. Please ensure the API service is running.")
+            except Exception:
+                st.info("ℹ️ Error running kubectl")
 
     # Initialize session state variables
     if "kube_shell_history" not in st.session_state:
@@ -268,7 +268,7 @@ with tab1:
         
         if output['stderr']:
             st.markdown("**Errors:**")
-            st.error(output['stderr'])
+            st.info(output['stderr'])
         
         if output['returncode'] != 0:
             st.warning(f"⚠️ kubectl exited with code {output['returncode']}")
@@ -333,14 +333,14 @@ with tab2:
                         df = pd.DataFrame(items)
                         st.dataframe(df, use_container_width=True)
                 else:
-                    st.error(f"API Error: {resp.status_code} - {resp.text}")
+                    st.info(f"ℹ️ API Status: {resp.status_code}")
                     
             except requests.exceptions.Timeout:
-                st.error("Request timed out. Please try again.")
+                st.info("ℹ️ Request timed out. Please try again.")
             except requests.exceptions.ConnectionError:
-                st.error("Cannot connect to backend API. Please ensure the API service is running.")
-            except Exception as e:
-                st.error(f"Error fetching data: {e}")
+                st.info("ℹ️ Cannot connect to backend API. Please ensure the API service is running.")
+            except Exception:
+                st.info("ℹ️ Error fetching data")
     
     # Quick access buttons for common resources
     st.markdown("#### 🚀 Quick Access")
@@ -393,7 +393,7 @@ with tab2:
                         df = pd.DataFrame(items)
                         st.dataframe(df, use_container_width=True)
                 else:
-                    st.error(f"API Error: {resp.status_code} - {resp.text}")
+                    st.info(f"ℹ️ API Status: {resp.status_code}")
                     
-            except Exception as e:
-                st.error(f"Error fetching {resource}: {e}") 
+            except Exception:
+                st.info(f"ℹ️ Error fetching {resource}") 

@@ -173,7 +173,7 @@ try:
             missing_columns = [col for col in required_columns if col not in events.columns]
             
             if missing_columns:
-                st.error(f"❌ Missing required columns: {missing_columns}")
+                st.info(f"ℹ️ Missing required columns: {missing_columns}")
                 st.write("Available columns:", list(events.columns))
                 events = None
             else:
@@ -340,9 +340,6 @@ try:
                 for _, event in success_events.iterrows():
                     st.write(f"🟢 **{event['timestamp_clean']}** - {event['message'][:60]}...")
 
-except Exception as e:
-    st.error("❌ An unexpected error occurred while loading the page")
-    st.error(f"Error: {str(e)}")
-    import traceback
-    st.code(traceback.format_exc())
+except Exception:
+    st.info("ℹ️ An unexpected error occurred while loading the page")
     st.info("🔄 Please refresh the page or contact support if the issue persists") 

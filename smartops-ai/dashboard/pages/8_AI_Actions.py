@@ -172,18 +172,18 @@ else:
                                     if resp2.status_code == 200:
                                         st.success("Action marked as ignored.")
                                     else:
-                                        st.error(f"Ignore failed: {resp2.text}")
+                                        st.info(f"ℹ️ Ignore failed: {resp2.text}")
                             else:
-                                st.error(f"Delete failed: {resp.text}")
+                                st.info(f"ℹ️ Delete failed: {resp.text}")
                         except Exception:
-                            st.error(f"Delete failed: {resp.text}")
+                            st.info(f"ℹ️ Delete failed: {resp.text}")
             if ignore_btn:
                 with st.spinner("Marking as ignored..."):
                     resp = requests.post("http://localhost:8000/ignore_ai_action", params={"action_id": action['id']})
                     if resp.status_code == 200:
                         st.success("Action marked as ignored.")
                     else:
-                        st.error(f"Ignore failed: {resp.text}")
+                        st.info(f"ℹ️ Ignore failed: {resp.text}")
 
 # Model Retraining Section
 st.markdown('<div class="section-header">🧠 Retrain Anomaly Detection Model</div>', unsafe_allow_html=True)
@@ -194,6 +194,6 @@ if st.button("🔄 Retrain Model", key="retrain_model_btn"):
             if resp.status_code == 200:
                 st.success("Model retrained and deployed!")
             else:
-                st.error(f"Retrain failed: {resp.text}")
-        except Exception as e:
-            st.error(f"Retrain error: {e}") 
+                st.info(f"ℹ️ Retrain failed: {resp.text}")
+        except Exception:
+            st.info("ℹ️ Retrain error occurred") 
