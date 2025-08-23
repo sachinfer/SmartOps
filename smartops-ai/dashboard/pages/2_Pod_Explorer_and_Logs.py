@@ -429,10 +429,14 @@ try:
     # Pod metrics
     st.markdown('<div class="section-header">📊 Pod Overview</div>', unsafe_allow_html=True)
 
-    pods = fetch_pods(namespace)
+    # Try to fetch real pods first
+    real_pods = fetch_pods(namespace)
     
-    # If no real pods found and API is not available, show demo pods
-    if not pods and not check_api_health():
+    # Check if API is available
+    api_available = check_api_health()
+    
+    # If no real pods found, show demo pods
+    if not real_pods:
         pods = [
             {"name": f"app-{namespace}-1", "status": "Running", "age": "2d", "ready": "1/1"},
             {"name": f"app-{namespace}-2", "status": "Running", "age": "1d", "ready": "1/1"},
@@ -440,7 +444,12 @@ try:
             {"name": f"redis-{namespace}", "status": "Running", "age": "5d", "ready": "1/1"},
             {"name": f"db-{namespace}", "status": "Pending", "age": "2m", "ready": "0/1"},
         ]
-        st.info(f"ℹ️ Showing demo pods for namespace '{namespace}' - start the API service for real-time data")
+        if not api_available:
+            st.info(f"ℹ️ Showing demo pods for namespace '{namespace}' - start the API service for real-time data")
+        else:
+            st.info(f"ℹ️ No pods found in namespace '{namespace}' - showing demo data")
+    else:
+        pods = real_pods
     
     if pods:
         # Calculate metrics
