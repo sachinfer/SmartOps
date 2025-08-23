@@ -430,6 +430,18 @@ try:
     st.markdown('<div class="section-header">📊 Pod Overview</div>', unsafe_allow_html=True)
 
     pods = fetch_pods(namespace)
+    
+    # If no real pods found and API is not available, show demo pods
+    if not pods and not check_api_health():
+        pods = [
+            {"name": f"app-{namespace}-1", "status": "Running", "age": "2d", "ready": "1/1"},
+            {"name": f"app-{namespace}-2", "status": "Running", "age": "1d", "ready": "1/1"},
+            {"name": f"worker-{namespace}-1", "status": "Running", "age": "3h", "ready": "1/1"},
+            {"name": f"redis-{namespace}", "status": "Running", "age": "5d", "ready": "1/1"},
+            {"name": f"db-{namespace}", "status": "Pending", "age": "2m", "ready": "0/1"},
+        ]
+        st.info(f"ℹ️ Showing demo pods for namespace '{namespace}' - start the API service for real-time data")
+    
     if pods:
         # Calculate metrics
         total_pods = len(pods)
