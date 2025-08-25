@@ -15,7 +15,7 @@ spec:
       labels:
         app: misi-ai-chatbot
         version: v1.0.0
-        spec:
+    spec:
       containers:
       - name: misi-chatbot
         image: us-docker.pkg.dev/PROJECT_ID/smartops-repo/misi-ai-chatbot:latest
