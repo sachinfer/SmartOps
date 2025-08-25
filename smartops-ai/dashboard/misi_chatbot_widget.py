@@ -329,8 +329,8 @@ class MisiChatbotWidget:
                 'ai': 'Automate operations with AI Actions on Page 8. Let AI handle routine tasks while you focus on strategy.',
                 'deploy': 'Monitor deployments and manage rollouts on Page 9: Deployments.',
                 'help': 'I can help you with:\n• Pod management and monitoring\n• Anomaly detection\n• Kubernetes shell access\n• Auto-scaling recommendations\n• Incident management\n• AI-powered actions\n• Deployment monitoring\n\nWhat would you like to know about?',
-                'hello': 'Hello! I\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
-                'hi': 'Hi there! I\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?'
+                'hello': 'Hello! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
+                'hi': 'Hi there! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?'
             };
             
             query = query.toLowerCase();
@@ -340,7 +340,7 @@ class MisiChatbotWidget:
                 }
             }
             
-            return "I'm here to help you with SmartOps! I can assist with pod management, anomaly detection, Kubernetes shell access, auto-scaling, incident management, AI actions, and deployments. What would you like to know about?";
+            return "I\\'m here to help you with SmartOps! I can assist with pod management, anomaly detection, Kubernetes shell access, auto-scaling, incident management, AI actions, and deployments. What would you like to know about?";
         }
         
         // Function to handle suggestion clicks
