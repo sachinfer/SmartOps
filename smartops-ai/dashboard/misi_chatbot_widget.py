@@ -306,7 +306,10 @@ class MisiChatbotWidget:
         
         // Function to send message
         function sendMisiMessage() {
+            console.log('sendMisiMessage function called');
             const input = document.getElementById('misi-chat-input');
+            console.log('Input element found:', input);
+            
             if (input && input.value.trim()) {
                 const message = input.value.trim();
                 console.log('Sending message:', message);
@@ -323,6 +326,9 @@ class MisiChatbotWidget:
                 }, 500);
             } else {
                 console.log('No message to send or input not found');
+                if (input) {
+                    console.log('Input value:', input.value);
+                }
             }
         }
         
@@ -407,6 +413,7 @@ class MisiChatbotWidget:
             const icon = document.getElementById('misi-icon');
             const closeBtn = document.querySelector('.misi-close-btn');
             const input = document.getElementById('misi-chat-input');
+            const sendBtn = document.getElementById('misi-send-btn');
             
             if (icon) {
                 icon.addEventListener('click', toggleMisiPopup);
@@ -425,6 +432,11 @@ class MisiChatbotWidget:
                     }
                 });
                 console.log('Input keypress listener added');
+            }
+            
+            if (sendBtn) {
+                sendBtn.addEventListener('click', sendMisiMessage);
+                console.log('Send button listener added');
             }
             
             console.log('Misi initialization complete');
@@ -485,7 +497,7 @@ class MisiChatbotWidget:
             <div class="misi-chat-input-container">
                 <input type="text" class="misi-chat-input" id="misi-chat-input"
                        placeholder="Ask me anything about SmartOps..." />
-                <button class="misi-send-btn" onclick="sendMisiMessage()" title="Send message">↵</button>
+                <button class="misi-send-btn" id="misi-send-btn" title="Send message">↵</button>
             </div>
         </div>
         
