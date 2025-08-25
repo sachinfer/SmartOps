@@ -236,7 +236,7 @@ class MisiChatbotWidget:
         // Global variables
         let misiPopupVisible = false;
         let misiMessages = [
-            {role: 'assistant', content: 'Hi! I\'m Misi, your SmartOps AI assistant. How can I help you today?'}
+            {role: 'assistant', content: 'Hi! I\\'m Misi, your SmartOps AI assistant. How can I help you today?'}
         ];
         
         // Function to toggle popup visibility
@@ -418,11 +418,11 @@ class MisiChatbotWidget:
             <div class="misi-chat-body" id="misi-chat-body">
                 <div class="misi-welcome-message">
                     <h4>Welcome to SmartOps! 🤖</h4>
-                    <p>I'm Misi, your AI assistant. Ask me about SmartOps features, navigation, or any Kubernetes questions!</p>
+                    <p>I&apos;m Misi, your AI assistant. Ask me about SmartOps features, navigation, or any Kubernetes questions!</p>
                 </div>
                 <div class="misi-message assistant">
                     <div class="misi-message-bubble">
-                        Hi! I'm Misi, your SmartOps AI assistant. How can I help you today?
+                        Hi! I&apos;m Misi, your SmartOps AI assistant. How can I help you today?
                     </div>
                 </div>
                 <div class="misi-suggestions">
