@@ -67,12 +67,22 @@ class MisiChatbotWidget:
             pointer-events: none;
         }
         
+        .misi-icon-label {
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
         .misi-chat-popup {
             position: fixed;
             bottom: 90px;
             right: 20px;
-            width: 380px;
-            height: 500px;
+            width: 600px;
+            height: 700px;
             background: white;
             border-radius: 15px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.3);
@@ -210,14 +220,37 @@ class MisiChatbotWidget:
         }
         
         .misi-chat-input {
-            width: 100%;
+            width: calc(100% - 60px);
             padding: 12px 16px;
             border: 2px solid #e5e7eb;
-            border-radius: 25px;
+            border-radius: 25px 0 0 25px;
             font-size: 14px;
             outline: none;
             transition: border-color 0.3s ease;
             box-sizing: border-box;
+            float: left;
+        }
+        
+        .misi-send-btn {
+            width: 60px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 0 25px 25px 0;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            float: right;
+        }
+        
+        .misi-send-btn:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            transform: scale(1.05);
+        }
+        
+        .misi-send-btn:active {
+            transform: scale(0.95);
         }
         
         .misi-chat-input:focus {
@@ -276,14 +309,20 @@ class MisiChatbotWidget:
             const input = document.getElementById('misi-chat-input');
             if (input && input.value.trim()) {
                 const message = input.value.trim();
+                console.log('Sending message:', message);
+                
+                // Add user message
                 addMisiMessage('user', message);
                 input.value = '';
                 
                 // Generate response
                 setTimeout(() => {
                     const response = generateMisiResponse(message);
+                    console.log('Generated response:', response);
                     addMisiMessage('assistant', response);
                 }, 500);
+            } else {
+                console.log('No message to send or input not found');
             }
         }
         
@@ -291,6 +330,8 @@ class MisiChatbotWidget:
         function addMisiMessage(role, content) {
             const chatBody = document.getElementById('misi-chat-body');
             if (chatBody) {
+                console.log('Adding message:', role, content);
+                
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `misi-message ${role}`;
                 
@@ -315,6 +356,9 @@ class MisiChatbotWidget:
                 
                 // Store message
                 misiMessages.push({role, content});
+                console.log('Message added successfully. Total messages:', misiMessages.length);
+            } else {
+                console.error('Chat body not found!');
             }
         }
         
@@ -330,7 +374,10 @@ class MisiChatbotWidget:
                 'deploy': 'Monitor deployments and manage rollouts on Page 9: Deployments.',
                 'help': 'I can help you with:<br>• Pod management and monitoring<br>• Anomaly detection<br>• Kubernetes shell access<br>• Auto-scaling recommendations<br>• Incident management<br>• AI-powered actions<br>• Deployment monitoring<br><br>What would you like to know about?',
                 'hello': 'Hello! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
-                'hi': 'Hi there! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?'
+                'hi': 'Hi there! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
+                'test': 'This is a test message! The chat is working properly. You can now type your own messages and I will respond to them.',
+                'pages': 'Here are the available SmartOps dashboard pages:<br><br>📊 <strong>Page 1: Overview</strong> - Cluster overview and metrics<br>🛰️ <strong>Page 2: Pod Explorer</strong> - Pod management and logs<br>💻 <strong>Page 3: Kubernetes Shell</strong> - Cluster exploration<br>🔍 <strong>Page 4: Anomaly Detection</strong> - AI-powered monitoring<br>⚖️ <strong>Page 5: Auto-Scaling</strong> - HPA recommendations<br>📋 <strong>Page 6: Incident Timeline</strong> - Incident management<br>🤖 <strong>Page 8: AI Actions</strong> - Automated operations<br>🚀 <strong>Page 9: Deployments</strong> - Deployment monitoring<br><br>You can navigate to any page using the sidebar!',
+                'show pages': 'Here are the available SmartOps dashboard pages:<br><br>📊 <strong>Page 1: Overview</strong> - Cluster overview and metrics<br>🛰️ <strong>Page 2: Pod Explorer</strong> - Pod management and logs<br>💻 <strong>Page 3: Kubernetes Shell</strong> - Cluster exploration<br>🔍 <strong>Page 4: Anomaly Detection</strong> - AI-powered monitoring<br>⚖️ <strong>Page 5: Auto-Scaling</strong> - HPA recommendations<br>📋 <strong>Page 6: Incident Timeline</strong> - Incident management<br>🤖 <strong>Page 8: AI Actions</strong> - Automated operations<br>🚀 <strong>Page 9: Deployments</strong> - Deployment monitoring<br><br>You can navigate to any page using the sidebar!'
             };
             
             query = query.toLowerCase();
@@ -405,6 +452,7 @@ class MisiChatbotWidget:
             <div class="misi-icon" id="misi-icon" title="Ask Misi - SmartOps AI Assistant">
                 <div class="misi-icon-text">🤖</div>
             </div>
+            <div class="misi-icon-label">Ask Misi</div>
         </div>
         
         <div class="misi-chat-popup" id="misi-chat-popup">
@@ -430,11 +478,14 @@ class MisiChatbotWidget:
                     <button class="misi-suggestion-btn" onclick="handleSuggestionClick('Show me anomaly detection')">Anomaly Detection</button>
                     <button class="misi-suggestion-btn" onclick="handleSuggestionClick('Help with scaling')">Auto Scaling</button>
                     <button class="misi-suggestion-btn" onclick="handleSuggestionClick('What can you do?')">What can you do?</button>
+                    <button class="misi-suggestion-btn" onclick="handleSuggestionClick('show pages')">Show Pages</button>
+                    <button class="misi-suggestion-btn" onclick="handleSuggestionClick('test')">Test Chat</button>
                 </div>
             </div>
             <div class="misi-chat-input-container">
                 <input type="text" class="misi-chat-input" id="misi-chat-input"
                        placeholder="Ask me anything about SmartOps..." />
+                <button class="misi-send-btn" onclick="sendMisiMessage()" title="Send message">↵</button>
             </div>
         </div>
         
