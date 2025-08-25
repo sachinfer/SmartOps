@@ -3,6 +3,16 @@ import pandas as pd
 import requests
 from datetime import datetime
 from sidebar_utils import show_sidebar
+import sys
+import os
+
+# Import Misi from the dashboard directory
+try:
+    from misi_chatbot_widget import add_misi_to_page
+    MISI_AVAILABLE = True
+except ImportError:
+    MISI_AVAILABLE = False
+    st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
 with st.sidebar:
     show_sidebar()
@@ -131,4 +141,16 @@ if not filtered_df.empty:
                 st.info(f"ℹ️ Connection error - Report saved locally")
 
 st.markdown("---")
-st.markdown("**Audit Trail:** All incidents are saved and can be filtered by namespace or app above.") 
+st.markdown("**Audit Trail:** All incidents are saved and can be filtered by namespace or app above.")
+
+# Add Misi AI Chatbot Widget
+if MISI_AVAILABLE:
+    add_misi_to_page("bottom-right")
+    st.markdown("""
+    <div style="text-align: center; margin: 2rem 0; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+        <h3>🤖 Misi AI Assistant Available</h3>
+        <p>Click the floating 🤖 icon in the bottom-right corner to chat with Misi about SmartOps features!</p>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 

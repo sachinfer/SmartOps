@@ -23,7 +23,7 @@ class MisiChatbotWidget:
             position: fixed;
             {position.split('-')[0]}: 20px;
             {position.split('-')[1]}: 20px;
-            z-index: 1000;
+            z-index: 9999;
         }}
         
         .misi-icon {{
@@ -34,36 +34,47 @@ class MisiChatbotWidget:
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
-            animation: pulse 2s infinite;
+            animation: misi-pulse 2s infinite;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }}
         
         .misi-icon:hover {{
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }}
+        
+        .misi-icon:active {{
+            transform: scale(0.95);
         }}
         
         .misi-icon-text {{
             color: white;
             font-size: 24px;
             font-weight: bold;
+            pointer-events: none;
         }}
         
         .misi-chat-popup {{
             position: fixed;
             {position.split('-')[0]}: 90px;
             {position.split('-')[1]}: 20px;
-            width: 350px;
+            width: 380px;
             height: 500px;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 1001;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            z-index: 10000;
             display: none;
             flex-direction: column;
             overflow: hidden;
+            border: 2px solid #667eea;
         }}
         
         .misi-chat-header {{
@@ -73,32 +84,37 @@ class MisiChatbotWidget:
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-radius: 15px 15px 0 0;
+            border-radius: 13px 13px 0 0;
         }}
         
         .misi-chat-title {{
             font-weight: bold;
             font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }}
         
         .misi-close-btn {{
-            background: none;
+            background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
-            padding: 0;
+            padding: 5px;
             width: 30px;
             height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            font-weight: bold;
         }}
         
         .misi-close-btn:hover {{
-            background: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
         }}
         
         .misi-chat-body {{
@@ -124,20 +140,23 @@ class MisiChatbotWidget:
         
         .misi-message-bubble {{
             max-width: 80%;
-            padding: 10px 15px;
+            padding: 12px 16px;
             border-radius: 18px;
             word-wrap: break-word;
+            line-height: 1.4;
         }}
         
         .misi-message.user .misi-message-bubble {{
             background: #667eea;
             color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }}
         
         .misi-message.assistant .misi-message-bubble {{
             background: white;
             color: #333;
             border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }}
         
         .misi-chat-input-container {{
@@ -148,50 +167,73 @@ class MisiChatbotWidget:
         
         .misi-chat-input {{
             width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
             outline: none;
             font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
         }}
         
         .misi-chat-input:focus {{
             border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }}
         
-        @keyframes pulse {{
+        @keyframes misi-pulse {{
             0% {{ transform: scale(1); }}
             50% {{ transform: scale(1.05); }}
             100% {{ transform: scale(1); }}
         }}
         
-        .misi-navigation-card {{
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 10px 0;
-        }}
-        
         .misi-suggestions {{
-            margin-top: 10px;
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
         }}
         
         .misi-suggestion-btn {{
             background: #f0f0f0;
             border: 1px solid #ddd;
-            border-radius: 15px;
-            padding: 5px 12px;
-            margin: 2px;
+            border-radius: 20px;
+            padding: 8px 16px;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
+            color: #333;
+            text-decoration: none;
+            display: inline-block;
         }}
         
         .misi-suggestion-btn:hover {{
-            background: #e0e0e0;
-            border-color: #bbb;
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }}
+        
+        .misi-welcome-message {{
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border: 1px solid #2196f3;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+        }}
+        
+        .misi-welcome-message h4 {{
+            margin: 0 0 10px 0;
+            color: #1976d2;
+            font-size: 14px;
+        }}
+        
+        .misi-welcome-message p {{
+            margin: 0;
+            color: #424242;
+            font-size: 12px;
+            line-height: 1.4;
         }}
         </style>
         """
@@ -202,24 +244,100 @@ class MisiChatbotWidget:
         let misiPopupVisible = false;
         let misiMessages = [];
         
-        function toggleMisiPopup() {
+        // Initialize Misi when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Misi AI Chatbot initialized');
+            initializeMisi();
+        });
+        
+        // Also try to initialize if DOM is already loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeMisi);
+        } else {
+            initializeMisi();
+        }
+        
+        function initializeMisi() {
+            console.log('Initializing Misi...');
+            
+            // Add event listeners
+            const icon = document.getElementById('misi-icon');
             const popup = document.getElementById('misi-chat-popup');
+            const input = document.getElementById('misi-chat-input');
+            const closeBtn = document.querySelector('.misi-close-btn');
+            
+            if (icon) {
+                icon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Misi icon clicked!');
+                    toggleMisiPopup();
+                });
+                console.log('Misi icon event listener added');
+            }
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeMisiPopup();
+                });
+            }
+            
+            if (input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        sendMisiMessage();
+                    }
+                });
+            }
+            
+            // Close popup when clicking outside
+            document.addEventListener('click', function(e) {
+                if (popup && !popup.contains(e.target) && !icon.contains(e.target)) {
+                    closeMisiPopup();
+                }
+            });
+            
+            console.log('Misi initialization complete');
+        }
+        
+        function toggleMisiPopup() {
+            console.log('Toggle popup called');
+            const popup = document.getElementById('misi-chat-popup');
+            if (!popup) {
+                console.error('Popup not found!');
+                return;
+            }
+            
             if (misiPopupVisible) {
                 popup.style.display = 'none';
                 misiPopupVisible = false;
+                console.log('Popup hidden');
             } else {
                 popup.style.display = 'flex';
                 misiPopupVisible = true;
+                console.log('Popup shown');
+                
                 // Focus on input
                 setTimeout(() => {
-                    document.getElementById('misi-chat-input').focus();
+                    const input = document.getElementById('misi-chat-input');
+                    if (input) {
+                        input.focus();
+                        console.log('Input focused');
+                    }
                 }, 100);
             }
         }
         
         function closeMisiPopup() {
-            document.getElementById('misi-chat-popup').style.display = 'none';
-            misiPopupVisible = false;
+            const popup = document.getElementById('misi-chat-popup');
+            if (popup) {
+                popup.style.display = 'none';
+                misiPopupVisible = false;
+                console.log('Popup closed');
+            }
         }
         
         function sendMisiMessage() {
@@ -227,11 +345,13 @@ class MisiChatbotWidget:
             const message = input.value.trim();
             
             if (message) {
+                console.log('Sending message:', message);
+                
                 // Add user message
                 addMisiMessage('user', message);
                 input.value = '';
                 
-                // Simulate AI response (in real implementation, this would call your backend)
+                // Simulate AI response
                 setTimeout(() => {
                     const response = generateMisiResponse(message);
                     addMisiMessage('assistant', response);
@@ -241,6 +361,8 @@ class MisiChatbotWidget:
         
         function addMisiMessage(role, content) {
             const chatBody = document.getElementById('misi-chat-body');
+            if (!chatBody) return;
+            
             const messageDiv = document.createElement('div');
             messageDiv.className = `misi-message ${role}`;
             
@@ -256,10 +378,11 @@ class MisiChatbotWidget:
             
             // Store message
             misiMessages.push({role, content, timestamp: new Date()});
+            console.log('Message added:', role, content);
         }
         
         function generateMisiResponse(query) {
-            // Simple response logic - in real implementation, this would call your AI engine
+            // Smart response logic based on user query
             const responses = {
                 'pod': 'I can help you with pod management! Navigate to Page 2: Pod Explorer and Logs to check pod status, view logs, and monitor pod health.',
                 'anomaly': 'SmartOps uses AI-powered anomaly detection to automatically identify issues in your cluster. Go to Page 4: Anomaly Detection to access this feature.',
@@ -267,7 +390,10 @@ class MisiChatbotWidget:
                 'scale': 'Get intelligent scaling recommendations on Page 5: Auto Scaling Recommendations and Control. Optimize your cluster performance automatically.',
                 'incident': 'Track incidents and generate postmortem reports on Page 6: Incident Timeline and Postmortem Report Generator.',
                 'ai': 'Automate operations with AI Actions on Page 8. Let AI handle routine tasks while you focus on strategy.',
-                'deploy': 'Monitor deployments and manage rollouts on Page 9: Deployments.'
+                'deploy': 'Monitor deployments and manage rollouts on Page 9: Deployments.',
+                'help': 'I can help you with:\n• Pod management and monitoring\n• Anomaly detection\n• Kubernetes shell access\n• Auto-scaling recommendations\n• Incident management\n• AI-powered actions\n• Deployment monitoring\n\nWhat would you like to know about?',
+                'hello': 'Hello! I\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
+                'hi': 'Hi there! I\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?'
             };
             
             query = query.toLowerCase();
@@ -280,24 +406,12 @@ class MisiChatbotWidget:
             return "I'm here to help you with SmartOps! I can assist with pod management, anomaly detection, Kubernetes shell access, auto-scaling, incident management, AI actions, and deployments. What would you like to know about?";
         }
         
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            // Enter key to send message
-            document.getElementById('misi-chat-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMisiMessage();
-                }
-            });
-            
-            // Close popup when clicking outside
-            document.addEventListener('click', function(e) {
-                const popup = document.getElementById('misi-chat-popup');
-                const icon = document.getElementById('misi-icon');
-                if (!popup.contains(e.target) && !icon.contains(e.target)) {
-                    closeMisiPopup();
-                }
-            });
-        });
+        // Make functions globally accessible
+        window.toggleMisiPopup = toggleMisiPopup;
+        window.closeMisiPopup = closeMisiPopup;
+        window.sendMisiMessage = sendMisiMessage;
+        
+        console.log('Misi JavaScript loaded successfully');
         </script>
         """
         
@@ -306,21 +420,34 @@ class MisiChatbotWidget:
         {css}
         
         <div class="misi-icon-container">
-            <div class="misi-icon" id="misi-icon" onclick="toggleMisiPopup()">
+            <div class="misi-icon" id="misi-icon" onclick="toggleMisiPopup()" title="Ask Misi - SmartOps AI Assistant">
                 <div class="misi-icon-text">🤖</div>
             </div>
         </div>
         
         <div class="misi-chat-popup" id="misi-chat-popup">
             <div class="misi-chat-header">
-                <div class="misi-chat-title">🤖 Ask Misi</div>
-                <button class="misi-close-btn" onclick="closeMisiPopup()">×</button>
+                <div class="misi-chat-title">
+                    <span>🤖</span>
+                    <span>Ask Misi</span>
+                </div>
+                <button class="misi-close-btn" onclick="closeMisiPopup()" title="Close chat">×</button>
             </div>
             <div class="misi-chat-body" id="misi-chat-body">
+                <div class="misi-welcome-message">
+                    <h4>Welcome to SmartOps! 🤖</h4>
+                    <p>I'm Misi, your AI assistant. Ask me about SmartOps features, navigation, or any Kubernetes questions!</p>
+                </div>
                 <div class="misi-message assistant">
                     <div class="misi-message-bubble">
                         Hi! I'm Misi, your SmartOps AI assistant. How can I help you today?
                     </div>
+                </div>
+                <div class="misi-suggestions">
+                    <button class="misi-suggestion-btn" onclick="addMisiMessage('user', 'How can I check pods?')">Check Pods</button>
+                    <button class="misi-suggestion-btn" onclick="addMisiMessage('user', 'Show me anomaly detection')">Anomaly Detection</button>
+                    <button class="misi-suggestion-btn" onclick="addMisiMessage('user', 'Help with scaling')">Auto Scaling</button>
+                    <button class="misi-suggestion-btn" onclick="addMisiMessage('user', 'What can you do?')">What can you do?</button>
                 </div>
             </div>
             <div class="misi-chat-input-container">
@@ -332,7 +459,8 @@ class MisiChatbotWidget:
         {js_code}
         """
         
-        st.markdown(html, unsafe_allow_html=True)
+        # Use Streamlit components for better JavaScript execution
+        components.html(html, height=0, scrolling=False)
     
     def render_misi_integration(self, position="bottom-right"):
         """Render the complete Misi integration with icon and popup"""
