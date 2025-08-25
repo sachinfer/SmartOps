@@ -296,7 +296,7 @@ class MisiChatbotWidget:
                 
                 const bubbleDiv = document.createElement('div');
                 bubbleDiv.className = 'misi-message-bubble';
-                bubbleDiv.textContent = content;
+                bubbleDiv.innerHTML = content;
                 
                 messageDiv.appendChild(bubbleDiv);
                 
@@ -328,7 +328,7 @@ class MisiChatbotWidget:
                 'incident': 'Track incidents and generate postmortem reports on Page 6: Incident Timeline and Postmortem Report Generator.',
                 'ai': 'Automate operations with AI Actions on Page 8. Let AI handle routine tasks while you focus on strategy.',
                 'deploy': 'Monitor deployments and manage rollouts on Page 9: Deployments.',
-                'help': 'I can help you with:\n• Pod management and monitoring\n• Anomaly detection\n• Kubernetes shell access\n• Auto-scaling recommendations\n• Incident management\n• AI-powered actions\n• Deployment monitoring\n\nWhat would you like to know about?',
+                'help': 'I can help you with:<br>• Pod management and monitoring<br>• Anomaly detection<br>• Kubernetes shell access<br>• Auto-scaling recommendations<br>• Incident management<br>• AI-powered actions<br>• Deployment monitoring<br><br>What would you like to know about?',
                 'hello': 'Hello! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
                 'hi': 'Hi there! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?'
             };
