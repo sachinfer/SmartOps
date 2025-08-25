@@ -50,7 +50,7 @@ class MisiChatbotWidget:
         
         .misi-icon:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
             background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
         
