@@ -6,7 +6,7 @@ metadata:
     app: misi-ai-chatbot
     version: v1.0.0
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: misi-ai-chatbot
@@ -34,11 +34,11 @@ spec:
           value: "false"
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "128Mi"
+            cpu: "100m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "200m"
         livenessProbe:
           httpGet:
             path: /_stcore/health
@@ -126,8 +126,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: misi-ai-chatbot
-  minReplicas: 2
-  maxReplicas: 10
+  minReplicas: 1
+  maxReplicas: 1
   metrics:
   - type: Resource
     resource:
