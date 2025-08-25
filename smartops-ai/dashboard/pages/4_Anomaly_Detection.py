@@ -4,6 +4,18 @@ import sqlite3
 from datetime import datetime, timedelta
 import pytz
 import requests
+import sys
+import os
+
+# Add the smartops-ai-chatbot directory to the path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'smartops-ai-chatbot'))
+
+try:
+    from misi_chatbot_widget import add_misi_to_page
+    MISI_AVAILABLE = True
+except ImportError:
+    MISI_AVAILABLE = False
+    st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
 # Check if API service is running
 def check_api_health():
@@ -185,4 +197,16 @@ if not filtered_df.empty:
     })
     st.dataframe(display_df, use_container_width=True)
 else:
-    st.info("No recent anomalies found.") 
+    st.info("No recent anomalies found.")
+
+# Add Misi AI Chatbot Widget
+if MISI_AVAILABLE:
+    add_misi_to_page("bottom-right")
+    st.markdown("""
+    <div style="text-align: center; margin: 2rem 0; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+        <h3>🤖 Misi AI Assistant Available</h3>
+        <p>Click the floating 🤖 icon in the bottom-right corner to chat with Misi about SmartOps features!</p>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 

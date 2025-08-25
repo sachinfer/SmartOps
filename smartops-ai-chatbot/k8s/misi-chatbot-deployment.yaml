@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: misi-chatbot
-        image: us-docker.pkg.dev/PROJECT_ID/smartops-repo/misi-ai-chatbot:latest
+        image: us-docker.pkg.dev/icbt-465109/smartops-repo/misi-ai-chatbot:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8501
