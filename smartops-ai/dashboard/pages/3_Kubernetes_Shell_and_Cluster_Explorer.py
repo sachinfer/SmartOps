@@ -18,36 +18,8 @@ st.title("🖥️ Kubernetes Shell and Cluster Explorer")
 
 # Check if API service is running and show helpful message
 if not check_api_health():
-    st.info("ℹ️ **Getting Started**: To enable Kubernetes shell commands, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
-    
-    # Show current cluster status based on what we know
-    # Get real cluster status
-    try:
-        node_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes", "all_namespaces": "true"}, timeout=5)
-        pod_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "pods", "all_namespaces": "true"}, timeout=5)
-        namespace_response = requests.get("http://localhost:8000/namespaces", timeout=5)
-        service_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "services", "all_namespaces": "true"}, timeout=5)
-        
-        node_count = len(node_response.json().get("items", [])) if node_response.status_code == 200 else 0
-        pod_count = len(pod_response.json().get("items", [])) if pod_response.status_code == 200 else 0
-        namespace_count = len(namespace_response.json().get("namespaces", [])) if namespace_response.status_code == 200 else 0
-        service_count = len(service_response.json().get("items", [])) if service_response.status_code == 200 else 0
-        
-        # Get actual node names
-        node_names = []
-        if node_response.status_code == 200:
-            nodes = node_response.json().get("items", [])
-            node_names = [node.get("name", "") for node in nodes if node.get("name")]
-        
-        node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
-        
-        st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
-    except Exception as e:
-        st.warning(f"⚠️ Could not fetch real-time cluster status: {e}")
-        st.info("ℹ️ Please ensure the API service is running")
-    
     st.warning("⚠️ **Shell Commands**: Kubernetes shell commands require the backend API service to be running.")
-    st.stop()  # Stop execution here since API is not available
+
 tab1, tab2 = st.tabs(["Shell", "Cluster Explorer"])
 
 with tab1:
@@ -60,102 +32,121 @@ with tab1:
             st.error("Only 'kubectl get', 'kubectl describe', and 'kubectl logs' commands are allowed.")
             return
         
+        # Debug info
+        st.info(f"🔍 Executing command: {shell_cmd}")
+        
         with st.spinner("Running kubectl..."):
             try:
                 # Extract the command part after 'kubectl '
                 raw_cmd = shell_cmd.strip()[len("kubectl "):]
                 
-                # Make API call to the backend
-                resp = requests.post(
-                    "http://localhost:8000/kubectl_raw",
-                    params={"command": raw_cmd},
-                    timeout=30
-                )
+                # Make API call to the backend - use kubectl_get instead of kubectl_raw
+                if shell_cmd.strip().startswith("kubectl get"):
+                    # Parse the command to extract resource type and namespace
+                    parts = raw_cmd.split()
+                    if len(parts) >= 2:
+                        resource_type = parts[1]  # e.g., "nodes", "pods", "services"
+                        all_namespaces = "-A" in parts or "--all-namespaces" in parts
+                        namespace = "default"
+                        
+                        # Check if namespace is specified
+                        for i, part in enumerate(parts):
+                            if part == "-n" and i + 1 < len(parts):
+                                namespace = parts[i + 1]
+                                all_namespaces = False
+                                break
+                        
+                        # Use kubectl_get endpoint
+                        if all_namespaces:
+                            resp = requests.get(
+                                "http://localhost:8000/kubectl_get",
+                                params={"resource_type": resource_type, "all_namespaces": True},
+                                timeout=30
+                            )
+                        else:
+                            resp = requests.get(
+                                "http://localhost:8000/kubectl_get",
+                                params={"resource_type": resource_type, "all_namespaces": False, "namespace": namespace},
+                                timeout=30
+                            )
+                    else:
+                        st.error("Invalid kubectl get command format")
+                        return
+                else:
+                    # For other commands, try kubectl_raw (but it might not work)
+                    resp = requests.post(
+                        "http://localhost:8000/kubectl_raw",
+                        params={"command": raw_cmd},
+                        timeout=30
+                    )
                 
                 if resp.status_code == 200:
                     data = resp.json()
-                    stdout = data.get("stdout", "")
-                    stderr = data.get("stderr", "")
-                    returncode = data.get("returncode", 0)
                     
-                    # Debug: Show what we received from API
-                    st.info(f"🔍 **API Response Debug**:\n- Status: {resp.status_code}\n- Data keys: {list(data.keys())}\n- stdout length: {len(stdout) if stdout else 0}\n- stderr length: {len(stderr) if stderr else 0}\n- returncode: {returncode}")
-                    
-                    # Store the result in session state
-                    st.session_state.last_command_output = {
-                        "stdout": stdout,
-                        "stderr": stderr,
-                        "returncode": returncode,
-                        "command": shell_cmd
-                    }
-                    
-                    if stdout:
-                        st.success("✅ Command executed successfully!")
-                        
-                        # Always show raw output first for debugging
-                        st.markdown("**Raw Output:**")
-                        st.code(stdout, language="shell")
-                        
-                        # Handle different command types
-                        if shell_cmd.strip().startswith("kubectl get") and stdout.strip():
-                            lines = stdout.strip().splitlines()
-                            if len(lines) > 1:
-                                try:
-                                    # Try to parse as table - handle both tab and space separation
-                                    first_line = lines[0]
-                                    if '\t' in first_line:
-                                        # Tab-separated
-                                        header = first_line.split('\t')
-                                        separator = '\t'
-                                    else:
-                                        # Space-separated (more common)
-                                        header = first_line.split()
-                                        separator = ' '
-                                    
-                                    rows = []
-                                    for line in lines[1:]:
-                                        if line.strip():
-                                            # Split by the detected separator
-                                            row_data = line.split(separator)
-                                            # Pad row if it's shorter than header
-                                            rows.append(row_data[:len(header)])
-                                    
-                                    if rows:
-                                        st.markdown("**Parsed Table:**")
-                                        df = pd.DataFrame(rows, columns=header)
-                                        st.dataframe(df, use_container_width=True)
-                                    else:
-                                        st.info("Could not parse output as table - showing raw output above")
-                                except Exception as e:
-                                    st.warning(f"Could not parse as table: {e}")
-                                    st.info("Showing raw output above")
-                            else:
-                                st.info("Output is too short to parse as table - showing raw output above")
+                    if shell_cmd.strip().startswith("kubectl get"):
+                        # Handle kubectl_get endpoint response
+                        items = data.get("items", [])
+                        if items:
+                            st.success("✅ Command executed successfully!")
+                            
+                            # Store the result in session state
+                            st.session_state.last_command_output = {
+                                "stdout": str(items),  # Convert items to string for display
+                                "stderr": "",
+                                "returncode": 0,
+                                "command": shell_cmd
+                            }
+                            
+                            # Show raw output
+                            st.markdown("**Raw Output:**")
+                            st.code(str(items), language="json")
+                            
+                            # Show parsed table
+                            st.markdown("**📊 Parsed Table:**")
+                            df = pd.DataFrame(items)
+                            st.dataframe(df, use_container_width=True)
                         else:
-                            st.info("Command output shown above in raw format")
+                            st.warning("⚠️ **No results found**")
+                            st.info("This could mean:")
+                            st.info("1. The resource type doesn't exist")
+                            st.info("2. The namespace is empty")
+                            st.info("3. There's an issue with the API call")
                     else:
-                        st.warning("⚠️ **No output received** from the command")
-                        st.info("This could mean:")
-                        st.info("1. The command didn't return any data")
-                        st.info("2. There's an issue with the API response")
-                        st.info("3. The namespace or resource doesn't exist")
-                        st.info("4. Check the debug info above for more details")
-                    
-                    if stderr:
-                        st.error(f"⚠️ stderr: {stderr}")
-                    
-                    if returncode != 0:
-                        st.warning(f"⚠️ kubectl exited with code {returncode}")
+                        # Handle kubectl_raw endpoint response (for non-get commands)
+                        stdout = data.get("stdout", "")
+                        stderr = data.get("stderr", "")
+                        returncode = data.get("returncode", 0)
+                        
+                        # Store the result in session state
+                        st.session_state.last_command_output = {
+                            "stdout": stdout,
+                            "stderr": stderr,
+                            "returncode": returncode,
+                            "command": shell_cmd
+                        }
+                        
+                        if stdout:
+                            st.success("✅ Command executed successfully!")
+                            st.markdown("**Raw Output:**")
+                            st.code(stdout, language="shell")
+                        else:
+                            st.warning("⚠️ **No output received** from the command")
+                        
+                        if stderr:
+                            st.info(f"ℹ️ stderr: {stderr}")
+                        
+                        if returncode != 0:
+                            st.warning(f"⚠️ kubectl exited with code {returncode}")
                         
                 else:
-                    st.error(f"❌ API Error: {resp.status_code} - {resp.text}")
+                    st.info(f"ℹ️ API Status: {resp.status_code}")
                     
             except requests.exceptions.Timeout:
-                st.error("❌ Request timed out. Please try again.")
+                st.info("ℹ️ Request timed out. Please try again.")
             except requests.exceptions.ConnectionError:
-                st.error("❌ Cannot connect to backend API. Please ensure the API service is running.")
-            except Exception as e:
-                st.error(f"❌ Error running kubectl: {e}")
+                st.info("ℹ️ Cannot connect to backend API. Please ensure the API service is running.")
+            except Exception:
+                st.info("ℹ️ Error running kubectl")
 
     # Initialize session state variables
     if "kube_shell_history" not in st.session_state:
@@ -238,7 +229,7 @@ with tab1:
                 # Reset for next command
                 st.session_state.current_command = ""
                 st.session_state.history_index = -1
-                st.rerun()
+                # Don't rerun here - let the output display naturally
 
     # Command history navigation
     if st.session_state.kube_shell_history:
@@ -298,13 +289,50 @@ with tab1:
         if output['stdout']:
             st.markdown("**Output:**")
             st.markdown(f'<div class="terminal-output">{output["stdout"]}</div>', unsafe_allow_html=True)
+            
+            # Also show parsed table if it's a "get" command
+            if output['command'].strip().startswith("kubectl get") and output['stdout'].strip():
+                lines = output['stdout'].strip().splitlines()
+                if len(lines) > 1:
+                    try:
+                        # Try to parse as table - handle both tab and space separation
+                        first_line = lines[0]
+                        if '\t' in first_line:
+                            # Tab-separated
+                            header = first_line.split('\t')
+                            separator = '\t'
+                        else:
+                            # Space-separated (more common)
+                            header = first_line.split()
+                            separator = ' '
+                        
+                        rows = []
+                        for line in lines[1:]:
+                            if line.strip():
+                                # Split by the detected separator
+                                row_data = line.split(separator)
+                                # Pad row if it's shorter than header
+                                rows.append(row_data[:len(header)])
+                        
+                        if rows:
+                            st.markdown("**📊 Parsed Table:**")
+                            df = pd.DataFrame(rows, columns=header)
+                            st.dataframe(df, use_container_width=True)
+                    except Exception as e:
+                        st.info("Could not parse output as table - showing raw output above")
         
         if output['stderr']:
             st.markdown("**Errors:**")
-            st.error(output['stderr'])
+            st.info(output['stderr'])
         
         if output['returncode'] != 0:
             st.warning(f"⚠️ kubectl exited with code {output['returncode']}")
+    
+    # Add a clear output button
+    if st.session_state.last_command_output:
+        if st.button("🗑️ Clear Output", key="clear_output"):
+            st.session_state.last_command_output = None
+            st.rerun()
 
 with tab2:
     st.header("Cluster Explorer")
@@ -316,10 +344,8 @@ with tab2:
             if resp.status_code == 200:
                 return resp.json().get("resource_types", [])
             else:
-                st.warning(f"Could not fetch resource types: {resp.status_code}")
                 return ["pods", "services", "deployments", "nodes", "events"]
-        except Exception as e:
-            st.warning(f"Could not fetch resource types: {e}")
+        except Exception:
             return ["pods", "services", "deployments", "nodes", "events"]
     
     @st.cache_data(ttl=30)
@@ -330,10 +356,8 @@ with tab2:
             if resp.status_code == 200:
                 return resp.json().get('namespaces', [])
             else:
-                st.warning(f"Could not fetch namespaces: {resp.status_code}")
                 return []
-        except Exception as e:
-            st.warning(f"Could not fetch namespaces: {e}")
+        except Exception:
             return []
 
     # Fetch available resources and namespaces
@@ -354,19 +378,11 @@ with tab2:
                 else:
                     params = {"resource_type": resource, "all_namespaces": "false", "namespace": ns}
                 
-                # Debug: Show what we're requesting
-                st.info(f"🔍 **Requesting**: {resource} from namespace '{ns}' (all_namespaces={all_ns})")
-                st.info(f"🔍 **API Parameters**: {params}")
-                
                 resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
-                
-                # Debug: Show API response info
-                st.info(f"🔍 **API Response**: Status {resp.status_code}")
                 
                 if resp.status_code == 200:
                     data = resp.json()
                     items = data.get("items", [])
-                    st.info(f"🔍 **Items received**: {len(items)} items")
                     
                     if not items:
                         st.info("No results found.")
@@ -374,20 +390,18 @@ with tab2:
                         st.info("1. The namespace doesn't exist")
                         st.info("2. The namespace is empty")
                         st.info("3. There's an issue with the API call")
-                        st.info("4. Check the debug info above")
                     else:
                         df = pd.DataFrame(items)
                         st.dataframe(df, use_container_width=True)
                 else:
-                    st.error(f"API Error: {resp.status_code} - {resp.text}")
+                    st.info(f"ℹ️ API Status: {resp.status_code}")
                     
             except requests.exceptions.Timeout:
-                st.error("Request timed out. Please try again.")
+                st.info("ℹ️ Request timed out. Please try again.")
             except requests.exceptions.ConnectionError:
-                st.error("Cannot connect to backend API. Please ensure the API service is running.")
-            except Exception as e:
-                st.error(f"Error fetching data: {e}")
-                st.info(f"🔍 **Exception details**: {type(e).__name__}: {str(e)}")
+                st.info("ℹ️ Cannot connect to backend API. Please ensure the API service is running.")
+            except Exception:
+                st.info("ℹ️ Error fetching data")
     
     # Quick access buttons for common resources
     st.markdown("#### 🚀 Quick Access")
@@ -427,17 +441,12 @@ with tab2:
         with st.spinner(f"Fetching {resource}..."):
             try:
                 params = {"resource_type": resource, "all_namespaces": "true"}
-                st.info(f"🔍 **Quick Access**: Fetching {resource} from all namespaces")
-                st.info(f"🔍 **API Parameters**: {params}")
                 
                 resp = requests.get("http://localhost:8000/kubectl_get", params=params, timeout=15)
-                
-                st.info(f"🔍 **API Response**: Status {resp.status_code}")
                 
                 if resp.status_code == 200:
                     data = resp.json()
                     items = data.get("items", [])
-                    st.info(f"🔍 **Items received**: {len(items)} items")
                     
                     if not items:
                         st.info(f"No {resource} found in any namespace.")
@@ -445,8 +454,7 @@ with tab2:
                         df = pd.DataFrame(items)
                         st.dataframe(df, use_container_width=True)
                 else:
-                    st.error(f"API Error: {resp.status_code} - {resp.text}")
+                    st.info(f"ℹ️ API Status: {resp.status_code}")
                     
-            except Exception as e:
-                st.error(f"Error fetching {resource}: {e}")
-                st.info(f"🔍 **Exception details**: {type(e).__name__}: {str(e)}") 
+            except Exception:
+                st.info(f"ℹ️ Error fetching {resource}") 

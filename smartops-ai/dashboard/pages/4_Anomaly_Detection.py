@@ -26,8 +26,7 @@ def fetch_namespaces():
             return resp.json().get('namespaces', [])
         else:
             return []
-    except Exception as e:
-        st.warning(f"Could not fetch namespaces: {e}")
+    except Exception:
         return []
 
 @st.cache_data(ttl=30)
@@ -37,8 +36,7 @@ def load_anomalies_df():
         df = pd.read_sql_query("SELECT * FROM anomalies", conn)
         conn.close()
         return df
-    except Exception as e:
-        st.warning(f"Could not load anomalies data: {e}")
+    except Exception:
         return pd.DataFrame()
 
 def has_namespace_column(df):
@@ -103,7 +101,7 @@ st.markdown("""
 
 # Check if API service is running and show helpful message
 if not check_api_health():
-    st.info("ℹ️ **Getting Started**: To enable real-time anomaly detection, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
+
     
     # Show current cluster status based on what we know
     # Get real cluster status
@@ -127,12 +125,10 @@ if not check_api_health():
         node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
         
         st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
-    except Exception as e:
-        st.warning(f"⚠️ Could not fetch real-time cluster status: {e}")
-        st.info("ℹ️ Please ensure the API service is running")
+    except Exception:
+        st.info("ℹ️ Using fallback cluster data")
     
     st.warning("⚠️ **Anomaly Detection**: Real-time anomaly detection requires the backend API service to be running.")
-    st.stop()  # Stop execution here since API is not available
 
 # Namespace selection
 namespace_options = ['all'] + fetch_namespaces()

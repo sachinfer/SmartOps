@@ -716,83 +716,9 @@ st.markdown("""
 # Check if API service is running and show helpful message
 api_available = check_api_health()
 
-if not api_available:
-    st.markdown("""
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);">
-        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
-            🚀 <span>Getting Started</span>
-        </h3>
-        <p style="color: #f8fafc; margin: 0 0 1rem 0; font-size: 1rem;">
-            To enable real-time data, start the API service first:
-        </p>
-        <div style="background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: 12px; margin: 1rem 0; font-family: 'Courier New', monospace; color: #f8fafc;">
-            cd smartops-ai/dashboard<br>
-            python event_api.py
-        </div>
-        <p style="color: #f8fafc; margin: 1rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
-            Then refresh this page to see live cluster data.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Show sample cluster status with beautiful styling
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(72, 187, 120, 0.3);">
-        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
-            ✅ <span>Cluster Status</span>
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">1</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Nodes</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">18</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Pods</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">11</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Namespaces</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">16</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Services</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    # Show live cluster status with beautiful styling
-    live_node_count = len(fetch_node_data()) if fetch_node_data() else 1
-    live_pod_count = len(fetch_pod_data_by_namespace(selected_namespace)) if fetch_pod_data_by_namespace(selected_namespace) else 18
-    live_namespace_count = get_namespace_count()
-    live_service_count = get_service_count()
-    
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 2rem; border-radius: 20px; margin: 2rem 0; box-shadow: 0 15px 35px rgba(72, 187, 120, 0.3);">
-        <h3 style="color: white; margin: 0 0 1rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
-            🚀 <span>Live Cluster Status</span>
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_node_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Nodes</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_pod_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Pods</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_namespace_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Namespaces</div>
-            </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 12px;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: white;">{live_service_count}</div>
-                <div style="font-size: 0.8rem; color: #f8fafc; opacity: 0.9;">Services</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+
+
+
 
 # New Relic-style Time Selector
 st.markdown("""
@@ -823,48 +749,7 @@ with col3:
 
 st.markdown("</div></div>", unsafe_allow_html=True)
 
-# Namespace Selector
-st.markdown("""
-<div class="time-selector">
-    <div class="time-header">🏷️ Namespace Selection</div>
-    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1rem; align-items: end;">
-""", unsafe_allow_html=True)
 
-col1, col2 = st.columns([3, 1])
-
-with col1:
-    # Get available namespaces
-    available_namespaces = get_available_namespaces()
-    selected_namespace = st.selectbox(
-        "Select Namespace",
-        ["all"] + available_namespaces,
-        index=0,
-        label_visibility="collapsed",
-        help="Choose a specific namespace or 'all' to view all namespaces"
-    )
-
-with col2:
-    if st.button("🔄 Refresh Namespace Data", type="secondary", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-
-st.markdown("</div></div>", unsafe_allow_html=True)
-
-# Display namespace info
-if selected_namespace == "all":
-    st.markdown(f"""
-    <div class="status-message">
-        <div class="status-icon">🏷️</div>
-        <div class="status-text">Viewing: All namespaces | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(f"""
-    <div class="status-message">
-        <div class="status-icon">🏷️</div>
-        <div class="status-text">Viewing: Namespace '{selected_namespace}' | {datetime.now().strftime("%B %d, %Y at %I:%M %p")}</div>
-    </div>
-    """, unsafe_allow_html=True)
 
 # Display time info
 if time_preset == "Live (Now)":
@@ -896,7 +781,7 @@ st.markdown('<div class="section-header">📊 Cluster Metrics</div>', unsafe_all
 
 # Get live or fallback data for metrics
 node_count = 1 if not api_available else len(fetch_node_data()) if fetch_node_data() else 1
-pod_count = len(fetch_pod_data_by_namespace(selected_namespace)) if fetch_pod_data_by_namespace(selected_namespace) and api_available else 18
+pod_count = len(fetch_pod_data()) if fetch_pod_data() and api_available else 18
 service_count = get_service_count()
 namespace_count = get_namespace_count()
 
@@ -972,8 +857,8 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Fetch real-time pod data based on selected namespace
-pods = fetch_pod_data_by_namespace(selected_namespace)
+# Fetch real-time pod data
+pods = fetch_pod_data()
 
 # Get pod status counts
 if pods and api_available:
@@ -1128,4 +1013,4 @@ st.markdown(f"""
         Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}
     </div>
 </div>
-""", unsafe_allow_html=True).
+""", unsafe_allow_html=True)

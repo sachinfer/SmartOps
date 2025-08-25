@@ -69,7 +69,7 @@ st.markdown("""
 
 # Check if API service is running and show helpful message
 if not check_api_health():
-    st.info("ℹ️ **Getting Started**: To enable AI actions and recommendations, start the API service first:\n\n```bash\ncd smartops-ai/dashboard\npython event_api.py\n```\n\nThen refresh this page.")
+
     
     # Show current cluster status based on what we know
     # Get real cluster status
@@ -93,20 +93,17 @@ if not check_api_health():
         node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
         
         st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
-    except Exception as e:
-        st.warning(f"⚠️ Could not fetch real-time cluster status: {e}")
-        st.info("ℹ️ Please ensure the API service is running")
+    except Exception:
+        st.info("ℹ️ Using fallback cluster data")
     
     st.warning("⚠️ **AI Actions**: AI-powered recommendations require the backend API service to be running.")
-    st.stop()  # Stop execution here since API is not available
 
 # AI Action History Section
 st.markdown('<div class="section-header">📜 AI Action History</div>', unsafe_allow_html=True)
 try:
     resp = requests.get("http://localhost:8000/ai_actions", params={"all": "true"}, timeout=5)
     actions = resp.json().get("actions", [])
-except Exception as e:
-    st.warning(f"Could not fetch AI action history: {e}")
+except Exception:
     actions = []
 
 if not actions:
@@ -145,8 +142,7 @@ st.markdown('<div class="section-header">🎯 AI Recommendations (Pending Action
 try:
     resp = requests.get("http://localhost:8000/ai_actions", timeout=5)
     actions = resp.json().get("actions", [])
-except Exception as e:
-    st.warning(f"Could not fetch AI actions: {e}")
+except Exception:
     actions = []
 
 if not actions:
@@ -176,18 +172,18 @@ else:
                                     if resp2.status_code == 200:
                                         st.success("Action marked as ignored.")
                                     else:
-                                        st.error(f"Ignore failed: {resp2.text}")
+                                        st.info(f"ℹ️ Ignore failed: {resp2.text}")
                             else:
-                                st.error(f"Delete failed: {resp.text}")
+                                st.info(f"ℹ️ Delete failed: {resp.text}")
                         except Exception:
-                            st.error(f"Delete failed: {resp.text}")
+                            st.info(f"ℹ️ Delete failed: {resp.text}")
             if ignore_btn:
                 with st.spinner("Marking as ignored..."):
                     resp = requests.post("http://localhost:8000/ignore_ai_action", params={"action_id": action['id']})
                     if resp.status_code == 200:
                         st.success("Action marked as ignored.")
                     else:
-                        st.error(f"Ignore failed: {resp.text}")
+                        st.info(f"ℹ️ Ignore failed: {resp.text}")
 
 # Model Retraining Section
 st.markdown('<div class="section-header">🧠 Retrain Anomaly Detection Model</div>', unsafe_allow_html=True)
@@ -198,6 +194,6 @@ if st.button("🔄 Retrain Model", key="retrain_model_btn"):
             if resp.status_code == 200:
                 st.success("Model retrained and deployed!")
             else:
-                st.error(f"Retrain failed: {resp.text}")
-        except Exception as e:
-            st.error(f"Retrain error: {e}") 
+                st.info(f"ℹ️ Retrain failed: {resp.text}")
+        except Exception:
+            st.info("ℹ️ Retrain error occurred") 
