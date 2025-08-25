@@ -7,6 +7,7 @@ on:
       - gcp
       - gcp2
       - dash
+      - misi
   workflow_dispatch:
 
 jobs:
