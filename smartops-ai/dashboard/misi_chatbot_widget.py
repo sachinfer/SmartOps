@@ -6,12 +6,10 @@ A reusable widget that can be embedded in any page with a corner icon and popup 
 import streamlit as st
 import streamlit.components.v1 as components
 from datetime import datetime
-from ai_chatbot_engine import SmartOpsAIChatbot
-from smartops_knowledge_base import get_knowledge_base
 
 class MisiChatbotWidget:
     def __init__(self):
-        self.chatbot = SmartOpsAIChatbot()
+        pass
     
     def render_misi_icon(self, position="bottom-right"):
         """Render the floating Misi icon with popup chat interface"""
@@ -509,23 +507,7 @@ class MisiChatbotWidget:
     
     def render_misi_integration(self, position="bottom-right"):
         """Render the complete Misi integration with icon and popup"""
-        if 'misi_messages' not in st.session_state:
-            st.session_state.misi_messages = [
-                {"role": "assistant", "content": "Hi! I'm Misi, your SmartOps AI assistant. How can I help you today?", "timestamp": datetime.now()}
-            ]
-        
         self.render_misi_icon(position)
-        self._handle_misi_chat()
-    
-    def _handle_misi_chat(self):
-        """Handle chat functionality"""
-        # This would integrate with Streamlit's chat interface
-        # For now, we'll use the JavaScript-based popup
-        pass
-    
-    def _update_chat_display(self):
-        """Update the chat display with new messages"""
-        pass
 
 def add_misi_to_page(position="bottom-right"):
     """Add Misi chatbot to any page - just call this function"""
