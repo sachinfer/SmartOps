@@ -150,19 +150,21 @@ class MisiChatbotWidget:
             font-size: 14px;
         }
         
-        .misi-message {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .misi-message.user {
-            align-items: flex-end;
-        }
-        
-        .misi-message.assistant {
-            align-items: flex-start;
-        }
+                 .misi-message {
+             margin-bottom: 15px;
+             display: flex;
+             flex-direction: column;
+             width: 100%;
+             position: relative;
+         }
+         
+         .misi-message.user {
+             align-items: flex-end;
+         }
+         
+         .misi-message.assistant {
+             align-items: flex-start;
+         }
         
         .misi-message-bubble {
             max-width: 80%;
@@ -352,13 +354,24 @@ class MisiChatbotWidget:
                 
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `misi-message ${role}`;
-                messageDiv.style.border = '2px solid red'; // Debug border
-                messageDiv.style.margin = '10px 0';
                 
                 const bubbleDiv = document.createElement('div');
                 bubbleDiv.className = 'misi-message-bubble';
                 bubbleDiv.innerHTML = content;
-                bubbleDiv.style.border = '1px solid blue'; // Debug border
+                
+                // Add inline styles to ensure visibility
+                if (role === 'user') {
+                    messageDiv.style.alignItems = 'flex-end';
+                    bubbleDiv.style.background = '#667eea';
+                    bubbleDiv.style.color = 'white';
+                    bubbleDiv.style.borderBottomRightRadius = '6px';
+                } else {
+                    messageDiv.style.alignItems = 'flex-start';
+                    bubbleDiv.style.background = 'white';
+                    bubbleDiv.style.color = '#374151';
+                    bubbleDiv.style.border = '1px solid #e5e7eb';
+                    bubbleDiv.style.borderBottomLeftRadius = '6px';
+                }
                 
                 messageDiv.appendChild(bubbleDiv);
                 
@@ -368,25 +381,36 @@ class MisiChatbotWidget:
                 // Find the suggestions section to insert messages before it
                 const suggestions = chatBody.querySelector('.misi-suggestions');
                 
-                if (suggestions) {
-                    // Insert the new message before the suggestions
-                    chatBody.insertBefore(messageDiv, suggestions);
-                    console.log('Message inserted before suggestions');
-                } else {
-                    // If no suggestions found, append to the end
-                    chatBody.appendChild(messageDiv);
-                    console.log('Message appended to end');
-                }
-                
-                // Scroll to bottom
-                chatBody.scrollTop = chatBody.scrollHeight;
-                
-                // Store message
-                misiMessages.push({role, content});
-                console.log('Message added successfully. Total messages:', misiMessages.length);
-                
-                // Force a reflow to ensure the message is visible
-                messageDiv.offsetHeight;
+                                 if (suggestions) {
+                     // Insert the new message before the suggestions
+                     chatBody.insertBefore(messageDiv, suggestions);
+                     console.log('Message inserted before suggestions');
+                     console.log('Chat body children after insert:', chatBody.children.length);
+                 } else {
+                     // If no suggestions found, append to the end
+                     chatBody.appendChild(messageDiv);
+                     console.log('Message appended to end');
+                     console.log('Chat body children after append:', chatBody.children.length);
+                 }
+                 
+                 // Ensure the message is visible
+                 messageDiv.style.display = 'flex';
+                 messageDiv.style.visibility = 'visible';
+                 messageDiv.style.opacity = '1';
+                 
+                 // Scroll to bottom
+                 chatBody.scrollTop = chatBody.scrollHeight;
+                 
+                 // Store message
+                 misiMessages.push({role, content});
+                 console.log('Message added successfully. Total messages:', misiMessages.length);
+                 
+                 // Force a reflow to ensure the message is visible
+                 messageDiv.offsetHeight;
+                 
+                 // Additional debugging
+                 console.log('Message div computed styles:', window.getComputedStyle(messageDiv));
+                 console.log('Message div is visible:', messageDiv.offsetWidth > 0 && messageDiv.offsetHeight > 0);
             } else {
                 console.error('Chat body not found!');
             }
