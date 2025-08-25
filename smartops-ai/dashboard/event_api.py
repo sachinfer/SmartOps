@@ -54,6 +54,70 @@ async def list_namespaces():
             content={"error": f"Failed to get namespaces: {str(e)}"}
         )
 
+@app.get("/pods")
+async def list_pods(namespace: str = Query("default", description="Namespace to query")):
+    """Get pods in a specific namespace"""
+    try:
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+        except Exception:
+            try:
+                config.load_kube_config()
+            except Exception as config_error:
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Failed to load Kubernetes config: {str(config_error)}"}
+                )
+        
+        v1 = client.CoreV1Api()
+        
+        try:
+            pods = v1.list_namespaced_pod(namespace).items
+            pod_list = []
+            for pod in pods:
+                # Calculate age
+                age = ""
+                if pod.status.start_time:
+                    age_delta = datetime.now(pod.status.start_time.tzinfo) - pod.status.start_time
+                    if age_delta.days > 0:
+                        age = f"{age_delta.days}d"
+                    elif age_delta.seconds > 3600:
+                        age = f"{age_delta.seconds // 3600}h"
+                    else:
+                        age = f"{age_delta.seconds // 60}m"
+                
+                # Get ready status
+                ready = "0/0"
+                if pod.status.container_statuses:
+                    total = len(pod.status.container_statuses)
+                    ready_count = sum(1 for cs in pod.status.container_statuses if cs.ready)
+                    ready = f"{ready_count}/{total}"
+                
+                pod_list.append({
+                    "name": pod.metadata.name,
+                    "namespace": pod.metadata.namespace,
+                    "status": pod.status.phase,
+                    "age": age,
+                    "ready": ready,
+                    "node": getattr(pod.spec, 'node_name', ''),
+                    "start_time": str(pod.status.start_time) if pod.status.start_time else ''
+                })
+            
+            return {"pods": pod_list}
+            
+        except Exception as pod_error:
+            return JSONResponse(
+                status_code=500,
+                content={"error": f"Failed to get pods: {str(pod_error)}"}
+            )
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to get pods: {str(e)}"}
+        )
+
 @app.get("/kubectl_get")
 async def kubectl_get(resource_type: str = Query(..., description="Resource type: pods, services, deployments, nodes"), 
                 all_namespaces: bool = Query(False),
