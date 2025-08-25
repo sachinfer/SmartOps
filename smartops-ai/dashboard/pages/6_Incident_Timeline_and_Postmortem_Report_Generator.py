@@ -146,11 +146,5 @@ st.markdown("**Audit Trail:** All incidents are saved and can be filtered by nam
 # Add Misi AI Chatbot Widget
 if MISI_AVAILABLE:
     add_misi_to_page("bottom-right")
-    st.markdown("""
-    <div style="text-align: center; margin: 2rem 0; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
-        <h3>🤖 Misi AI Assistant Available</h3>
-        <p>Click the floating 🤖 icon in the bottom-right corner to chat with Misi about SmartOps features!</p>
-    </div>
-    """, unsafe_allow_html=True)
 else:
     st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 
