@@ -426,41 +426,9 @@ class MisiChatbotWidget:
                 bubbleDiv.className = 'misi-message-bubble';
                 bubbleDiv.innerHTML = content;
                 
-                // Add inline styles to ensure visibility
-                if (role === 'user') {
-                    messageDiv.style.alignItems = 'flex-end';
-                    messageDiv.style.marginBottom = '15px';
-                    messageDiv.style.display = 'flex';
-                    messageDiv.style.flexDirection = 'column';
-                    messageDiv.style.width = '100%';
-                    
-                    bubbleDiv.style.background = '#667eea';
-                    bubbleDiv.style.color = 'white';
-                    bubbleDiv.style.borderBottomRightRadius = '6px';
-                    bubbleDiv.style.maxWidth = '80%';
-                    bubbleDiv.style.padding = '12px 16px';
-                    bubbleDiv.style.borderRadius = '18px';
-                    bubbleDiv.style.fontSize = '14px';
-                    bubbleDiv.style.lineHeight = '1.4';
-                    bubbleDiv.style.wordWrap = 'break-word';
-                } else {
-                    messageDiv.style.alignItems = 'flex-start';
-                    messageDiv.style.marginBottom = '15px';
-                    messageDiv.style.display = 'flex';
-                    messageDiv.style.flexDirection = 'column';
-                    messageDiv.style.width = '100%';
-                    
-                    bubbleDiv.style.background = 'white';
-                    bubbleDiv.style.color = '#374151';
-                    bubbleDiv.style.border = '1px solid #e5e7eb';
-                    bubbleDiv.style.borderBottomLeftRadius = '6px';
-                    bubbleDiv.style.maxWidth = '80%';
-                    bubbleDiv.style.padding = '12px 16px';
-                    bubbleDiv.style.borderRadius = '18px';
-                    bubbleDiv.style.fontSize = '14px';
-                    bubbleDiv.style.lineHeight = '1.4';
-                    bubbleDiv.style.wordWrap = 'break-word';
-                }
+                // Remove debug border and use CSS classes instead of inline styles
+                messageDiv.style.border = 'none';
+                messageDiv.style.minHeight = 'auto';
                 
                 messageDiv.appendChild(bubbleDiv);
                 
@@ -486,8 +454,6 @@ class MisiChatbotWidget:
                 messageDiv.style.display = 'flex';
                 messageDiv.style.visibility = 'visible';
                 messageDiv.style.opacity = '1';
-                messageDiv.style.border = '2px solid red'; // Debug border to make sure it's visible
-                messageDiv.style.minHeight = '50px';
                 
                 // Scroll to bottom
                 chatBody.scrollTop = chatBody.scrollHeight;
