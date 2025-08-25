@@ -352,21 +352,30 @@ class MisiChatbotWidget:
                 
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `misi-message ${role}`;
+                messageDiv.style.border = '2px solid red'; // Debug border
+                messageDiv.style.margin = '10px 0';
                 
                 const bubbleDiv = document.createElement('div');
                 bubbleDiv.className = 'misi-message-bubble';
                 bubbleDiv.innerHTML = content;
+                bubbleDiv.style.border = '1px solid blue'; // Debug border
                 
                 messageDiv.appendChild(bubbleDiv);
                 
-                // Insert after welcome message and suggestions
-                const welcomeMessage = chatBody.querySelector('.misi-welcome-message');
+                console.log('Message div created:', messageDiv);
+                console.log('Message div HTML:', messageDiv.outerHTML);
+                
+                // Find the suggestions section to insert messages before it
                 const suggestions = chatBody.querySelector('.misi-suggestions');
                 
                 if (suggestions) {
+                    // Insert the new message before the suggestions
                     chatBody.insertBefore(messageDiv, suggestions);
+                    console.log('Message inserted before suggestions');
                 } else {
+                    // If no suggestions found, append to the end
                     chatBody.appendChild(messageDiv);
+                    console.log('Message appended to end');
                 }
                 
                 // Scroll to bottom
@@ -375,6 +384,9 @@ class MisiChatbotWidget:
                 // Store message
                 misiMessages.push({role, content});
                 console.log('Message added successfully. Total messages:', misiMessages.length);
+                
+                // Force a reflow to ensure the message is visible
+                messageDiv.offsetHeight;
             } else {
                 console.error('Chat body not found!');
             }
