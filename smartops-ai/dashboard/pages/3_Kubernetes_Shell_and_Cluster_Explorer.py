@@ -32,6 +32,9 @@ with tab1:
             st.error("Only 'kubectl get', 'kubectl describe', and 'kubectl logs' commands are allowed.")
             return
         
+        # Debug info
+        st.info(f"🔍 Executing command: {shell_cmd}")
+        
         with st.spinner("Running kubectl..."):
             try:
                 # Extract the command part after 'kubectl '
@@ -205,7 +208,7 @@ with tab1:
                 # Reset for next command
                 st.session_state.current_command = ""
                 st.session_state.history_index = -1
-                st.rerun()
+                # Don't rerun here - let the output display naturally
 
     # Command history navigation
     if st.session_state.kube_shell_history:
@@ -265,6 +268,37 @@ with tab1:
         if output['stdout']:
             st.markdown("**Output:**")
             st.markdown(f'<div class="terminal-output">{output["stdout"]}</div>', unsafe_allow_html=True)
+            
+            # Also show parsed table if it's a "get" command
+            if output['command'].strip().startswith("kubectl get") and output['stdout'].strip():
+                lines = output['stdout'].strip().splitlines()
+                if len(lines) > 1:
+                    try:
+                        # Try to parse as table - handle both tab and space separation
+                        first_line = lines[0]
+                        if '\t' in first_line:
+                            # Tab-separated
+                            header = first_line.split('\t')
+                            separator = '\t'
+                        else:
+                            # Space-separated (more common)
+                            header = first_line.split()
+                            separator = ' '
+                        
+                        rows = []
+                        for line in lines[1:]:
+                            if line.strip():
+                                # Split by the detected separator
+                                row_data = line.split(separator)
+                                # Pad row if it's shorter than header
+                                rows.append(row_data[:len(header)])
+                        
+                        if rows:
+                            st.markdown("**📊 Parsed Table:**")
+                            df = pd.DataFrame(rows, columns=header)
+                            st.dataframe(df, use_container_width=True)
+                    except Exception as e:
+                        st.info("Could not parse output as table - showing raw output above")
         
         if output['stderr']:
             st.markdown("**Errors:**")
@@ -272,6 +306,12 @@ with tab1:
         
         if output['returncode'] != 0:
             st.warning(f"⚠️ kubectl exited with code {output['returncode']}")
+    
+    # Add a clear output button
+    if st.session_state.last_command_output:
+        if st.button("🗑️ Clear Output", key="clear_output"):
+            st.session_state.last_command_output = None
+            st.rerun()
 
 with tab2:
     st.header("Cluster Explorer")
