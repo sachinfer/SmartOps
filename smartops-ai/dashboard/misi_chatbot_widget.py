@@ -304,24 +304,38 @@ class MisiChatbotWidget:
         
         // Function to send message
         function sendMisiMessage() {
-            console.log('sendMisiMessage function called');
+            console.log('=== sendMisiMessage function called ===');
+            console.log('Function context:', this);
+            console.log('Window object:', window);
+            
             const input = document.getElementById('misi-chat-input');
             console.log('Input element found:', input);
+            console.log('Input value:', input ? input.value : 'Input not found');
             
             if (input && input.value.trim()) {
                 const message = input.value.trim();
                 console.log('Sending message:', message);
                 
-                // Add user message
-                addMisiMessage('user', message);
-                input.value = '';
-                
-                // Generate response
-                setTimeout(() => {
-                    const response = generateMisiResponse(message);
-                    console.log('Generated response:', response);
-                    addMisiMessage('assistant', response);
-                }, 500);
+                try {
+                    // Add user message
+                    console.log('Calling addMisiMessage for user...');
+                    addMisiMessage('user', message);
+                    input.value = '';
+                    
+                    // Generate response
+                    console.log('Generating response...');
+                    setTimeout(() => {
+                        try {
+                            const response = generateMisiResponse(message);
+                            console.log('Generated response:', response);
+                            addMisiMessage('assistant', response);
+                        } catch (error) {
+                            console.error('Error generating response:', error);
+                        }
+                    }, 500);
+                } catch (error) {
+                    console.error('Error in sendMisiMessage:', error);
+                }
             } else {
                 console.log('No message to send or input not found');
                 if (input) {
@@ -426,6 +440,7 @@ class MisiChatbotWidget:
             if (input) {
                 input.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
+                        console.log('Enter key pressed, calling sendMisiMessage');
                         sendMisiMessage();
                     }
                 });
@@ -433,7 +448,10 @@ class MisiChatbotWidget:
             }
             
             if (sendBtn) {
-                sendBtn.addEventListener('click', sendMisiMessage);
+                sendBtn.addEventListener('click', function() {
+                    console.log('Send button clicked, calling sendMisiMessage');
+                    sendMisiMessage();
+                });
                 console.log('Send button listener added');
             }
             
@@ -450,7 +468,21 @@ class MisiChatbotWidget:
         // Also try to initialize after a short delay to ensure everything is loaded
         setTimeout(initializeMisi, 100);
         
+        // Expose functions globally for debugging
+        window.toggleMisiPopup = toggleMisiPopup;
+        window.closeMisiPopup = closeMisiPopup;
+        window.sendMisiMessage = sendMisiMessage;
+        window.addMisiMessage = addMisiMessage;
+        window.generateMisiResponse = generateMisiResponse;
+        window.handleSuggestionClick = handleSuggestionClick;
+        window.initializeMisi = initializeMisi;
+        
         console.log('Misi JavaScript loaded successfully');
+        console.log('Global functions exposed:', {
+            toggleMisiPopup: typeof toggleMisiPopup,
+            sendMisiMessage: typeof sendMisiMessage,
+            addMisiMessage: typeof addMisiMessage
+        });
         </script>
         """
         
