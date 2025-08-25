@@ -40,82 +40,103 @@ with tab1:
                 # Extract the command part after 'kubectl '
                 raw_cmd = shell_cmd.strip()[len("kubectl "):]
                 
-                # Make API call to the backend
-                resp = requests.post(
-                    "http://localhost:8000/kubectl_raw",
-                    params={"command": raw_cmd},
-                    timeout=30
-                )
+                # Make API call to the backend - use kubectl_get instead of kubectl_raw
+                if shell_cmd.strip().startswith("kubectl get"):
+                    # Parse the command to extract resource type and namespace
+                    parts = raw_cmd.split()
+                    if len(parts) >= 2:
+                        resource_type = parts[1]  # e.g., "nodes", "pods", "services"
+                        all_namespaces = "-A" in parts or "--all-namespaces" in parts
+                        namespace = "default"
+                        
+                        # Check if namespace is specified
+                        for i, part in enumerate(parts):
+                            if part == "-n" and i + 1 < len(parts):
+                                namespace = parts[i + 1]
+                                all_namespaces = False
+                                break
+                        
+                        # Use kubectl_get endpoint
+                        if all_namespaces:
+                            resp = requests.get(
+                                "http://localhost:8000/kubectl_get",
+                                params={"resource_type": resource_type, "all_namespaces": True},
+                                timeout=30
+                            )
+                        else:
+                            resp = requests.get(
+                                "http://localhost:8000/kubectl_get",
+                                params={"resource_type": resource_type, "all_namespaces": False, "namespace": namespace},
+                                timeout=30
+                            )
+                    else:
+                        st.error("Invalid kubectl get command format")
+                        return
+                else:
+                    # For other commands, try kubectl_raw (but it might not work)
+                    resp = requests.post(
+                        "http://localhost:8000/kubectl_raw",
+                        params={"command": raw_cmd},
+                        timeout=30
+                    )
                 
                 if resp.status_code == 200:
                     data = resp.json()
-                    stdout = data.get("stdout", "")
-                    stderr = data.get("stderr", "")
-                    returncode = data.get("returncode", 0)
                     
-                    # Store the result in session state
-                    st.session_state.last_command_output = {
-                        "stdout": stdout,
-                        "stderr": stderr,
-                        "returncode": returncode,
-                        "command": shell_cmd
-                    }
-                    
-                    if stdout:
-                        st.success("✅ Command executed successfully!")
-                        
-                        # Always show raw output first for debugging
-                        st.markdown("**Raw Output:**")
-                        st.code(stdout, language="shell")
-                        
-                        # Handle different command types
-                        if shell_cmd.strip().startswith("kubectl get") and stdout.strip():
-                            lines = stdout.strip().splitlines()
-                            if len(lines) > 1:
-                                try:
-                                    # Try to parse as table - handle both tab and space separation
-                                    first_line = lines[0]
-                                    if '\t' in first_line:
-                                        # Tab-separated
-                                        header = first_line.split('\t')
-                                        separator = '\t'
-                                    else:
-                                        # Space-separated (more common)
-                                        header = first_line.split()
-                                        separator = ' '
-                                    
-                                    rows = []
-                                    for line in lines[1:]:
-                                        if line.strip():
-                                            # Split by the detected separator
-                                            row_data = line.split(separator)
-                                            # Pad row if it's shorter than header
-                                            rows.append(row_data[:len(header)])
-                                    
-                                    if rows:
-                                        st.markdown("**Parsed Table:**")
-                                        df = pd.DataFrame(rows, columns=header)
-                                        st.dataframe(df, use_container_width=True)
-                                    else:
-                                        st.info("Could not parse output as table - showing raw output above")
-                                except Exception:
-                                    st.info("Showing raw output above")
-                            else:
-                                st.info("Output is too short to parse as table - showing raw output above")
+                    if shell_cmd.strip().startswith("kubectl get"):
+                        # Handle kubectl_get endpoint response
+                        items = data.get("items", [])
+                        if items:
+                            st.success("✅ Command executed successfully!")
+                            
+                            # Store the result in session state
+                            st.session_state.last_command_output = {
+                                "stdout": str(items),  # Convert items to string for display
+                                "stderr": "",
+                                "returncode": 0,
+                                "command": shell_cmd
+                            }
+                            
+                            # Show raw output
+                            st.markdown("**Raw Output:**")
+                            st.code(str(items), language="json")
+                            
+                            # Show parsed table
+                            st.markdown("**📊 Parsed Table:**")
+                            df = pd.DataFrame(items)
+                            st.dataframe(df, use_container_width=True)
                         else:
-                            st.info("Command output shown above in raw format")
+                            st.warning("⚠️ **No results found**")
+                            st.info("This could mean:")
+                            st.info("1. The resource type doesn't exist")
+                            st.info("2. The namespace is empty")
+                            st.info("3. There's an issue with the API call")
                     else:
-                        st.warning("⚠️ **No output received** from the command")
-                        st.info("This could mean:")
-                        st.info("1. The command didn't return any data")
-                        st.info("2. There's an issue with the API response")
-                        st.info("3. The namespace or resource doesn't exist")
-                    
-                    if stderr:
-                        st.info(f"ℹ️ stderr: {stderr}")
-                    
-                    if returncode != 0:
-                        st.warning(f"⚠️ kubectl exited with code {returncode}")
+                        # Handle kubectl_raw endpoint response (for non-get commands)
+                        stdout = data.get("stdout", "")
+                        stderr = data.get("stderr", "")
+                        returncode = data.get("returncode", 0)
+                        
+                        # Store the result in session state
+                        st.session_state.last_command_output = {
+                            "stdout": stdout,
+                            "stderr": stderr,
+                            "returncode": returncode,
+                            "command": shell_cmd
+                        }
+                        
+                        if stdout:
+                            st.success("✅ Command executed successfully!")
+                            st.markdown("**Raw Output:**")
+                            st.code(stdout, language="shell")
+                        else:
+                            st.warning("⚠️ **No output received** from the command")
+                        
+                        if stderr:
+                            st.info(f"ℹ️ stderr: {stderr}")
+                        
+                        if returncode != 0:
+                            st.warning(f"⚠️ kubectl exited with code {returncode}")
                         
                 else:
                     st.info(f"ℹ️ API Status: {resp.status_code}")
