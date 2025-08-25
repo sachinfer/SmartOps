@@ -12,27 +12,13 @@ from sidebar_utils import show_sidebar
 import sys
 import os
 
-# Add the smartops-ai-chatbot directory to the path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'smartops-ai-chatbot'))
-
+# Import Misi from the dashboard directory
 try:
     from misi_chatbot_widget import add_misi_to_page
     MISI_AVAILABLE = True
 except ImportError:
-    # Try alternative import paths
-    try:
-        # Try importing from the current directory structure
-        from smartops_ai_chatbot.misi_chatbot_widget import add_misi_to_page
-        MISI_AVAILABLE = True
-    except ImportError:
-        try:
-            # Try importing directly from the parent directory
-            sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-            from smartops_ai_chatbot.misi_chatbot_widget import add_misi_to_page
-            MISI_AVAILABLE = True
-        except ImportError:
-            MISI_AVAILABLE = False
-            st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
+    MISI_AVAILABLE = False
+    st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
 # Page config
 st.set_page_config(
