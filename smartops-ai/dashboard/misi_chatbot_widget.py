@@ -150,21 +150,21 @@ class MisiChatbotWidget:
             font-size: 14px;
         }
         
-                 .misi-message {
-             margin-bottom: 15px;
-             display: flex;
-             flex-direction: column;
-             width: 100%;
-             position: relative;
-         }
-         
-         .misi-message.user {
-             align-items: flex-end;
-         }
-         
-         .misi-message.assistant {
-             align-items: flex-start;
-         }
+        .misi-message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            position: relative;
+        }
+        
+        .misi-message.user {
+            align-items: flex-end;
+        }
+        
+        .misi-message.assistant {
+            align-items: flex-start;
+        }
         
         .misi-message-bubble {
             max-width: 80%;
@@ -381,36 +381,36 @@ class MisiChatbotWidget:
                 // Find the suggestions section to insert messages before it
                 const suggestions = chatBody.querySelector('.misi-suggestions');
                 
-                                 if (suggestions) {
-                     // Insert the new message before the suggestions
-                     chatBody.insertBefore(messageDiv, suggestions);
-                     console.log('Message inserted before suggestions');
-                     console.log('Chat body children after insert:', chatBody.children.length);
-                 } else {
-                     // If no suggestions found, append to the end
-                     chatBody.appendChild(messageDiv);
-                     console.log('Message appended to end');
-                     console.log('Chat body children after append:', chatBody.children.length);
-                 }
-                 
-                 // Ensure the message is visible
-                 messageDiv.style.display = 'flex';
-                 messageDiv.style.visibility = 'visible';
-                 messageDiv.style.opacity = '1';
-                 
-                 // Scroll to bottom
-                 chatBody.scrollTop = chatBody.scrollHeight;
-                 
-                 // Store message
-                 misiMessages.push({role, content});
-                 console.log('Message added successfully. Total messages:', misiMessages.length);
-                 
-                 // Force a reflow to ensure the message is visible
-                 messageDiv.offsetHeight;
-                 
-                 // Additional debugging
-                 console.log('Message div computed styles:', window.getComputedStyle(messageDiv));
-                 console.log('Message div is visible:', messageDiv.offsetWidth > 0 && messageDiv.offsetHeight > 0);
+                if (suggestions) {
+                    // Insert the new message before the suggestions
+                    chatBody.insertBefore(messageDiv, suggestions);
+                    console.log('Message inserted before suggestions');
+                    console.log('Chat body children after insert:', chatBody.children.length);
+                } else {
+                    // If no suggestions found, append to the end
+                    chatBody.appendChild(messageDiv);
+                    console.log('Message appended to end');
+                    console.log('Chat body children after append:', chatBody.children.length);
+                }
+                
+                // Ensure the message is visible
+                messageDiv.style.display = 'flex';
+                messageDiv.style.visibility = 'visible';
+                messageDiv.style.opacity = '1';
+                
+                // Scroll to bottom
+                chatBody.scrollTop = chatBody.scrollHeight;
+                
+                // Store message
+                misiMessages.push({role, content});
+                console.log('Message added successfully. Total messages:', misiMessages.length);
+                
+                // Force a reflow to ensure the message is visible
+                messageDiv.offsetHeight;
+                
+                // Additional debugging
+                console.log('Message div computed styles:', window.getComputedStyle(messageDiv));
+                console.log('Message div is visible:', messageDiv.offsetWidth > 0 && messageDiv.offsetHeight > 0);
             } else {
                 console.error('Chat body not found!');
             }
