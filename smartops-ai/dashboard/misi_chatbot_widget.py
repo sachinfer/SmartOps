@@ -27,15 +27,15 @@ class MisiChatbotWidget:
         }
         
         .misi-icon {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
             transition: all 0.3s ease;
             animation: misi-pulse 2s infinite;
             user-select: none;
@@ -62,24 +62,24 @@ class MisiChatbotWidget:
         
         .misi-icon-text {
             color: white;
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
             pointer-events: none;
         }
         
         .misi-icon-label {
             color: white;
-            font-size: 10px;
+            font-size: 14px;
             font-weight: bold;
             text-align: center;
-            margin-top: 5px;
+            margin-top: 8px;
             pointer-events: none;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         
         .misi-chat-popup {
             position: fixed;
-            bottom: 90px;
+            bottom: 110px;
             right: 20px;
             width: 600px;
             height: 700px;
