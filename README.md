@@ -72,7 +72,7 @@ streamlit run streamlit_app.py
 ```
 The dashboard will open at `http://localhost:8501`
 
-### 4. Windows Users (One-Click Start)
+### 4. Windows Users (One-Click Start)-
 ```bash
 start_dashboard.bat
 ```
