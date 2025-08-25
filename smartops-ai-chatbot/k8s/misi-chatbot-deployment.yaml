@@ -15,11 +15,11 @@ spec:
       labels:
         app: misi-ai-chatbot
         version: v1.0.0
-    spec:
-             containers:
-       - name: misi-chatbot
-         image: us-docker.pkg.dev/PROJECT_ID/smartops-repo/misi-ai-chatbot:latest
-         imagePullPolicy: Always
+        spec:
+      containers:
+      - name: misi-chatbot
+        image: us-docker.pkg.dev/PROJECT_ID/smartops-repo/misi-ai-chatbot:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8501
           name: http
