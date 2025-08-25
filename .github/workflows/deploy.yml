@@ -7,6 +7,7 @@ on:
       - gcp
       - gcp2
       - dash
+      - ai
   workflow_dispatch:
 
 jobs:
@@ -50,6 +51,7 @@ jobs:
           echo "ANOMALY_TAG=${{ env.REGISTRY }}/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "DASHBOARD_TAG=${{ env.REGISTRY }}/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "MONITOR_TAG=${{ env.REGISTRY }}/smartops-monitor:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "MISI_TAG=${{ env.REGISTRY }}/misi-ai-chatbot:${GITHUB_SHA::8}" >> $GITHUB_ENV
 
       # 🚀 OPTIMIZED: Parallel builds with Docker layer caching
       - name: Build & Push All Images (Parallel)
@@ -98,6 +100,16 @@ jobs:
             --file smartops-ai/app/Dockerfile.monitor \
             ./smartops-ai/app &
           
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/misi-ai-chatbot:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/misi-ai-chatbot:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/misi-ai-chatbot:latest \
+            --tag ${{ env.REGISTRY }}/misi-ai-chatbot:${GITHUB_SHA::8} \
+            --push \
+            --file smartops-ai-chatbot/Dockerfile.production \
+            ./smartops-ai-chatbot &
+          
           # Wait for all builds to complete
           wait
           
@@ -134,6 +146,7 @@ jobs:
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops &
           kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops &
           kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops &
+          kubectl apply -f smartops-ai-chatbot/k8s/misi-chatbot-deployment.yaml -n smartops &
           
           # Wait for all deployments to be applied
           wait
@@ -142,6 +155,7 @@ jobs:
           kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops &
           kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n smartops &
           kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops &
+          kubectl set image deployment/misi-ai-chatbot misi-chatbot=${{ env.MISI_TAG }} -n smartops &
           
           # Wait for image updates
           wait
@@ -163,6 +177,9 @@ jobs:
           # Wait for main app
           kubectl wait --for=condition=available deployment/smartops-app -n smartops --timeout=120s || echo "⚠️ Main app timeout"
           
+          # Wait for Misi chatbot
+          kubectl wait --for=condition=available deployment/misi-ai-chatbot -n smartops --timeout=120s || echo "⚠️ Misi chatbot timeout"
+          
           echo "✅ Critical services are ready!"
 
       # 🚀 OPTIMIZED: Simplified success notification
@@ -174,7 +191,7 @@ jobs:
           # Send Telegram notification
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://$DASHBOARD_IP)" \
+            -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A• 🤖 Misi AI Chatbot%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://$DASHBOARD_IP)" \
             -d parse_mode=Markdown
 
       # 🚀 OPTIMIZED: Simplified failure notification
