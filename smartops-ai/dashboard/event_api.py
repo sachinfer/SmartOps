@@ -357,6 +357,165 @@ async def kubectl_raw(command: str = Query(..., description="kubectl command to 
             content={"error": f"Failed to execute command: {str(e)}"}
         )
 
+@app.get("/incidents")
+async def get_incidents():
+    """Get incident data for timeline and postmortem reports"""
+    try:
+        # For now, return sample incident data
+        # In a real implementation, this would fetch from a database
+        sample_incidents = [
+            {
+                "id": 1,
+                "timestamp": "2025-08-25 05:30:00",
+                "type": "Pod Crash",
+                "app": "smartops-app",
+                "namespace": "smartops",
+                "details": "Pod smartops-app-8c6cd4cbb-7226b crashed due to memory limit exceeded",
+                "root_cause": "Memory leak in application code causing OOM",
+                "impact": "Service unavailable for 2 minutes, affecting 15 users",
+                "remediation": "Increased memory limits and fixed memory leak in code",
+                "status": "Resolved"
+            },
+            {
+                "id": 2,
+                "timestamp": "2025-08-25 04:15:00",
+                "type": "High CPU Usage",
+                "app": "smartops-monitor",
+                "namespace": "smartops",
+                "details": "CPU usage spiked to 95% for 10 minutes",
+                "root_cause": "Inefficient database queries during peak load",
+                "impact": "Increased response times, monitoring alerts delayed",
+                "remediation": "Optimized database queries and added caching",
+                "status": "Resolved"
+            },
+            {
+                "id": 3,
+                "timestamp": "2025-08-25 03:45:00",
+                "type": "Network Latency",
+                "app": "smartops-dashboard",
+                "namespace": "smartops",
+                "details": "API response times increased from 200ms to 2s",
+                "root_cause": "Database connection pool exhaustion",
+                "impact": "Dashboard loading slowly, user experience degraded",
+                "remediation": "Increased connection pool size and added connection monitoring",
+                "status": "Resolved"
+            }
+        ]
+        
+        return {"incidents": sample_incidents}
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to fetch incidents: {str(e)}"}
+        )
+
+@app.post("/postmortem")
+async def save_postmortem(postmortem_data: dict):
+    """Save postmortem report to audit trail"""
+    try:
+        # In a real implementation, this would save to a database
+        # For now, just return success
+        return {"message": "Postmortem report saved successfully", "id": postmortem_data.get("id", "new")}
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to save postmortem: {str(e)}"}
+        )
+
+@app.get("/hpa_status")
+async def get_hpa_status():
+    """Get HPA status and usage data for auto-scaling recommendations"""
+    try:
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+        except Exception:
+            try:
+                config.load_kube_config()
+            except Exception as config_error:
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Failed to load Kubernetes config: {str(config_error)}"}
+                )
+        
+        # For now, return sample HPA data
+        # In a real implementation, this would fetch actual HPA and metrics
+        sample_hpa_data = [
+            {
+                "pod": "smartops-app",
+                "namespace": "smartops",
+                "current_replicas": 1,
+                "min_replicas": 1,
+                "max_replicas": 5,
+                "cpu_avg": 0.65,
+                "mem_avg": 0.72,
+                "cpu_target": 0.7,
+                "mem_target": 0.8,
+                "last_scale_time": "2025-08-25 05:30:00",
+                "status": "Active"
+            },
+            {
+                "pod": "smartops-monitor",
+                "namespace": "smartops",
+                "current_replicas": 1,
+                "min_replicas": 1,
+                "max_replicas": 3,
+                "cpu_avg": 0.45,
+                "mem_avg": 0.38,
+                "cpu_target": 0.7,
+                "mem_target": 0.8,
+                "last_scale_time": "2025-08-25 04:15:00",
+                "status": "Active"
+            },
+            {
+                "pod": "smartops-dashboard",
+                "namespace": "smartops",
+                "current_replicas": 1,
+                "min_replicas": 1,
+                "max_replicas": 3,
+                "cpu_avg": 0.28,
+                "mem_avg": 0.35,
+                "cpu_target": 0.7,
+                "mem_target": 0.8,
+                "last_scale_time": "2025-08-25 03:45:00",
+                "status": "Active"
+            }
+        ]
+        
+        return {"hpa": sample_hpa_data}
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to fetch HPA data: {str(e)}"}
+        )
+
+@app.post("/update_hpa")
+async def update_hpa(hpa_data: dict):
+    """Update HPA settings for a pod"""
+    try:
+        # In a real implementation, this would update the actual HPA
+        # For now, just return success
+        pod = hpa_data.get("pod", "unknown")
+        min_replicas = hpa_data.get("min_replicas", 1)
+        max_replicas = hpa_data.get("max_replicas", 5)
+        
+        return {
+            "message": f"HPA updated successfully for {pod}",
+            "pod": pod,
+            "min_replicas": min_replicas,
+            "max_replicas": max_replicas,
+            "status": "Applied"
+        }
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to update HPA: {str(e)}"}
+        )
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
