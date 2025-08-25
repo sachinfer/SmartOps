@@ -14,8 +14,20 @@ try:
     from misi_chatbot_widget import add_misi_to_page
     MISI_AVAILABLE = True
 except ImportError:
-    MISI_AVAILABLE = False
-    st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
+    # Try alternative import paths
+    try:
+        # Try importing from the current directory structure
+        from smartops_ai_chatbot.misi_chatbot_widget import add_misi_to_page
+        MISI_AVAILABLE = True
+    except ImportError:
+        try:
+            # Try importing directly from the parent directory
+            sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+            from smartops_ai_chatbot.misi_chatbot_widget import add_misi_to_page
+            MISI_AVAILABLE = True
+        except ImportError:
+            MISI_AVAILABLE = False
+            st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
 # Check if API service is running
 def check_api_health():
