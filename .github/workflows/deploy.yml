@@ -7,7 +7,7 @@ on:
       - gcp
       - gcp2
       - dash
-      - ai
+      # - ai
   workflow_dispatch:
 
 jobs:

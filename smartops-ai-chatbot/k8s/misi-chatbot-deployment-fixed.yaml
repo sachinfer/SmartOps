@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: misi-ai-chatbot
+  labels:
+    app: misi-ai-chatbot
+    version: v1.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: misi-ai-chatbot
+  template:
+    metadata:
+      labels:
+        app: misi-ai-chatbot
+        version: v1.0.0
+    spec:
+      containers:
+      - name: misi-chatbot
+        image: us-docker.pkg.dev/PROJECT_ID/smartops-repo/misi-ai-chatbot:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8501
+          name: http
+        env:
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+        - name: STREAMLIT_SERVER_ADDRESS
+          value: "0.0.0.0"
+        - name: STREAMLIT_SERVER_HEADLESS
+          value: "true"
+        - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+          value: "false"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: chatbot-config
+          mountPath: /app/config
+          readOnly: true
+      volumes:
+      - name: chatbot-config
+        configMap:
+          name: misi-chatbot-config
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: misi-ai-chatbot-service
+  labels:
+    app: misi-ai-chatbot
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8501
+    protocol: TCP
+    name: http
+  selector:
+    app: misi-ai-chatbot
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: misi-chatbot-config
+  labels:
+    app: misi-ai-chatbot
+data:
+  config.yaml: |
+    # Misi AI Chatbot Configuration
+    chatbot:
+      name: "Misi"
+      version: "1.0.0"
+      position: "bottom-right"
+      theme: "dark"
+    
+    smartops:
+      pages:
+        - name: "Overview"
+          number: 1
+        - name: "Pod Explorer and Logs"
+          number: 2
+        - name: "Kubernetes Shell and Cluster Explorer"
+          number: 3
+        - name: "Anomaly Detection"
+          number: 4
+        - name: "Auto Scaling Recommendations and Control"
+          number: 5
+        - name: "Incident Timeline and Postmortem Report Generator"
+          number: 6
+        - name: "AI Actions"
+          number: 8
+        - name: "Deployments"
+          number: 9
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: misi-ai-chatbot-hpa
+  labels:
+    app: misi-ai-chatbot
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: misi-ai-chatbot
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: misi-ai-chatbot-ingress
+  labels:
+    app: misi-ai-chatbot
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: misi.yourdomain.com  # Replace with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: misi-ai-chatbot-service
+            port:
+              number: 80
