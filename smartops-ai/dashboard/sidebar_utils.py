@@ -17,6 +17,7 @@ def get_anomaly_data():
         ]
         
         conn = None
+        working_db = None
         for db_path in db_paths:
             try:
                 conn = sqlite3.connect(db_path)
@@ -24,6 +25,7 @@ def get_anomaly_data():
                 cursor = conn.cursor()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='anomalies'")
                 if cursor.fetchone():
+                    working_db = db_path
                     break
                 conn.close()
                 conn = None
@@ -37,12 +39,20 @@ def get_anomaly_data():
             st.error("Could not connect to anomalies database")
             return pd.DataFrame()
         
+        # Debug: Check table structure
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(anomalies)")
+        columns_info = cursor.fetchall()
+        
+        # Debug: Show sample data
+        cursor.execute("SELECT * FROM anomalies LIMIT 3")
+        sample_data = cursor.fetchall()
+        
         # Query for recent anomalies (last 24 hours) with high CPU usage
         query = """
         SELECT timestamp, pod_name, cpu, memory, prediction, labels
         FROM anomalies 
         WHERE timestamp >= datetime('now', '-24 hours')
-        AND cpu > 0.5  -- CPU usage > 50%
         AND prediction = 'Anomaly detected'
         ORDER BY timestamp DESC
         LIMIT 10
@@ -51,12 +61,42 @@ def get_anomaly_data():
         df = pd.read_sql_query(query, conn)
         conn.close()
         
-        # Convert CPU to percentage and memory to MB
+        # Debug: Show data info
         if not df.empty:
-            df['cpu_percent'] = (df['cpu'] * 100).round(1)
-            df['memory_mb'] = (df['memory'] / (1024 * 1024)).round(1)
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            df['time_ago'] = df['timestamp'].apply(lambda x: get_time_ago(x))
+            st.info(f"📊 Database: {working_db}")
+            st.info(f"📊 Raw data types: {df.dtypes.to_dict()}")
+            st.info(f"📊 Sample CPU values: {df['cpu'].head(3).tolist()}")
+            st.info(f"📊 Sample Memory values: {df['memory'].head(3).tolist()}")
+        
+        # Convert CPU to percentage and memory to MB with proper error handling
+        if not df.empty:
+            # Handle CPU conversion - ensure it's numeric
+            try:
+                # Convert CPU to numeric, handling any string values
+                df['cpu'] = pd.to_numeric(df['cpu'], errors='coerce')
+                # Filter out rows where CPU conversion failed
+                df = df.dropna(subset=['cpu'])
+                # Filter for high CPU usage (> 50%)
+                df = df[df['cpu'] > 0.5]
+                
+                # Convert CPU to percentage
+                df['cpu_percent'] = (df['cpu'] * 100).round(1)
+                
+                # Handle memory conversion
+                df['memory'] = pd.to_numeric(df['memory'], errors='coerce')
+                df = df.dropna(subset=['memory'])
+                df['memory_mb'] = (df['memory'] / (1024 * 1024)).round(1)
+                
+                # Convert timestamp
+                df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+                df = df.dropna(subset=['timestamp'])
+                
+                # Add time ago
+                df['time_ago'] = df['timestamp'].apply(lambda x: get_time_ago(x))
+                
+            except Exception as e:
+                st.error(f"Error processing anomaly data: {e}")
+                return pd.DataFrame()
         
         return df
     except Exception as e:
@@ -105,13 +145,16 @@ def ignore_anomaly(pod_name):
 
 def show_anomaly_notifications():
     """Display anomaly notifications in the sidebar"""
-    # Add refresh button
-    col1, col2 = st.columns([3, 1])
+    # Add refresh button and debug button
+    col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
         st.markdown('<div class="sb-title">🚨 Active Anomalies</div>', unsafe_allow_html=True)
     with col2:
         if st.button("🔄", key="refresh_anomalies", help="Refresh anomalies"):
             st.rerun()
+    with col3:
+        if st.button("🐛", key="debug_anomalies", help="Debug database"):
+            debug_database()
     
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     
@@ -214,6 +257,61 @@ def show_anomaly_notifications():
             f'<div style="color: #bdc3c7; font-size: 0.8rem; text-align: center;">👁️ {len(ignored)} anomalies ignored</div>',
             unsafe_allow_html=True
         )
+
+def debug_database():
+    """Debug database connection and show detailed information"""
+    st.markdown("---")
+    st.markdown("**🐛 Database Debug Information**")
+    
+    # Try multiple possible database paths
+    db_paths = [
+        '/app/dashboard/data/data.db',  # Production path
+        'smartops-ai/dashboard/data/data.db',  # Local development
+        'data/data.db',  # Relative path
+        'dashboard/data/data.db'  # Another relative path
+    ]
+    
+    for db_path in db_paths:
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            # Check if table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='anomalies'")
+            if cursor.fetchone():
+                st.success(f"✅ Table found in: {db_path}")
+                
+                # Get table structure
+                cursor.execute("PRAGMA table_info(anomalies)")
+                columns = cursor.fetchall()
+                st.info(f"📋 Table structure: {[col[1] for col in columns]}")
+                
+                # Get row count
+                cursor.execute("SELECT COUNT(*) FROM anomalies")
+                count = cursor.fetchone()[0]
+                st.info(f"📊 Total records: {count}")
+                
+                # Get sample data
+                cursor.execute("SELECT * FROM anomalies LIMIT 3")
+                sample = cursor.fetchall()
+                st.info(f"📝 Sample data: {sample}")
+                
+                # Get data types
+                cursor.execute("SELECT * FROM anomalies LIMIT 1")
+                sample_row = cursor.fetchone()
+                if sample_row:
+                    st.info(f"🔍 Sample row types: {[type(val).__name__ for val in sample_row]}")
+                
+                conn.close()
+                break
+            else:
+                st.warning(f"⚠️ Table 'anomalies' not found in: {db_path}")
+                conn.close()
+                
+        except Exception as e:
+            st.error(f"❌ Error with {db_path}: {str(e)}")
+    
+    st.markdown("---")
 
 def show_sidebar():
     # ---------- Hide everything except the sidebar ----------
