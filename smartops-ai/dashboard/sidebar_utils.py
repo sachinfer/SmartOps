@@ -1,4 +1,219 @@
 import streamlit as st
+import sqlite3
+import pandas as pd
+from datetime import datetime, timedelta
+import subprocess
+import json
+
+def get_anomaly_data():
+    """Fetch recent actionable anomalies from the database"""
+    try:
+        # Try multiple possible database paths
+        db_paths = [
+            '/app/dashboard/data/data.db',  # Production path
+            'smartops-ai/dashboard/data/data.db',  # Local development
+            'data/data.db',  # Relative path
+            'dashboard/data/data.db'  # Another relative path
+        ]
+        
+        conn = None
+        for db_path in db_paths:
+            try:
+                conn = sqlite3.connect(db_path)
+                # Test if the table exists
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='anomalies'")
+                if cursor.fetchone():
+                    break
+                conn.close()
+                conn = None
+            except:
+                if conn:
+                    conn.close()
+                conn = None
+                continue
+        
+        if not conn:
+            st.error("Could not connect to anomalies database")
+            return pd.DataFrame()
+        
+        # Query for recent anomalies (last 24 hours) with high CPU usage
+        query = """
+        SELECT timestamp, pod_name, cpu, memory, prediction, labels
+        FROM anomalies 
+        WHERE timestamp >= datetime('now', '-24 hours')
+        AND cpu > 0.5  -- CPU usage > 50%
+        AND prediction = 'Anomaly detected'
+        ORDER BY timestamp DESC
+        LIMIT 10
+        """
+        
+        df = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        # Convert CPU to percentage and memory to MB
+        if not df.empty:
+            df['cpu_percent'] = (df['cpu'] * 100).round(1)
+            df['memory_mb'] = (df['memory'] / (1024 * 1024)).round(1)
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            df['time_ago'] = df['timestamp'].apply(lambda x: get_time_ago(x))
+        
+        return df
+    except Exception as e:
+        st.error(f"Error fetching anomaly data: {e}")
+        return pd.DataFrame()
+
+def get_time_ago(timestamp):
+    """Convert timestamp to human readable time ago"""
+    now = datetime.now()
+    diff = now - timestamp
+    
+    if diff.days > 0:
+        return f"{diff.days}d ago"
+    elif diff.seconds > 3600:
+        hours = diff.seconds // 3600
+        return f"{hours}h ago"
+    elif diff.seconds > 60:
+        minutes = diff.seconds // 60
+        return f"{minutes}m ago"
+    else:
+        return "Just now"
+
+def kill_pod(pod_name, namespace="smartops"):
+    """Kill a problematic pod permanently"""
+    try:
+        # Delete the pod
+        result = subprocess.run([
+            'kubectl', 'delete', 'pod', pod_name, 
+            '-n', namespace, '--force', '--grace-period=0'
+        ], capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            return True, f"Successfully killed pod {pod_name}"
+        else:
+            return False, f"Failed to kill pod: {result.stderr}"
+    except Exception as e:
+        return False, f"Error killing pod: {str(e)}"
+
+def ignore_anomaly(pod_name):
+    """Mark an anomaly as ignored (store in session state)"""
+    if 'ignored_anomalies' not in st.session_state:
+        st.session_state.ignored_anomalies = set()
+    
+    st.session_state.ignored_anomalies.add(pod_name)
+    st.rerun()
+
+def show_anomaly_notifications():
+    """Display anomaly notifications in the sidebar"""
+    # Add refresh button
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown('<div class="sb-title">🚨 Active Anomalies</div>', unsafe_allow_html=True)
+    with col2:
+        if st.button("🔄", key="refresh_anomalies", help="Refresh anomalies"):
+            st.rerun()
+    
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    
+    # Get anomaly data
+    anomalies_df = get_anomaly_data()
+    
+    if anomalies_df.empty:
+        st.markdown(
+            '<div style="color: #dfe6e9; font-size: 0.9rem; text-align: center; padding: 1rem;">✅ No active anomalies</div>',
+            unsafe_allow_html=True
+        )
+        return
+    
+    # Filter out ignored anomalies
+    ignored = st.session_state.get('ignored_anomalies', set())
+    active_anomalies = anomalies_df[~anomalies_df['pod_name'].isin(ignored)]
+    
+    if active_anomalies.empty:
+        st.markdown(
+            '<div style="color: #dfe6e9; font-size: 0.9rem; text-align: center; padding: 1rem;">✅ All anomalies handled</div>',
+            unsafe_allow_html=True
+        )
+        return
+    
+    # Show anomaly count with notification badge
+    anomaly_count = len(active_anomalies)
+    st.markdown(
+        f'<div style="color: #ff6b6b; font-size: 0.9rem; text-align: center; padding: 0.5rem; background: rgba(255,107,107,0.1); border-radius: 8px; margin-bottom: 1rem;">🚨 {anomaly_count} Active Anomaly{"s" if anomaly_count > 1 else ""}</div>',
+        unsafe_allow_html=True
+    )
+    
+    # Display each anomaly
+    for _, row in active_anomalies.iterrows():
+        pod_name = row['pod_name']
+        cpu_percent = row['cpu_percent']
+        memory_mb = row['memory_mb']
+        time_ago = row['time_ago']
+        
+        # Anomaly severity based on CPU usage
+        if cpu_percent > 90:
+            severity_icon = "🔴"
+            severity_color = "#ff6b6b"
+            severity_text = "CRITICAL"
+        elif cpu_percent > 70:
+            severity_icon = "🟠"
+            severity_color = "#ffa726"
+            severity_text = "HIGH"
+        else:
+            severity_icon = "🟡"
+            severity_color = "#ffd54f"
+            severity_text = "MEDIUM"
+        
+        # Anomaly card
+        st.markdown(
+            f"""
+            <div style="
+                background: rgba(0,0,0,0.2); 
+                border: 1px solid {severity_color}; 
+                border-radius: 10px; 
+                padding: 1rem; 
+                margin: 0.5rem 0;
+                backdrop-filter: blur(10px);
+            ">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="font-size: 1.2rem;">{severity_icon}</span>
+                    <span style="color: {severity_color}; font-weight: bold;">{pod_name}</span>
+                    <span style="color: {severity_color}; font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">{severity_text}</span>
+                </div>
+                <div style="color: #dfe6e9; font-size: 0.85rem; margin-bottom: 0.5rem;">
+                    CPU: <strong>{cpu_percent}%</strong> | Memory: <strong>{memory_mb}MB</strong>
+                </div>
+                <div style="color: #bdc3c7; font-size: 0.8rem; margin-bottom: 0.8rem;">
+                    {time_ago}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Action buttons
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button(f"🗑️ Kill", key=f"kill_{pod_name}", use_container_width=True):
+                success, message = kill_pod(pod_name)
+                if success:
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
+        
+        with col2:
+            if st.button(f"👁️ Ignore", key=f"ignore_{pod_name}", use_container_width=True):
+                ignore_anomaly(pod_name)
+    
+    # Show ignored anomalies count
+    if ignored:
+        st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="color: #bdc3c7; font-size: 0.8rem; text-align: center;">👁️ {len(ignored)} anomalies ignored</div>',
+            unsafe_allow_html=True
+        )
 
 def show_sidebar():
     # ---------- Hide everything except the sidebar ----------
@@ -69,6 +284,15 @@ def show_sidebar():
 
         /* Make emojis align nicely inside buttons */
         .stButton > button p { margin: 0; }
+        
+        /* Anomaly notification styles */
+        .anomaly-card {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            backdrop-filter: blur(10px);
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -86,6 +310,9 @@ def show_sidebar():
         unsafe_allow_html=True
     )
 
+    # Show anomaly notifications at the top
+    show_anomaly_notifications()
+    
     st.markdown('<div class="sb-title">🧭 Navigation</div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
 
@@ -96,6 +323,13 @@ def show_sidebar():
         st.switch_page("pages/1_Overview.py")
     if st.button("🔥  Anomaly Detection", key="nav_anomaly", use_container_width=True):
         st.switch_page("pages/4_Anomaly_Detection.py")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ---- Testing & Development
+    st.markdown('<div class="sb-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sb-sub">🧪 Testing & Development</div>', unsafe_allow_html=True)
+    if st.button("🧪  Sidebar Test", key="nav_test", use_container_width=True):
+        st.switch_page("test_sidebar.py")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Pod & Cluster

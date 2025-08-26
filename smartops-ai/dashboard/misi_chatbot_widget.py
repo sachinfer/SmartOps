@@ -81,6 +81,8 @@ class MisiChatbotWidget:
             left: 0;
             width: 100vw;
             height: 100vh;
+            min-width: 1200px;
+            min-height: 800px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             z-index: 10000;
             display: none;
@@ -104,7 +106,7 @@ class MisiChatbotWidget:
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
             color: white;
-            padding: 25px 30px;
+            padding: 35px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -148,7 +150,7 @@ class MisiChatbotWidget:
         
         .misi-chat-body {
             flex: 1;
-            padding: 30px;
+            padding: 40px 50px;
             overflow-y: auto;
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -176,9 +178,9 @@ class MisiChatbotWidget:
         .misi-welcome-message {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(20px);
-            padding: 25px;
-            border-radius: 20px;
-            margin-bottom: 25px;
+            padding: 35px;
+            border-radius: 25px;
+            margin-bottom: 35px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             text-align: center;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -212,11 +214,11 @@ class MisiChatbotWidget:
         }
         
         .misi-message-bubble {
-            max-width: 70%;
-            padding: 18px 24px;
-            border-radius: 25px;
-            font-size: 15px;
-            line-height: 1.5;
+            max-width: 75%;
+            padding: 22px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            line-height: 1.6;
             word-wrap: break-word;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
@@ -255,9 +257,9 @@ class MisiChatbotWidget:
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-size: 13px;
+            padding: 16px 25px;
+            border-radius: 30px;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
             white-space: nowrap;
@@ -272,7 +274,7 @@ class MisiChatbotWidget:
         }
         
         .misi-chat-input-container {
-            padding: 25px 30px;
+            padding: 35px 40px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
             border-top: 1px solid rgba(255, 255, 255, 0.2);
@@ -280,11 +282,11 @@ class MisiChatbotWidget:
         }
         
         .misi-chat-input {
-            width: calc(100% - 70px);
-            padding: 18px 24px;
+            width: calc(100% - 90px);
+            padding: 22px 30px;
             border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 30px 0 0 30px;
-            font-size: 15px;
+            border-radius: 35px 0 0 35px;
+            font-size: 16px;
             outline: none;
             transition: all 0.3s ease;
             box-sizing: border-box;
@@ -295,14 +297,14 @@ class MisiChatbotWidget:
         }
         
         .misi-send-btn {
-            width: 70px;
-            height: 60px;
+            width: 90px;
+            height: 70px;
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(20px);
             border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 0 30px 30px 0;
+            border-radius: 0 35px 35px 0;
             color: white;
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
             float: right;

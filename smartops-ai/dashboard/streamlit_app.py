@@ -1,5 +1,6 @@
 import streamlit as st
 from sidebar_utils import show_sidebar
+import time
 
 # Page config with modern theme
 st.set_page_config(
@@ -8,6 +9,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Auto-refresh sidebar every 30 seconds
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = time.time()
+
+current_time = time.time()
+if current_time - st.session_state.last_refresh > 30:  # 30 seconds
+    st.session_state.last_refresh = current_time
+    st.rerun()
 
 # Custom CSS for modern styling
 st.markdown("""
