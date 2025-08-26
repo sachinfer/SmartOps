@@ -235,6 +235,9 @@ def show_anomaly_notifications():
     ignored = st.session_state.get('ignored_anomalies', set())
     active_anomalies = anomalies_df[~anomalies_df['pod_name'].isin(ignored)]
     
+    # Remove duplicate pods (keep only the most recent entry for each pod)
+    active_anomalies = active_anomalies.drop_duplicates(subset=['pod_name'], keep='first')
+    
     if active_anomalies.empty:
         st.markdown(
             '<div style="color: #dfe6e9; font-size: 0.9rem; text-align: center; padding: 1rem;">✅ All anomalies handled</div>',
@@ -250,7 +253,7 @@ def show_anomaly_notifications():
     )
     
     # Display each anomaly
-    for _, row in active_anomalies.iterrows():
+    for idx, (_, row) in enumerate(active_anomalies.iterrows()):
         pod_name = row['pod_name']
         cpu_percent = row['cpu_percent']
         memory_mb = row['memory_mb']
@@ -297,11 +300,11 @@ def show_anomaly_notifications():
             unsafe_allow_html=True
         )
         
-        # Action buttons
+        # Action buttons with unique keys
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button(f"🗑️ Kill", key=f"kill_{pod_name}", use_container_width=True):
+            if st.button(f"🗑️ Kill", key=f"kill_{pod_name}_{idx}", use_container_width=True):
                 success, message = kill_pod(pod_name)
                 if success:
                     st.success(message)
@@ -313,7 +316,7 @@ def show_anomaly_notifications():
                         show_pod_killing_alternatives()
         
         with col2:
-            if st.button(f"👁️ Ignore", key=f"ignore_{pod_name}", use_container_width=True):
+            if st.button(f"👁️ Ignore", key=f"ignore_{pod_name}_{idx}", use_container_width=True):
                 ignore_anomaly(pod_name)
     
     # Show ignored anomalies count
