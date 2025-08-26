@@ -331,31 +331,43 @@ def show_anomaly_notifications():
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-title">⚡ Quick Actions</div>', unsafe_allow_html=True)
     
-    # Show current stress test pods
-    st.markdown("**🚨 Kill Stress Test Pods:**")
-    st.markdown("Copy and run these commands:")
-    
-    # Get current stress test pods from the database
-    try:
-        conn = sqlite3.connect(working_db if 'working_db' in locals() else '/app/dashboard/data/data.db')
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT DISTINCT pod_name FROM anomalies 
-            WHERE pod_name LIKE '%stress%' 
-            AND timestamp >= datetime('now', '-1 hour')
-            ORDER BY pod_name
-        """)
-        stress_pods = cursor.fetchall()
-        conn.close()
-        
-        if stress_pods:
-            for (pod_name,) in stress_pods:
-                st.code(f"kubectl delete pod {pod_name} -n smartops --force --grace-period=0", language="bash")
-        else:
-            st.info("No stress test pods found in recent anomalies")
+    # Get current anomalies for quick actions
+    current_anomalies = get_anomaly_data()
+    if not current_anomalies.empty:
+        st.markdown("**🚨 Active Anomaly Pods:**")
+        for idx, (_, row) in enumerate(current_anomalies.iterrows()):
+            pod_name = row['pod_name']
+            cpu_percent = row['cpu_percent']
             
-    except Exception as e:
-        st.warning("Could not fetch stress test pods from database")
+            # Create a copy-paste command
+            kill_command = f"kubectl delete pod {pod_name} -n smartops --force --grace-period=0"
+            
+            st.markdown(f"""
+            <div style="
+                background: rgba(255,107,107,0.1); 
+                border: 1px solid #ff6b6b; 
+                border-radius: 8px; 
+                padding: 0.8rem; 
+                margin: 0.5rem 0;
+            ">
+                <div style="color: #ff6b6b; font-weight: bold; margin-bottom: 0.5rem;">
+                    🔴 {pod_name} (CPU: {cpu_percent}%)
+                </div>
+                <div style="font-size: 0.8rem; color: #dfe6e9;">
+                    Copy and run this command:
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.code(kill_command, language="bash")
+            
+            # Add a copy button
+            if st.button(f"📋 Copy Command", key=f"copy_{pod_name}_{idx}", use_container_width=True):
+                st.success(f"Command copied! Run: {kill_command}")
+    else:
+        st.markdown("✅ No active anomalies")
+    
+    st.markdown("---")
     
     # Show namespace info
     st.markdown("**📋 Current Namespace:** `smartops`")
