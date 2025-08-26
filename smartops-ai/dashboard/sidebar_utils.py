@@ -61,13 +61,6 @@ def get_anomaly_data():
         df = pd.read_sql_query(query, conn)
         conn.close()
         
-        # Debug: Show data info
-        if not df.empty:
-            st.info(f"📊 Database: {working_db}")
-            st.info(f"📊 Raw data types: {df.dtypes.to_dict()}")
-            st.info(f"📊 Sample CPU values: {df['cpu'].head(3).tolist()}")
-            st.info(f"📊 Sample Memory values: {df['memory'].head(3).tolist()}")
-        
         # Convert CPU to percentage and memory to MB with proper error handling
         if not df.empty:
             # Handle CPU conversion - ensure it's numeric
@@ -122,7 +115,13 @@ def get_time_ago(timestamp):
 def kill_pod(pod_name, namespace="smartops"):
     """Kill a problematic pod permanently"""
     try:
-        # Delete the pod
+        # First check if kubectl is available
+        result = subprocess.run(['which', 'kubectl'], capture_output=True, text=True, timeout=10)
+        if result.returncode != 0:
+            # kubectl not available, try alternative methods
+            return False, f"kubectl not available. Pod {pod_name} cannot be killed from this container."
+        
+        # kubectl is available, proceed with deletion
         result = subprocess.run([
             'kubectl', 'delete', 'pod', pod_name, 
             '-n', namespace, '--force', '--grace-period=0'
@@ -132,8 +131,72 @@ def kill_pod(pod_name, namespace="smartops"):
             return True, f"Successfully killed pod {pod_name}"
         else:
             return False, f"Failed to kill pod: {result.stderr}"
+    except subprocess.TimeoutExpired:
+        return False, "Timeout while trying to kill pod"
+    except FileNotFoundError:
+        return False, "kubectl command not found. Pod killing is not available from this container."
     except Exception as e:
         return False, f"Error killing pod: {str(e)}"
+
+def show_pod_killing_alternatives():
+    """Show alternative ways to kill pods when kubectl is not available"""
+    st.markdown("---")
+    st.markdown("**🔧 Alternative Ways to Kill Pods:**")
+    
+    st.markdown("""
+    Since kubectl is not available in this container, you can kill pods using:
+    
+    **1. From your local machine:**
+    ```bash
+    kubectl delete pod <pod-name> -n smartops --force --grace-period=0
+    ```
+    
+    **2. From Cloud Shell:**
+    ```bash
+    kubectl delete pod <pod-name> -n smartops --force --grace-period=0
+    ```
+    
+    **3. From another pod with kubectl:**
+    ```bash
+    kubectl exec -it <monitor-pod> -- kubectl delete pod <pod-name> -n smartops
+    ```
+    
+    **4. Scale deployment to 0:**
+    ```bash
+    kubectl scale deployment <deployment-name> --replicas=0 -n smartops
+    ```
+    """)
+    
+    # Show current stress test pods
+    st.markdown("**🚨 Current Stress Test Pods:**")
+    st.markdown("Use these commands to kill the stress-test pod:")
+    
+    st.code("kubectl delete pod stress-test -n smartops --force --grace-period=0", language="bash")
+    
+    # Add a button to show more info
+    if st.button("📋 Show All Pods"):
+        show_all_pods_info()
+
+def show_all_pods_info():
+    """Show information about all pods in the smartops namespace"""
+    st.markdown("**📊 All Pods in smartops Namespace:**")
+    
+    st.markdown("""
+    To see all pods and their status:
+    ```bash
+    kubectl get pods -n smartops
+    ```
+    
+    To see detailed pod information:
+    ```bash
+    kubectl describe pod <pod-name> -n smartops
+    ```
+    
+    To see pod logs:
+    ```bash
+    kubectl logs <pod-name> -n smartops
+    ```
+    """)
 
 def ignore_anomaly(pod_name):
     """Mark an anomaly as ignored (store in session state)"""
@@ -245,6 +308,9 @@ def show_anomaly_notifications():
                     st.rerun()
                 else:
                     st.error(message)
+                    # Show alternatives when kubectl is not available
+                    if "kubectl not available" in message:
+                        show_pod_killing_alternatives()
         
         with col2:
             if st.button(f"👁️ Ignore", key=f"ignore_{pod_name}", use_container_width=True):
@@ -257,6 +323,43 @@ def show_anomaly_notifications():
             f'<div style="color: #bdc3c7; font-size: 0.8rem; text-align: center;">👁️ {len(ignored)} anomalies ignored</div>',
             unsafe_allow_html=True
         )
+    
+    # Quick Actions Section
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-title">⚡ Quick Actions</div>', unsafe_allow_html=True)
+    
+    # Show current stress test pods
+    st.markdown("**🚨 Kill Stress Test Pods:**")
+    st.markdown("Copy and run these commands:")
+    
+    # Get current stress test pods from the database
+    try:
+        conn = sqlite3.connect(working_db if 'working_db' in locals() else '/app/dashboard/data/data.db')
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT pod_name FROM anomalies 
+            WHERE pod_name LIKE '%stress%' 
+            AND timestamp >= datetime('now', '-1 hour')
+            ORDER BY pod_name
+        """)
+        stress_pods = cursor.fetchall()
+        conn.close()
+        
+        if stress_pods:
+            for (pod_name,) in stress_pods:
+                st.code(f"kubectl delete pod {pod_name} -n smartops --force --grace-period=0", language="bash")
+        else:
+            st.info("No stress test pods found in recent anomalies")
+            
+    except Exception as e:
+        st.warning("Could not fetch stress test pods from database")
+    
+    # Show namespace info
+    st.markdown("**📋 Current Namespace:** `smartops`")
+    
+    # Add a button to refresh pod list
+    if st.button("🔄 Refresh Pod List", key="refresh_pods", use_container_width=True):
+        st.rerun()
 
 def debug_database():
     """Debug database connection and show detailed information"""
