@@ -61,38 +61,44 @@ def add_misi_to_page(position="bottom-right"):
     
     .misi-chat-popup {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 500px;
-        height: 600px;
-        background: white;
-        border-radius: 24px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
         z-index: 10000;
         display: none;
         flex-direction: column;
         overflow: hidden;
-        animation: misi-slide-in 0.3s ease-out;
-        border: 1px solid rgba(0,0,0,0.1);
-        max-width: 90vw;
-        max-height: 90vh;
-        min-width: 400px;
-        min-height: 500px;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+        animation: misi-fade-in 0.3s ease-out;
+        backdrop-filter: blur(10px);
     }
     
-    /* Fallback positioning for edge cases */
-    .misi-chat-popup.fallback {
-        top: 20px;
-        left: 20px;
-        right: 20px;
-        bottom: 20px;
-        transform: none;
-        width: auto;
-        height: auto;
+    @keyframes misi-fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    .misi-chat-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 800px;
+        height: 80%;
+        max-height: 700px;
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: misi-slide-in 0.3s ease-out;
     }
     
     @keyframes misi-slide-in {
@@ -264,23 +270,38 @@ def add_misi_to_page(position="bottom-right"):
     .misi-chat-input {
         flex: 1;
         padding: 16px 20px;
-        border: 1px solid #d1d5db;
+        border: 2px solid #d1d5db;
         border-radius: 25px;
-        font-size: 14px;
+        font-size: 16px;
         outline: none;
-        background: #f9fafb;
+        background: white;
         color: #1e293b;
         transition: all 0.3s ease;
+        box-sizing: border-box;
+        cursor: text;
+        user-select: auto;
+        -webkit-user-select: auto;
+        -moz-user-select: auto;
+        -ms-user-select: auto;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10001;
     }
     
     .misi-chat-input:focus {
         border-color: #10b981;
         background: white;
         box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        outline: none;
+    }
+    
+    .misi-chat-input:active {
+        border-color: #10b981;
     }
     
     .misi-chat-input::placeholder {
         color: #9ca3af;
+        opacity: 1;
     }
     
     .misi-send-btn {
@@ -322,16 +343,27 @@ def add_misi_to_page(position="bottom-right"):
             popup.style.display = misiPopupVisible ? 'flex' : 'none';
             
             if (misiPopupVisible) {
-                // Ensure popup is properly positioned
-                ensurePopupVisibility(popup);
-                
-                // Focus on input when opening
+                // Focus on input when opening with multiple attempts
                 setTimeout(() => {
                     const input = document.getElementById('misi-chat-input');
                     if (input) {
+                        // Ensure input is interactive
+                        input.style.pointerEvents = 'auto';
+                        input.style.userSelect = 'auto';
+                        input.removeAttribute('readonly');
+                        input.removeAttribute('disabled');
+                        
+                        // Focus and click to ensure it's active
                         input.focus();
+                        input.click();
+                        
+                        // Force focus again
+                        setTimeout(() => {
+                            input.focus();
+                            console.log('Input focused and ready for input');
+                        }, 100);
                     }
-                }, 100);
+                }, 200);
             }
         }
     }
@@ -440,6 +472,7 @@ def add_misi_to_page(position="bottom-right"):
         const closeBtn = document.querySelector('.misi-close-btn');
         const input = document.getElementById('misi-chat-input');
         const sendBtn = document.getElementById('misi-send-btn');
+        const popup = document.getElementById('misi-chat-popup');
         
         if (icon) {
             icon.addEventListener('click', toggleMisiPopup);
@@ -455,11 +488,35 @@ def add_misi_to_page(position="bottom-right"):
                     sendMisiMessage();
                 }
             });
+            
+            // Additional input event listeners
+            input.addEventListener('input', function(e) {
+                console.log('Input value:', e.target.value);
+            });
+            
+            input.addEventListener('focus', function(e) {
+                console.log('Input focused');
+                e.target.style.borderColor = '#10b981';
+            });
+            
+            input.addEventListener('blur', function(e) {
+                console.log('Input blurred');
+                e.target.style.borderColor = '#d1d5db';
+            });
         }
         
         if (sendBtn) {
             sendBtn.addEventListener('click', function() {
                 sendMisiMessage();
+            });
+        }
+        
+        // Close popup when clicking outside the chat content
+        if (popup) {
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) {
+                    closeMisiPopup();
+                }
             });
         }
         
@@ -492,38 +549,40 @@ def add_misi_to_page(position="bottom-right"):
     </div>
     
     <div class="misi-chat-popup" id="misi-chat-popup">
-        <div class="misi-chat-header">
-            <div class="misi-header-icon">
-                <div class="misi-header-icon-inner">
-                    <div class="misi-header-icon-lines"></div>
-                    <div class="misi-header-icon-lines"></div>
+        <div class="misi-chat-content">
+            <div class="misi-chat-header">
+                <div class="misi-header-icon">
+                    <div class="misi-header-icon-inner">
+                        <div class="misi-header-icon-lines"></div>
+                        <div class="misi-header-icon-lines"></div>
+                    </div>
+                </div>
+                <div class="misi-chat-title">Ask Misi</div>
+                <div class="misi-chat-subtitle">Your SmartOps AI Assistant</div>
+                <button class="misi-close-btn" title="Close chat">×</button>
+            </div>
+            <div class="misi-chat-body" id="misi-chat-body">
+                <div class="misi-message assistant">
+                    <div class="misi-message-bubble">
+                        Hi! I'm Misi, your SmartOps AI assistant. How can I help you today?
+                    </div>
                 </div>
             </div>
-            <div class="misi-chat-title">Ask Misi</div>
-            <div class="misi-chat-subtitle">Your SmartOps AI Assistant</div>
-            <button class="misi-close-btn" title="Close chat">×</button>
-        </div>
-        <div class="misi-chat-body" id="misi-chat-body">
-            <div class="misi-message assistant">
-                <div class="misi-message-bubble">
-                    Hi! I'm Misi, your SmartOps AI assistant. How can I help you today?
-                </div>
+            <div class="misi-suggestions">
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('pod')">Pods</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('anomaly')">Anomaly</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('scale')">Scale</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('shell')">Shell</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('incident')">Incident</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('ai')">AI Actions</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('deploy')">Deployments</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('help')">Help</button>
             </div>
-        </div>
-        <div class="misi-suggestions">
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('pod')">Pods</button>
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('anomaly')">Anomaly</button>
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('scale')">Scale</button>
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('shell')">Shell</button>
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('incident')">Incident</button>
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('ai')">AI Actions</button>
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('deploy')">Deployments</button>
-            <button class="misi-suggestion-btn" onclick="sendMisiMessage('help')">Help</button>
-        </div>
-        <div class="misi-chat-input-container">
-            <input type="text" class="misi-chat-input" id="misi-chat-input"
-                   placeholder="Ask me anything about SmartOps..." />
-            <button class="misi-send-btn" id="misi-send-btn">📤</button>
+            <div class="misi-chat-input-container">
+                <input type="text" class="misi-chat-input" id="misi-chat-input"
+                       placeholder="Ask me anything about SmartOps..." />
+                <button class="misi-send-btn" id="misi-send-btn">📤</button>
+            </div>
         </div>
     </div>
     
