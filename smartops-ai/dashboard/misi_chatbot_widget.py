@@ -1,16 +1,15 @@
 """
-Misi AI Chatbot Widget for SmartOps
-Modern floating popup style with interactive chat interface
+Misi AI Chatbot Widget for SmartOps Dashboard
+Provides a floating chat interface with AI assistance
 """
 
 import streamlit as st
 import streamlit.components.v1 as components
 
-def add_misi_to_page(position="bottom-right"):
-    """Add Misi chatbot to any page - just call this function"""
+def add_misi_to_page():
+    """Add the Misi AI chatbot widget to the current page"""
     
-    # CSS for styling
-    css = """
+    html = """
     <style>
     .misi-icon-container {
         position: fixed;
@@ -44,19 +43,45 @@ def add_misi_to_page(position="bottom-right"):
         box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
     }
     
-    .misi-icon-text {
+    .misi-icon img {
+        width: 50px;
+        height: 50px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+    }
+    
+    .misi-icon .misi-icon-fallback {
+        font-size: 40px;
         color: white;
-        font-size: 32px;
-        font-weight: bold;
+        display: none;
+    }
+    
+    .misi-icon img:not([src]), .misi-icon img[src=""], .misi-icon img[src*="error"] {
+        display: none;
+    }
+    
+    .misi-icon img:not([src]) + .misi-icon-fallback,
+    .misi-icon img[src=""] + .misi-icon-fallback,
+    .misi-icon img[src*="error"] + .misi-icon-fallback {
+        display: block;
     }
     
     .misi-icon-label {
+        position: absolute;
+        bottom: -30px;
+        left: 50%;
+        transform: translateX(-50%);
         color: white;
-        font-size: 14px;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 8px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        font-size: 12px;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .misi-icon-container:hover .misi-icon-label {
+        opacity: 1;
     }
     
     .misi-chat-popup {
@@ -75,12 +100,8 @@ def add_misi_to_page(position="bottom-right"):
     }
     
     @keyframes misi-fade-in {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     
     .misi-chat-content {
@@ -113,53 +134,56 @@ def add_misi_to_page(position="bottom-right"):
     }
     
     .misi-chat-header {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        padding: 30px 30px 20px 30px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 24px;
         text-align: center;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
         position: relative;
     }
     
     .misi-header-icon {
         width: 60px;
         height: 60px;
-        background: #10b981;
+        background: rgba(255,255,255,0.2);
         border-radius: 50%;
-        margin: 0 auto 15px auto;
+        margin: 0 auto 16px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 3px solid #d1fae5;
     }
     
     .misi-header-icon-inner {
-        width: 30px;
-        height: 30px;
+        width: 40px;
+        height: 40px;
         background: white;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 2px;
+        border-radius: 50%;
+        position: relative;
     }
     
     .misi-header-icon-lines {
-        width: 4px;
-        height: 20px;
+        position: absolute;
+        width: 20px;
+        height: 3px;
         background: #10b981;
         border-radius: 2px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
     
+    .misi-header-icon-lines:nth-child(1) { top: 35%; }
+    .misi-header-icon-lines:nth-child(2) { top: 65%; }
+    
     .misi-chat-title {
-        font-weight: 600;
-        font-size: 18px;
-        color: #1e293b;
-        margin-bottom: 5px;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 4px;
     }
     
     .misi-chat-subtitle {
         font-size: 14px;
-        color: #64748b;
+        opacity: 0.9;
         font-weight: 400;
     }
     
@@ -167,35 +191,34 @@ def add_misi_to_page(position="bottom-right"):
         position: absolute;
         top: 20px;
         right: 20px;
-        background: rgba(0,0,0,0.1);
+        background: rgba(255,255,255,0.2);
+        color: white;
         border: none;
-        color: #64748b;
-        font-size: 18px;
-        cursor: pointer;
-        padding: 8px;
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        transition: all 0.3s ease;
-        width: 32px;
-        height: 32px;
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: all 0.3s ease;
     }
     
     .misi-close-btn:hover {
-        background: rgba(0,0,0,0.2);
-        color: #1e293b;
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.1);
     }
     
     .misi-chat-body {
         flex: 1;
-        padding: 20px 30px;
-        overflow-y: auto;
+        padding: 24px;
         background: #f8fafc;
+        overflow-y: auto;
     }
     
     .misi-message {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         display: flex;
         flex-direction: column;
     }
@@ -212,54 +235,93 @@ def add_misi_to_page(position="bottom-right"):
         max-width: 80%;
         padding: 16px 20px;
         border-radius: 20px;
-        font-size: 14px;
         line-height: 1.5;
-        word-wrap: break-word;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
     .misi-message.user .misi-message-bubble {
         background: #10b981;
         color: white;
-        border-bottom-right-radius: 6px;
+        border-bottom-right-radius: 8px;
     }
     
     .misi-message.assistant .misi-message-bubble {
         background: white;
         color: #1e293b;
         border: 1px solid #e2e8f0;
-        border-bottom-left-radius: 6px;
+        border-bottom-left-radius: 8px;
+    }
+    
+    .misi-typing-indicator {
+        display: none;
+        padding: 16px 20px;
+        background: #f1f5f9;
+        border-radius: 20px;
+        margin-bottom: 16px;
+        align-self: flex-start;
+        max-width: 80%;
+        border: 1px solid #e2e8f0;
+        border-bottom-left-radius: 8px;
+    }
+    
+    .misi-typing-dots {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+    
+    .misi-typing-dot {
+        width: 8px;
+        height: 8px;
+        background: #64748b;
+        border-radius: 50%;
+        animation: misi-typing-bounce 1.4s infinite ease-in-out;
+    }
+    
+    .misi-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .misi-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes misi-typing-bounce {
+        0%, 80%, 100% {
+            transform: scale(0.8);
+            opacity: 0.5;
+        }
+        40% {
+            transform: scale(1);
+            opacity: 1;
+        }
     }
     
     .misi-suggestions {
+        padding: 20px 24px;
+        background: white;
+        border-top: 1px solid #e2e8f0;
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
-        margin: 20px 30px;
+        gap: 8px;
         justify-content: center;
     }
     
     .misi-suggestion-btn {
-        background: white;
-        border: 1px solid #d1d5db;
-        color: #374151;
-        padding: 12px 20px;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        padding: 8px 16px;
         border-radius: 20px;
         font-size: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
         font-weight: 500;
-        white-space: nowrap;
     }
     
     .misi-suggestion-btn:hover {
-        background: #f9fafb;
-        border-color: #9ca3af;
-        transform: translateY(-1px);
+        background: #e2e8f0;
+        color: #1e293b;
+        border-color: #cbd5e1;
     }
     
     .misi-chat-input-container {
-        padding: 20px 30px;
+        padding: 20px 24px;
         background: white;
         border-top: 1px solid #e2e8f0;
         display: flex;
@@ -279,13 +341,12 @@ def add_misi_to_page(position="bottom-right"):
         transition: all 0.3s ease;
         box-sizing: border-box;
         cursor: text;
-        user-select: auto;
-        -webkit-user-select: auto;
-        -moz-user-select: auto;
-        -ms-user-select: auto;
-        pointer-events: auto;
-        position: relative;
-        z-index: 10001;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.5;
+        resize: none;
+        overflow: hidden;
+        min-height: 50px;
+        max-height: 120px;
     }
     
     .misi-chat-input:focus {
@@ -305,245 +366,32 @@ def add_misi_to_page(position="bottom-right"):
     }
     
     .misi-send-btn {
-        width: 48px;
-        height: 48px;
+        width: 50px;
+        height: 50px;
         background: #10b981;
-        border: none;
         color: white;
-        font-size: 18px;
-        cursor: pointer;
+        border: none;
         border-radius: 50%;
+        font-size: 20px;
+        cursor: pointer;
         transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
     
     .misi-send-btn:hover {
         background: #059669;
         transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
     }
     </style>
-    """
-    
-    # JavaScript for functionality
-    js_code = """
-    <script>
-    let misiPopupVisible = false;
-    let misiMessages = [
-        {role: 'assistant', content: 'Hi! I\\'m Misi, your SmartOps AI assistant. How can I help you today?'}
-    ];
-    
-    function toggleMisiPopup() {
-        const popup = document.getElementById('misi-chat-popup');
-        if (popup) {
-            misiPopupVisible = !misiPopupVisible;
-            popup.style.display = misiPopupVisible ? 'flex' : 'none';
-            
-            if (misiPopupVisible) {
-                // Focus on input when opening with multiple attempts
-                setTimeout(() => {
-                    const input = document.getElementById('misi-chat-input');
-                    if (input) {
-                        // Ensure input is interactive
-                        input.style.pointerEvents = 'auto';
-                        input.style.userSelect = 'auto';
-                        input.removeAttribute('readonly');
-                        input.removeAttribute('disabled');
-                        
-                        // Focus and click to ensure it's active
-                        input.focus();
-                        input.click();
-                        
-                        // Force focus again
-                        setTimeout(() => {
-                            input.focus();
-                            console.log('Input focused and ready for input');
-                        }, 100);
-                    }
-                }, 200);
-            }
-        }
-    }
-    
-    function ensurePopupVisibility(popup) {
-        // Reset to default positioning
-        popup.classList.remove('fallback');
-        popup.style.top = '50%';
-        popup.style.left = '50%';
-        popup.style.transform = 'translate(-50%, -50%)';
-        
-        // Check if popup is cut off
-        setTimeout(() => {
-            const rect = popup.getBoundingClientRect();
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            
-            // If popup is cut off on left or right, use fallback positioning
-            if (rect.left < 0 || rect.right > viewportWidth || rect.top < 0 || rect.bottom > viewportHeight) {
-                popup.classList.add('fallback');
-                console.log('Using fallback positioning for popup');
-            }
-        }, 50);
-    }
-    
-    function closeMisiPopup() {
-        const popup = document.getElementById('misi-chat-popup');
-        if (popup) {
-            misiPopupVisible = false;
-            popup.style.display = 'none';
-        }
-    }
-    
-    function sendMisiMessage(message = null) {
-        let messageText;
-        
-        if (message) {
-            messageText = message;
-        } else {
-            const input = document.getElementById('misi-chat-input');
-            if (input && input.value.trim()) {
-                messageText = input.value.trim();
-                input.value = '';
-            } else {
-                return;
-            }
-        }
-        
-        if (messageText) {
-            addMisiMessage('user', messageText);
-            
-            setTimeout(() => {
-                const response = generateMisiResponse(messageText);
-                addMisiMessage('assistant', response);
-            }, 500);
-        }
-    }
-    
-    function addMisiMessage(role, content) {
-        const chatBody = document.getElementById('misi-chat-body');
-        if (chatBody) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `misi-message ${role}`;
-            
-            const bubbleDiv = document.createElement('div');
-            bubbleDiv.className = 'misi-message-bubble';
-            bubbleDiv.textContent = content;
-            
-            messageDiv.appendChild(bubbleDiv);
-            chatBody.appendChild(messageDiv);
-            
-            chatBody.scrollTop = chatBody.scrollHeight;
-            misiMessages.push({role, content});
-        }
-    }
-    
-    function generateMisiResponse(query) {
-        const responses = {
-            'pod': 'To check pods, go to Page 2: Pod Explorer and Logs. You can view real-time pod status, logs, and manage your Kubernetes workloads.',
-            'anomaly': 'For anomaly detection, visit Page 4: Anomaly Detection. Our AI models automatically detect unusual patterns in your cluster.',
-            'scale': 'Auto-scaling recommendations are available on Page 5: Auto-Scaling Recommendations and Control. Get AI-powered suggestions for optimal HPA settings.',
-            'shell': 'Access Kubernetes shell and explore your cluster on Page 3: Kubernetes Shell and Cluster Explorer.',
-            'incident': 'Track incidents and generate postmortem reports on Page 6: Incident Timeline and Postmortem Report Generator.',
-            'ai': 'Automate operations with AI Actions on Page 8. Let AI handle routine tasks while you focus on strategy.',
-            'deploy': 'Monitor deployments and manage rollouts on Page 9: Deployments.',
-            'help': 'I can help you with: Pod management, anomaly detection, Kubernetes shell access, auto-scaling, incident management, AI-powered actions, and deployment monitoring. What would you like to know about?',
-            'hello': 'Hello! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
-            'hi': 'Hi there! I\\'m Misi, your SmartOps AI assistant. I can help you navigate the dashboard and answer questions about SmartOps features. How can I assist you today?',
-            'test': 'This is a test message! The chat is working properly. You can now type your own messages and I will respond to them.',
-            'pages': 'Here are the available SmartOps dashboard pages: Page 1: Overview, Page 2: Pod Explorer, Page 3: Kubernetes Shell, Page 4: Anomaly Detection, Page 5: Auto-Scaling, Page 6: Incident Timeline, Page 8: AI Actions, Page 9: Deployments. You can navigate to any page using the sidebar!',
-            'show pages': 'Here are the available SmartOps dashboard pages: Page 1: Overview, Page 2: Pod Explorer, Page 3: Kubernetes Shell, Page 4: Anomaly Detection, Page 5: Auto-Scaling, Page 6: Incident Timeline, Page 8: AI Actions, Page 9: Deployments. You can navigate to any page using the sidebar!'
-        };
-        
-        query = query.toLowerCase();
-        for (const [key, response] of Object.entries(responses)) {
-            if (query.includes(key)) {
-                return response;
-            }
-        }
-        
-        return "I\\'m here to help you with SmartOps! I can assist with pod management, anomaly detection, Kubernetes shell access, auto-scaling, incident management, AI actions, and deployments. What would you like to know about?";
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        const icon = document.getElementById('misi-icon');
-        const closeBtn = document.querySelector('.misi-close-btn');
-        const input = document.getElementById('misi-chat-input');
-        const sendBtn = document.getElementById('misi-send-btn');
-        const popup = document.getElementById('misi-chat-popup');
-        
-        if (icon) {
-            icon.addEventListener('click', toggleMisiPopup);
-        }
-        
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeMisiPopup);
-        }
-        
-        if (input) {
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMisiMessage();
-                }
-            });
-            
-            // Additional input event listeners
-            input.addEventListener('input', function(e) {
-                console.log('Input value:', e.target.value);
-            });
-            
-            input.addEventListener('focus', function(e) {
-                console.log('Input focused');
-                e.target.style.borderColor = '#10b981';
-            });
-            
-            input.addEventListener('blur', function(e) {
-                console.log('Input blurred');
-                e.target.style.borderColor = '#d1d5db';
-            });
-        }
-        
-        if (sendBtn) {
-            sendBtn.addEventListener('click', function() {
-                sendMisiMessage();
-            });
-        }
-        
-        // Close popup when clicking outside the chat content
-        if (popup) {
-            popup.addEventListener('click', function(e) {
-                if (e.target === popup) {
-                    closeMisiPopup();
-                }
-            });
-        }
-        
-        // Handle window resize to ensure popup stays visible
-        window.addEventListener('resize', function() {
-            if (misiPopupVisible) {
-                const popup = document.getElementById('misi-chat-popup');
-                if (popup) {
-                    ensurePopupVisibility(popup);
-                }
-            }
-        });
-    });
-    
-    window.toggleMisiPopup = toggleMisiPopup;
-    window.closeMisiPopup = closeMisiPopup;
-    window.sendMisiMessage = sendMisiMessage;
-    </script>
-    """
-    
-    # HTML structure
-    html = f"""
-    {css}
     
     <div class="misi-icon-container">
         <div class="misi-icon" id="misi-icon" title="Ask Misi - SmartOps AI Assistant">
-            <div class="misi-icon-text">🤖</div>
+            <img src="https://raw.githubusercontent.com/smartops-ai/smartops-ai/main/assets/misi_logo.png" alt="Misi Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <span class="misi-icon-fallback">🤖</span>
         </div>
         <div class="misi-icon-label">Ask Misi</div>
     </div>
@@ -567,6 +415,13 @@ def add_misi_to_page(position="bottom-right"):
                         Hi! I'm Misi, your SmartOps AI assistant. How can I help you today?
                     </div>
                 </div>
+                <div class="misi-typing-indicator" id="misi-typing-indicator">
+                    <div class="misi-typing-dots">
+                        <div class="misi-typing-dot"></div>
+                        <div class="misi-typing-dot"></div>
+                        <div class="misi-typing-dot"></div>
+                    </div>
+                </div>
             </div>
             <div class="misi-suggestions">
                 <button class="misi-suggestion-btn" onclick="sendMisiMessage('pod')">Pods</button>
@@ -586,8 +441,176 @@ def add_misi_to_page(position="bottom-right"):
         </div>
     </div>
     
-    {js_code}
+    <script>
+    let misiPopupVisible = false;
+    
+    function toggleMisiPopup() {
+        const popup = document.getElementById('misi-chat-popup');
+        if (popup) {
+            misiPopupVisible = !misiPopupVisible;
+            popup.style.display = misiPopupVisible ? 'flex' : 'none';
+            
+            if (misiPopupVisible) {
+                setTimeout(() => {
+                    const input = document.getElementById('misi-chat-input');
+                    if (input) {
+                        input.value = '';
+                        input.focus();
+                        console.log('Input focused and ready for input');
+                    }
+                }, 300);
+            }
+        }
+    }
+    
+    function closeMisiPopup() {
+        const popup = document.getElementById('misi-chat-popup');
+        if (popup) {
+            misiPopupVisible = false;
+            popup.style.display = 'none';
+            
+            const input = document.getElementById('misi-chat-input');
+            if (input) {
+                input.value = '';
+            }
+        }
+    }
+    
+    function addMisiMessage(message, isUser = false) {
+        const chatBody = document.getElementById('misi-chat-body');
+        if (chatBody) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `misi-message ${isUser ? 'user' : 'assistant'}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'misi-message-bubble';
+            bubbleDiv.textContent = message;
+            
+            messageDiv.appendChild(bubbleDiv);
+            chatBody.appendChild(messageDiv);
+            
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    }
+    
+    function showTypingIndicator() {
+        const indicator = document.getElementById('misi-typing-indicator');
+        if (indicator) {
+            indicator.style.display = 'block';
+            const chatBody = document.getElementById('misi-chat-body');
+            if (chatBody) {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+        }
+    }
+    
+    function hideTypingIndicator() {
+        const indicator = document.getElementById('misi-typing-indicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
+    
+    function sendMisiMessage(message = null) {
+        let textToSend = message;
+        
+        if (!textToSend) {
+            const input = document.getElementById('misi-chat-input');
+            if (input) {
+                textToSend = input.value.trim();
+                input.value = '';
+            }
+        }
+        
+        if (textToSend) {
+            console.log('Sending message:', textToSend);
+            
+            addMisiMessage(textToSend, true);
+            showTypingIndicator();
+            
+            setTimeout(() => {
+                hideTypingIndicator();
+                
+                let response = "I understand you're asking about '" + textToSend + "'. ";
+                
+                if (textToSend.toLowerCase().includes('pod')) {
+                    response += "To check pods, go to the Pod Explorer page. You can view logs, check status, and manage pod lifecycle.";
+                } else if (textToSend.toLowerCase().includes('anomaly')) {
+                    response += "Anomaly detection is available in the sidebar. It monitors CPU and memory usage to identify problematic pods.";
+                } else if (textToSend.toLowerCase().includes('scale')) {
+                    response += "Auto-scaling recommendations are available on the Auto-Scaling page. You can set up HPA and manage scaling policies.";
+                } else if (textToSend.toLowerCase().includes('shell')) {
+                    response += "Use the Kubernetes Shell page to run kubectl commands and explore your cluster directly from the dashboard.";
+                } else if (textToSend.toLowerCase().includes('incident')) {
+                    response += "The Incident Timeline page helps you track and analyze deployment events and generate postmortem reports.";
+                } else if (textToSend.toLowerCase().includes('ai')) {
+                    response += "AI Actions page provides automated responses to common issues and intelligent recommendations.";
+                } else if (textToSend.toLowerCase().includes('deploy')) {
+                    response += "Check the Deployments page to monitor deployment status, rollbacks, and deployment events.";
+                } else if (textToSend.toLowerCase().includes('help')) {
+                    response += "I'm here to help! Ask me about any SmartOps feature, or use the suggestion buttons above for quick access.";
+                } else {
+                    response += "I can help you navigate SmartOps features. Try asking about pods, anomalies, scaling, shell access, incidents, AI actions, or deployments.";
+                }
+                
+                addMisiMessage(response, false);
+            }, 1500);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const icon = document.getElementById('misi-icon');
+        const closeBtn = document.querySelector('.misi-close-btn');
+        const input = document.getElementById('misi-chat-input');
+        const sendBtn = document.getElementById('misi-send-btn');
+        const popup = document.getElementById('misi-chat-popup');
+        
+        if (icon) {
+            icon.addEventListener('click', toggleMisiPopup);
+        }
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeMisiPopup);
+        }
+        
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMisiMessage();
+                }
+            });
+            
+            input.addEventListener('input', function(e) {
+                console.log('Input value:', e.target.value);
+            });
+            
+            input.addEventListener('focus', function(e) {
+                console.log('Input focused');
+                e.target.style.borderColor = '#10b981';
+            });
+            
+            input.addEventListener('blur', function(e) {
+                console.log('Input blurred');
+                e.target.style.borderColor = '#d1d5db';
+            });
+        }
+        
+        if (sendBtn) {
+            sendBtn.addEventListener('click', function() {
+                sendMisiMessage();
+            });
+        }
+        
+        if (popup) {
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) {
+                    closeMisiPopup();
+                }
+            });
+        }
+    });
+    </script>
     """
     
-    # Use Streamlit components for better JavaScript execution
     components.html(html, height=0, scrolling=False)
