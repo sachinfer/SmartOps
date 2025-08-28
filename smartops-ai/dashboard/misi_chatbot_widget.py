@@ -201,6 +201,17 @@ def add_misi_to_page(position="bottom-right"):
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
+        transition: all 0.3s ease;
+    }
+    
+    .misi-chat-header:hover {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+    
+    .misi-chat-header:active {
+        cursor: grabbing;
+        transform: scale(0.98);
     }
     
     .misi-header-left {
@@ -727,6 +738,7 @@ def add_misi_to_page(position="bottom-right"):
                         placeholder="Enter Message" />
                  <button class="misi-send-btn" id="misi-send-btn">📤</button>
                  <button class="misi-test-btn" onclick="testMessageDisplay()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🧪 Test</button>
+                 <button class="misi-test-btn" onclick="testDragAndZoom()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🎯 Test Move</button>
              </div>
              
              <!-- Resize handle -->
@@ -734,10 +746,12 @@ def add_misi_to_page(position="bottom-right"):
         </div>
     </div>
     
-    <script>
-         let misiPopupVisible = false;
+         <script>
+     let misiPopupVisible = false;
      let isZoomed = false;
      let currentScale = 1;
+     let xOffset = 0;
+     let yOffset = 0;
     
     function toggleMisiPopup() {
         const popup = document.getElementById('misi-chat-popup');
@@ -794,11 +808,13 @@ def add_misi_to_page(position="bottom-right"):
                  currentScale = 1;
                  chatContent.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1)`;
                  isZoomed = false;
+                 console.log('🔍 Zoomed out to:', currentScale);
              } else {
                  // Zoom in
                  currentScale = 1.5;
                  chatContent.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1.5)`;
                  isZoomed = true;
+                 console.log('🔍 Zoomed in to:', currentScale);
              }
          }
      }
@@ -1004,112 +1020,152 @@ def add_misi_to_page(position="bottom-right"):
         }
     }
     
-    function testMessageDisplay() {
-        console.log('🧪 Testing message display...');
-        
-        // Test if chat body exists
-        const chatBody = document.getElementById('misi-chat-body');
-        if (chatBody) {
-            console.log('✅ Chat body found:', chatBody);
-            console.log('📊 Chat body children:', chatBody.children.length);
-            console.log('🎨 Chat body styles:', chatBody.style.cssText);
-            
-            // Add a simple test message with forced styles
-            const testDiv = document.createElement('div');
-            testDiv.textContent = '🧪 TEST MESSAGE - This should be visible!';
-            testDiv.style.cssText = 'background: #ef4444; color: white; padding: 15px; margin: 15px; border-radius: 8px; font-weight: bold; text-align: center; border: 3px solid #000; display: block !important; visibility: visible !important; opacity: 1 !important; font-size: 18px; z-index: 9999; position: relative;';
-            chatBody.appendChild(testDiv);
-            
-            console.log('✅ Test message added. Total children:', chatBody.children.length);
-            
-            // Also test the normal message function
-            setTimeout(() => {
-                addMisiMessage('This is a test message from user', true);
-            }, 500);
-            
-            setTimeout(() => {
-                addMisiMessage('This is a test response from AI', false);
-            }, 1000);
-            
-            // Force scroll to show the test message
-            setTimeout(() => {
-                chatBody.scrollTop = 0;
-                console.log('📜 Scrolled to top to show test message');
-            }, 100);
-        } else {
-            console.error('❌ Chat body not found in test function!');
-        }
-    }
+         function testMessageDisplay() {
+         console.log('🧪 Testing message display...');
+         
+         // Test if chat body exists
+         const chatBody = document.getElementById('misi-chat-body');
+         if (chatBody) {
+             console.log('✅ Chat body found:', chatBody);
+             console.log('📊 Chat body children:', chatBody.children.length);
+             console.log('🎨 Chat body styles:', chatBody.style.cssText);
+             
+             // Add a simple test message with forced styles
+             const testDiv = document.createElement('div');
+             testDiv.textContent = '🧪 TEST MESSAGE - This should be visible!';
+             testDiv.style.cssText = 'background: #ef4444; color: white; padding: 15px; margin: 15px; border-radius: 8px; font-weight: bold; text-align: center; border: 3px solid #000; display: block !important; visibility: visible !important; opacity: 1 !important; font-size: 18px; z-index: 9999; position: relative;';
+             chatBody.appendChild(testDiv);
+             
+             console.log('✅ Test message added. Total children:', chatBody.children.length);
+             
+             // Also test the normal message function
+             setTimeout(() => {
+                 addMisiMessage('This is a test message from user', true);
+             }, 500);
+             
+             setTimeout(() => {
+                 addMisiMessage('This is a test response from AI', false);
+             }, 1000);
+             
+             // Force scroll to show the test message
+             setTimeout(() => {
+                 chatBody.scrollTop = 0;
+                 console.log('📜 Scrolled to top to show test message');
+             }, 100);
+         } else {
+             console.error('❌ Chat body not found in test function!');
+         }
+     }
+     
+     function testDragAndZoom() {
+         console.log('🎯 Testing drag and zoom functionality...');
+         
+         const chatContent = document.querySelector('.misi-chat-content');
+         if (chatContent) {
+             console.log('✅ Chat content found:', chatContent);
+             console.log('🎨 Current transform:', chatContent.style.transform);
+             console.log('📍 Current position:', xOffset, yOffset);
+             console.log('🔍 Current scale:', currentScale);
+             
+             // Test moving the widget
+             xOffset += 100;
+             yOffset += 50;
+             setTranslate(xOffset, yOffset, chatContent);
+             
+             console.log('🚀 Moved widget to:', xOffset, yOffset);
+             
+             // Test zooming
+             setTimeout(() => {
+                 currentScale = 1.2;
+                 setTranslate(xOffset, yOffset, chatContent);
+                 console.log('🔍 Zoomed to:', currentScale);
+             }, 1000);
+             
+             // Reset after 3 seconds
+             setTimeout(() => {
+                 xOffset = 0;
+                 yOffset = 0;
+                 currentScale = 1;
+                 setTranslate(xOffset, yOffset, chatContent);
+                 console.log('🔄 Reset position and zoom');
+             }, 3000);
+         } else {
+             console.error('❌ Chat content not found!');
+         }
+     }
     
-    document.addEventListener('DOMContentLoaded', function() {
-        const icon = document.getElementById('misi-icon');
-        const closeBtn = document.querySelector('.misi-close-btn');
-        const input = document.getElementById('misi-chat-input');
-        const sendBtn = document.getElementById('misi-send-btn');
-        const popup = document.getElementById('misi-chat-popup');
-        const chatContent = document.querySelector('.misi-chat-content');
-        
-                 // Enhanced Draggable functionality with zoom support
+         document.addEventListener('DOMContentLoaded', function() {
+         const icon = document.getElementById('misi-icon');
+         const closeBtn = document.querySelector('.misi-close-btn');
+         const input = document.getElementById('misi-chat-input');
+         const sendBtn = document.getElementById('misi-send-btn');
+         const popup = document.getElementById('misi-chat-popup');
+         const chatContent = document.querySelector('.misi-chat-content');
+         
+         // Enhanced Draggable functionality with zoom support
          let isDragging = false;
          let currentX;
          let currentY;
          let initialX;
          let initialY;
-         let xOffset = 0;
-         let yOffset = 0;
          
-         function dragStart(e) {
-             // Don't start dragging if clicking on buttons
-             if (e.target.closest('.misi-close-btn') || 
-                 e.target.closest('.misi-menu-btn') || 
-                 e.target.closest('.misi-zoom-btn')) {
-                 return;
-             }
-             
-             // Allow dragging from anywhere on the header
-             if (e.target.closest('.misi-chat-header')) {
-                 isDragging = true;
-                 e.preventDefault();
-                 
-                 initialX = e.clientX - xOffset;
-                 initialY = e.clientY - yOffset;
-                 
-                 // Add dragging visual feedback
-                 chatContent.style.cursor = 'grabbing';
-                 chatContent.style.boxShadow = '0 15px 50px rgba(0,0,0,0.3)';
-             }
-         }
+                   function dragStart(e) {
+              // Don't start dragging if clicking on buttons
+              if (e.target.closest('.misi-close-btn') || 
+                  e.target.closest('.misi-menu-btn') || 
+                  e.target.closest('.misi-zoom-btn')) {
+                  return;
+              }
+              
+              // Allow dragging from anywhere on the header
+              if (e.target.closest('.misi-chat-header')) {
+                  isDragging = true;
+                  e.preventDefault();
+                  
+                  initialX = e.clientX - xOffset;
+                  initialY = e.clientY - yOffset;
+                  
+                  // Add dragging visual feedback
+                  chatContent.style.cursor = 'grabbing';
+                  chatContent.style.boxShadow = '0 15px 50px rgba(0,0,0,0.3)';
+                  
+                  console.log('🚀 Started dragging from:', initialX, initialY);
+              }
+          }
          
-         function drag(e) {
-             if (isDragging) {
-                 e.preventDefault();
-                 
-                 currentX = e.clientX - initialX;
-                 currentY = e.clientY - initialY;
-                 
-                 xOffset = currentX;
-                 yOffset = currentY;
-                 
-                 setTranslate(currentX, currentY, chatContent);
-             }
-         }
+                   function drag(e) {
+              if (isDragging) {
+                  e.preventDefault();
+                  
+                  currentX = e.clientX - initialX;
+                  currentY = e.clientY - initialY;
+                  
+                  xOffset = currentX;
+                  yOffset = currentY;
+                  
+                  setTranslate(currentX, currentY, chatContent);
+                  console.log('🔄 Dragging to:', currentX, currentY);
+              }
+          }
          
-         function setTranslate(xPos, yPos, el) {
-             // Apply both translation and current zoom scale
-             el.style.transform = `translate(${xPos}px, ${yPos}px) scale(${currentScale})`;
-         }
+                   function setTranslate(xPos, yPos, el) {
+              // Apply both translation and current zoom scale
+              el.style.transform = `translate(${xPos}px, ${yPos}px) scale(${currentScale})`;
+              console.log('📍 Setting transform:', `translate(${xPos}px, ${yPos}px) scale(${currentScale})`);
+          }
          
-         function dragEnd() {
-             if (isDragging) {
-                 initialX = currentX;
-                 initialY = currentY;
-                 isDragging = false;
-                 
-                 // Reset cursor and shadow
-                 chatContent.style.cursor = 'move';
-                 chatContent.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
-             }
-         }
+                   function dragEnd() {
+              if (isDragging) {
+                  initialX = currentX;
+                  initialY = currentY;
+                  isDragging = false;
+                  
+                  // Reset cursor and shadow
+                  chatContent.style.cursor = 'move';
+                  chatContent.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
+                  console.log('✅ Stopped dragging at:', xOffset, yOffset);
+              }
+          }
         
                  // Add keyboard support
          document.addEventListener('keydown', function(e) {
