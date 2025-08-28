@@ -385,9 +385,44 @@ def show_sidebar():
     st.markdown(
         """
         <div style="text-align:center; margin: .5rem 0 2rem 0;">
-            <div style="font-size:3rem; margin-bottom: 0.8rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">🚀</div>
+            <div style="margin-bottom: 1rem;">
+                <svg width="80" height="80" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background circle with gradient -->
+                    <circle cx="120" cy="120" r="116" fill="url(#circularGradient)" stroke="url(#circularGradient)" stroke-width="8"/>
+                    
+                    <!-- Inner white circle for contrast -->
+                    <circle cx="120" cy="120" r="100" fill="white"/>
+                    
+                    <!-- Brain/Intelligence icon (centered and larger) -->
+                    <path d="M120 70C131 70 140 79 140 90C140 97 136 103 130 106C136 109 140 115 140 122C140 133 131 142 120 142C109 142 100 133 100 122C100 115 104 109 110 106C104 103 100 97 100 90C100 79 109 70 120 70Z" fill="url(#circularGradient)"/>
+                    
+                    <!-- Neural connections (larger and repositioned) -->
+                    <circle cx="96" cy="96" r="6" fill="url(#circularGradient)" opacity="0.8"/>
+                    <circle cx="144" cy="96" r="6" fill="url(#circularGradient)" opacity="0.8"/>
+                    <circle cx="96" cy="144" r="6" fill="url(#circularGradient)" opacity="0.8"/>
+                    <circle cx="144" cy="144" r="6" fill="url(#circularGradient)" opacity="0.8"/>
+                    
+                    <!-- Company name (curved around the circle) -->
+                    <defs>
+                        <path id="textPath" d="M120 40 A80 80 0 0 1 200 120 A80 80 0 0 1 120 200 A80 80 0 0 1 40 120 A80 80 0 0 1 120 40"/>
+                    </defs>
+                    <text>
+                        <textPath href="#textPath" startOffset="50%" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="url(#circularGradient)" side="right">
+                            MISI 24x7
+                        </textPath>
+                    </text>
+                    
+                    <!-- Gradient definitions -->
+                    <defs>
+                        <linearGradient id="circularGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea"/>
+                            <stop offset="100%" style="stop-color:#764ba2"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
             <div style="font-size:1.8rem; font-weight:900; color:#fff; letter-spacing:1px; margin-bottom: 0.4rem; text-shadow: 0 4px 15px rgba(0,0,0,0.4);">SmartOps</div>
-            <div style="font-size:1rem; color:#fff; opacity:.9; margin-bottom: 1rem; font-weight: 600; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">AI Kubernetes Platform</div>
+            <div style="font-size:1rem; color:#fff; opacity:.9; margin-bottom: 1rem; font-weight: 600; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">by Misi 24x7</div>
             <div style="display: flex; align-items: center; justify-content: center; gap: 0.8rem; background: rgba(255,255,255,0.1); padding: 0.8rem 1.5rem; border-radius: 20px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);">
                 <div class="status-indicator"></div>
                 <span style="font-size: 0.9rem; color: #ffffff; font-weight: 600;">System Online</span>
@@ -456,7 +491,7 @@ def show_sidebar():
                     <span style='color: #4ade80; font-size: 1.2rem;'>●</span> AI Engine: Ready
                 </div>
                 <div style='margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid rgba(255,255,255,0.2);'>
-                    <div style="font-weight: 700; margin-bottom: 0.5rem;">SmartOps v1.0</div>
+                    <div style="font-weight: 700; margin-bottom: 0.5rem;">SmartOps by Misi 24x7</div>
                     <span style='font-size: 0.8rem; opacity: 0.8;'>© 2024 SmartOps AI</span>
                 </div>
             </div>
