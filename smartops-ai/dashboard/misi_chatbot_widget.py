@@ -14,35 +14,16 @@ def add_misi_to_page(position="bottom-right"):
                       Currently only "bottom-right" is supported
     """
     
-    html = f"""
+    html = """
     <style>
-    .misi-icon-container {{
+    .misi-icon-container {
         position: fixed;
         bottom: 20px;
         right: 20px;
         z-index: 9999;
-    }}
+    }
     
-    .misi-icon-container.bottom-left {{
-        bottom: 20px;
-        left: 20px;
-        right: auto;
-    }}
-    
-    .misi-icon-container.top-right {{
-        top: 20px;
-        right: 20px;
-        bottom: auto;
-    }}
-    
-    .misi-icon-container.top-left {{
-        top: 20px;
-        left: 20px;
-        bottom: auto;
-        right: auto;
-    }}
-    
-    .misi-icon {{
+    .misi-icon {
         width: 80px;
         height: 80px;
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -54,43 +35,43 @@ def add_misi_to_page(position="bottom-right"):
         box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         transition: all 0.3s ease;
         animation: misi-pulse 2s infinite;
-    }}
+    }
     
-    @keyframes misi-pulse {{
-        0% {{ transform: scale(1); }}
-        50% {{ transform: scale(1.05); }}
-        100% {{ transform: scale(1); }}
-    }}
+    @keyframes misi-pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
     
-    .misi-icon:hover {{
+    .misi-icon:hover {
         transform: scale(1.1);
         box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
-    }}
+    }
     
-    .misi-icon img {{
+    .misi-icon img {
         width: 50px;
         height: 50px;
         object-fit: contain;
         filter: brightness(0) invert(1);
-    }}
+    }
     
-    .misi-icon .misi-icon-fallback {{
+    .misi-icon .misi-icon-fallback {
         font-size: 40px;
         color: white;
         display: none;
-    }}
+    }
     
-    .misi-icon img:not([src]), .misi-icon img[src=""], .misi-icon img[src*="error"] {{
+    .misi-icon img:not([src]), .misi-icon img[src=""], .misi-icon img[src*="error"] {
         display: none;
-    }}
+    }
     
     .misi-icon img:not([src]) + .misi-icon-fallback,
     .misi-icon img[src=""] + .misi-icon-fallback,
-    .misi-icon img[src*="error"] + .misi-icon-fallback {{
+    .misi-icon img[src*="error"] + .misi-icon-fallback {
         display: block;
-    }}
+    }
     
-    .misi-icon-label {{
+    .misi-icon-label {
         position: absolute;
         bottom: -30px;
         left: 50%;
@@ -102,13 +83,13 @@ def add_misi_to_page(position="bottom-right"):
         white-space: nowrap;
         opacity: 0;
         transition: opacity 0.3s ease;
-    }}
+    }
     
-    .misi-icon-container:hover .misi-icon-label {{
+    .misi-icon-container:hover .misi-icon-label {
         opacity: 1;
-    }}
+    }
     
-    .misi-chat-popup {{
+    .misi-chat-popup {
         position: fixed;
         top: 0;
         left: 0;
@@ -121,14 +102,14 @@ def add_misi_to_page(position="bottom-right"):
         overflow: hidden;
         animation: misi-fade-in 0.3s ease-out;
         backdrop-filter: blur(10px);
-    }}
+    }
     
-    @keyframes misi-fade-in {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
+    @keyframes misi-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
     
-    .misi-chat-content {{
+    .misi-chat-content {
         position: absolute;
         top: 50%;
         left: 50%;
@@ -144,29 +125,29 @@ def add_misi_to_page(position="bottom-right"):
         flex-direction: column;
         overflow: hidden;
         animation: misi-slide-in 0.3s ease-out;
-    }}
+    }
     
-    @keyframes misi-slide-in {{
-        from {{
+    @keyframes misi-slide-in {
+        from {
             opacity: 0;
             transform: translate(-50%, -50%) scale(0.9);
-        }}
-        to {{
+        }
+        to {
             opacity: 1;
             transform: translate(-50%, -50%) scale(1);
-        }}
-    }}
+        }
+    }
     
-    .misi-chat-header {{
+    .misi-chat-header {
         background: linear-gradient(135deg, #10b981, #059669);
         color: white;
         padding: 24px;
         text-align: center;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         position: relative;
-    }}
+    }
     
-    .misi-header-icon {{
+    .misi-header-icon {
         width: 60px;
         height: 60px;
         background: rgba(255,255,255,0.2);
@@ -175,17 +156,17 @@ def add_misi_to_page(position="bottom-right"):
         display: flex;
         align-items: center;
         justify-content: center;
-    }}
+    }
     
-    .misi-header-icon-inner {{
+    .misi-header-icon-inner {
         width: 40px;
         height: 40px;
         background: white;
         border-radius: 50%;
         position: relative;
-    }}
+    }
     
-    .misi-header-icon-lines {{
+    .misi-header-icon-lines {
         position: absolute;
         width: 20px;
         height: 3px;
@@ -194,24 +175,24 @@ def add_misi_to_page(position="bottom-right"):
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-    }}
+    }
     
-    .misi-header-icon-lines:nth-child(1) {{ top: 35%; }}
-    .misi-header-icon-lines:nth-child(2) {{ top: 65%; }}
+    .misi-header-icon-lines:nth-child(1) { top: 35%; }
+    .misi-header-icon-lines:nth-child(2) { top: 65%; }
     
-    .misi-chat-title {{
+    .misi-chat-title {
         font-size: 24px;
         font-weight: 700;
         margin-bottom: 4px;
-    }}
+    }
     
-    .misi-chat-subtitle {{
+    .misi-chat-subtitle {
         font-size: 14px;
         opacity: 0.9;
         font-weight: 400;
-    }}
+    }
     
-    .misi-close-btn {{
+    .misi-close-btn {
         position: absolute;
         top: 20px;
         right: 20px;
@@ -227,56 +208,56 @@ def add_misi_to_page(position="bottom-right"):
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease;
-    }}
+    }
     
-    .misi-close-btn:hover {{
+    .misi-close-btn:hover {
         background: rgba(255,255,255,0.3);
         transform: scale(1.1);
-    }}
+    }
     
-    .misi-chat-body {{
+    .misi-chat-body {
         flex: 1;
         padding: 24px;
         background: #f8fafc;
         overflow-y: auto;
-    }}
+    }
     
-    .misi-message {{
+    .misi-message {
         margin-bottom: 16px;
         display: flex;
         flex-direction: column;
-    }}
+    }
     
-    .misi-message.user {{
+    .misi-message.user {
         align-items: flex-end;
-    }}
+    }
     
-    .misi-message.assistant {{
+    .misi-message.assistant {
         align-items: flex-start;
-    }}
+    }
     
-    .misi-message-bubble {{
+    .misi-message-bubble {
         max-width: 80%;
         padding: 16px 20px;
         border-radius: 20px;
         line-height: 1.5;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }}
+    }
     
-    .misi-message.user .misi-message-bubble {{
+    .misi-message.user .misi-message-bubble {
         background: #10b981;
         color: white;
         border-bottom-right-radius: 8px;
-    }}
+    }
     
-    .misi-message.assistant .misi-message-bubble {{
+    .misi-message.assistant .misi-message-bubble {
         background: white;
         color: #1e293b;
         border: 1px solid #e2e8f0;
         border-bottom-left-radius: 8px;
-    }}
+    }
     
-    .misi-typing-indicator {{
+    .misi-typing-indicator {
         display: none;
         padding: 16px 20px;
         background: #f1f5f9;
@@ -286,37 +267,37 @@ def add_misi_to_page(position="bottom-right"):
         max-width: 80%;
         border: 1px solid #e2e8f0;
         border-bottom-left-radius: 8px;
-    }}
+    }
     
-    .misi-typing-dots {{
+    .misi-typing-dots {
         display: flex;
         gap: 4px;
         align-items: center;
-    }}
+    }
     
-    .misi-typing-dot {{
+    .misi-typing-dot {
         width: 8px;
         height: 8px;
         background: #64748b;
         border-radius: 50%;
         animation: misi-typing-bounce 1.4s infinite ease-in-out;
-    }}
+    }
     
-    .misi-typing-dot:nth-child(1) {{ animation-delay: -0.32s; }}
-    .misi-typing-dot:nth-child(2) {{ animation-delay: -0.16s; }}
+    .misi-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .misi-typing-dot:nth-child(2) { animation-delay: -0.16s; }
     
-    @keyframes misi-typing-bounce {{
-        0%, 80%, 100% {{
+    @keyframes misi-typing-bounce {
+        0%, 80%, 100% {
             transform: scale(0.8);
             opacity: 0.5;
-        }}
-        40% {{
+        }
+        40% {
             transform: scale(1);
             opacity: 1;
-        }}
-    }}
+        }
+    }
     
-    .misi-suggestions {{
+    .misi-suggestions {
         padding: 20px 24px;
         background: white;
         border-top: 1px solid #e2e8f0;
@@ -324,9 +305,9 @@ def add_misi_to_page(position="bottom-right"):
         flex-wrap: wrap;
         gap: 8px;
         justify-content: center;
-    }}
+    }
     
-    .misi-suggestion-btn {{
+    .misi-suggestion-btn {
         background: #f1f5f9;
         color: #475569;
         border: 1px solid #e2e8f0;
@@ -336,24 +317,24 @@ def add_misi_to_page(position="bottom-right"):
         cursor: pointer;
         transition: all 0.3s ease;
         font-weight: 500;
-    }}
+    }
     
-    .misi-suggestion-btn:hover {{
+    .misi-suggestion-btn:hover {
         background: #e2e8f0;
         color: #1e293b;
         border-color: #cbd5e1;
-    }}
+    }
     
-    .misi-chat-input-container {{
+    .misi-chat-input-container {
         padding: 20px 24px;
         background: white;
         border-top: 1px solid #e2e8f0;
         display: flex;
         gap: 12px;
         align-items: center;
-    }}
+    }
     
-    .misi-chat-input {{
+    .misi-chat-input {
         flex: 1;
         padding: 16px 20px;
         border: 2px solid #d1d5db;
@@ -371,25 +352,25 @@ def add_misi_to_page(position="bottom-right"):
         overflow: hidden;
         min-height: 50px;
         max-height: 120px;
-    }}
+    }
     
-    .misi-chat-input:focus {{
+    .misi-chat-input:focus {
         border-color: #10b981;
         background: white;
         box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         outline: none;
-    }}
+    }
     
-    .misi-chat-input:active {{
+    .misi-chat-input:active {
         border-color: #10b981;
-    }}
+    }
     
-    .misi-chat-input::placeholder {{
+    .misi-chat-input::placeholder {
         color: #9ca3af;
         opacity: 1;
-    }}
+    }
     
-    .misi-send-btn {{
+    .misi-send-btn {
         width: 50px;
         height: 50px;
         background: #10b981;
@@ -403,16 +384,16 @@ def add_misi_to_page(position="bottom-right"):
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }}
+    }
     
-    .misi-send-btn:hover {{
+    .misi-send-btn:hover {
         background: #059669;
         transform: scale(1.05);
         box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
-    }}
+    }
     </style>
     
-    <div class="misi-icon-container" id="misi-icon-container">
+    <div class="misi-icon-container">
         <div class="misi-icon" id="misi-icon" title="Ask Misi - SmartOps AI Assistant">
             <img src="https://raw.githubusercontent.com/smartops-ai/smartops-ai/main/assets/misi_logo.png" alt="Misi Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
             <span class="misi-icon-fallback">🤖</span>
@@ -588,19 +569,6 @@ def add_misi_to_page(position="bottom-right"):
         const input = document.getElementById('misi-chat-input');
         const sendBtn = document.getElementById('misi-send-btn');
         const popup = document.getElementById('misi-chat-popup');
-        const iconContainer = document.getElementById('misi-icon-container');
-        
-        // Apply position class based on parameter
-        if (iconContainer) {
-            // Remove any existing position classes
-            iconContainer.classList.remove('bottom-left', 'top-right', 'top-left');
-            
-            // Add the position class (default is bottom-right)
-            const position = '{position}';
-            if (position && position !== 'bottom-right') {
-                iconContainer.classList.add(position);
-            }
-        }
         
         if (icon) {
             icon.addEventListener('click', toggleMisiPopup);
@@ -646,54 +614,6 @@ def add_misi_to_page(position="bottom-right"):
                 }
             });
         }
-
-        // Function to update icon container position
-        function updateIconContainerPosition() {
-            const iconContainer = document.getElementById('misi-icon-container');
-            if (iconContainer) {
-                const icon = document.getElementById('misi-icon');
-                if (icon) {
-                    const iconRect = icon.getBoundingClientRect();
-                    const popup = document.getElementById('misi-chat-popup');
-                    if (popup) {
-                        const popupRect = popup.getBoundingClientRect();
-                        const windowHeight = window.innerHeight;
-                        const windowWidth = window.innerWidth;
-
-                        let newPosition = 'bottom-right';
-                        let newBottom = 20;
-                        let newRight = 20;
-
-                        if (iconRect.bottom + popupRect.height + 20 > windowHeight) { // Too close to bottom
-                            newPosition = 'top-right';
-                            newBottom = windowHeight - popupRect.height - 20;
-                        }
-                        if (iconRect.right + popupRect.width + 20 > windowWidth) { // Too close to right
-                            newPosition = 'bottom-left';
-                            newRight = windowWidth - popupRect.width - 20;
-                        }
-                        if (iconRect.left - popupRect.width - 20 < 0) { // Too close to left
-                            newPosition = 'bottom-right'; // Default to bottom-right if left is too close
-                            newRight = 20;
-                        }
-                        if (iconRect.top - popupRect.height - 20 < 0) { // Too close to top
-                            newPosition = 'bottom-right'; // Default to bottom-right if top is too close
-                            newBottom = 20;
-                        }
-
-                        iconContainer.classList.remove('bottom-left', 'top-right', 'top-left');
-                        iconContainer.classList.add(newPosition);
-                        iconContainer.style.bottom = `${newBottom}px`;
-                        iconContainer.style.right = `${newRight}px`;
-                    }
-                }
-            }
-        }
-
-        // Update position on window resize and scroll
-        window.addEventListener('resize', updateIconContainerPosition);
-        window.addEventListener('scroll', updateIconContainerPosition);
-        updateIconContainerPosition(); // Initial call
     });
     </script>
     """
