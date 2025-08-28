@@ -412,118 +412,115 @@ def fetch_pod_containers(pod_name, namespace):
         # Fallback: return default container names
         return ["main", "sidecar", "init"]
 
-# Main content with error handling
-try:
-    st.markdown("""
-    <div class="dashboard-header">
-        <h1>🛰️ Pod Explorer</h1>
-        <p>Simple and clean pod monitoring dashboard</p>
-    </div>
-    """, unsafe_allow_html=True)
+# Main content
+st.markdown("""
+<div class="dashboard-header">
+    <h1>🛰️ Pod Explorer</h1>
+    <p>Simple and clean pod monitoring dashboard</p>
+</div>
+""", unsafe_allow_html=True)
 
-    # Check if API service is running but don't block functionality
-    api_available = check_api_health()
+# Check if API service is running but don't block functionality
+api_available = check_api_health()
+
+# Namespace selector
+st.markdown('<div class="section-header">📁 Select Namespace</div>', unsafe_allow_html=True)
+
+namespaces = fetch_namespaces()
+if not namespaces:
+    st.info("ℹ️ No namespaces available - using demo mode")
+    namespaces = ["default", "kube-system", "smartops"]
+
+namespace = st.selectbox("Choose namespace", namespaces, key="namespace_selector")
+
+# Pod metrics
+st.markdown('<div class="section-header">📊 Pod Overview</div>', unsafe_allow_html=True)
+
+# Try to fetch real pods first
+real_pods = fetch_pods(namespace)
+
+# Check if API is available
+api_available = check_api_health()
+
+# If no real pods found, show demo pods
+if not real_pods:
+    pods = [
+        {"name": f"app-{namespace}-1", "status": "Running", "age": "2d", "ready": "1/1"},
+        {"name": f"app-{namespace}-2", "status": "Running", "age": "1d", "ready": "1/1"},
+        {"name": f"worker-{namespace}-1", "status": "Running", "age": "3h", "ready": "1/1"},
+        {"name": f"redis-{namespace}", "status": "Running", "age": "5d", "ready": "1/1"},
+        {"name": f"db-{namespace}", "status": "Pending", "age": "2m", "ready": "0/1"},
+    ]
+    if not api_available:
+        st.info(f"ℹ️ Showing demo pods for namespace '{namespace}' - start the API service for real-time data")
+    else:
+        st.info(f"ℹ️ No pods found in namespace '{namespace}' - showing demo data")
+else:
+    pods = real_pods
+
+if pods:
+    # Calculate metrics
+    total_pods = len(pods)
+    running_pods = len([p for p in pods if p.get('status') == 'Running'])
+    pending_pods = len([p for p in pods if p.get('status') == 'Pending'])
+    failed_pods = len([p for p in pods if p.get('status') == 'Failed'])
     
-
-
-    # Namespace selector
-    st.markdown('<div class="section-header">📁 Select Namespace</div>', unsafe_allow_html=True)
-
-    namespaces = fetch_namespaces()
-    if not namespaces:
-        st.info("ℹ️ No namespaces available - using demo mode")
-        namespaces = ["default", "kube-system", "smartops"]
-
-    namespace = st.selectbox("Choose namespace", namespaces, key="namespace_selector")
-
-    # Pod metrics
-    st.markdown('<div class="section-header">📊 Pod Overview</div>', unsafe_allow_html=True)
-
-    # Try to fetch real pods first
-    real_pods = fetch_pods(namespace)
+    col1, col2, col3, col4 = st.columns(4)
     
-    # Check if API is available
-    api_available = check_api_health()
+    with col1:
+        st.metric("Total Pods", total_pods)
     
-    # If no real pods found, show demo pods
-    if not real_pods:
-        pods = [
-            {"name": f"app-{namespace}-1", "status": "Running", "age": "2d", "ready": "1/1"},
-            {"name": f"app-{namespace}-2", "status": "Running", "age": "1d", "ready": "1/1"},
-            {"name": f"worker-{namespace}-1", "status": "Running", "age": "3h", "ready": "1/1"},
-            {"name": f"redis-{namespace}", "status": "Running", "age": "5d", "ready": "1/1"},
-            {"name": f"db-{namespace}", "status": "Pending", "age": "2m", "ready": "0/1"},
-        ]
-        if not api_available:
-            st.info(f"ℹ️ Showing demo pods for namespace '{namespace}' - start the API service for real-time data")
+    with col2:
+        st.metric("Running", running_pods)
+    
+    with col3:
+        st.metric("Pending", pending_pods)
+    
+    with col4:
+        st.metric("Failed", failed_pods)
+else:
+    st.info("No pods found in this namespace.")
+
+# Pod list
+st.markdown('<div class="section-header">🔍 Pod List</div>', unsafe_allow_html=True)
+
+if pods:
+    # Create a compact table display
+    pod_data = []
+    for pod in pods:
+        pod_name = pod.get('name', 'Unknown')
+        pod_status = pod.get('status', 'Unknown')
+        pod_age = pod.get('age', 'Unknown')
+        pod_ready = pod.get('ready', 'Unknown')
+        
+        # Status icon
+        if pod_status == 'Running':
+            status_icon = '🟢'
+        elif pod_status == 'Pending':
+            status_icon = '🟡'
+        elif pod_status == 'Failed':
+            status_icon = '🔴'
         else:
-            st.info(f"ℹ️ No pods found in namespace '{namespace}' - showing demo data")
-    else:
-        pods = real_pods
+            status_icon = '⚪'
+        
+        pod_data.append({
+            'Status': status_icon,
+            'Name': pod_name,
+            'Status': pod_status,
+            'Age': pod_age,
+            'Ready': pod_ready
+        })
     
-    if pods:
-        # Calculate metrics
-        total_pods = len(pods)
-        running_pods = len([p for p in pods if p.get('status') == 'Running'])
-        pending_pods = len([p for p in pods if p.get('status') == 'Pending'])
-        failed_pods = len([p for p in pods if p.get('status') == 'Failed'])
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Total Pods", total_pods)
-        
-        with col2:
-            st.metric("Running", running_pods)
-        
-        with col3:
-            st.metric("Pending", pending_pods)
-        
-        with col4:
-            st.metric("Failed", failed_pods)
-    else:
-        st.info("No pods found in this namespace.")
-
-    # Pod list
-    st.markdown('<div class="section-header">🔍 Pod List</div>', unsafe_allow_html=True)
-
-    if pods:
-        # Create a compact table display
-        pod_data = []
-        for pod in pods:
-            pod_name = pod.get('name', 'Unknown')
-            pod_status = pod.get('status', 'Unknown')
-            pod_age = pod.get('age', 'Unknown')
-            pod_ready = pod.get('ready', 'Unknown')
-            
-            # Status icon
-            if pod_status == 'Running':
-                status_icon = '🟢'
-            elif pod_status == 'Pending':
-                status_icon = '🟡'
-            elif pod_status == 'Failed':
-                status_icon = '🔴'
-            else:
-                status_icon = '⚪'
-            
-            pod_data.append({
-                'Status': status_icon,
-                'Name': pod_name,
-                'Status': pod_status,
-                'Age': pod_age,
-                'Ready': pod_ready
-            })
-        
-        # Convert to DataFrame and display as compact table
-        df = pd.DataFrame(pod_data)
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            height=200  # Compact height
-        )
-    else:
-        st.info("No pods available to display.")
+    # Convert to DataFrame and display as compact table
+    df = pd.DataFrame(pod_data)
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        height=200  # Compact height
+    )
+else:
+    st.info("No pods available to display.")
 
     # Simple log viewer
     st.markdown('<div class="section-header">📋 Log Viewer</div>', unsafe_allow_html=True)
@@ -622,21 +619,18 @@ try:
             else:
                 st.warning("⚠️ **API Status**: Backend service is not running. Start it with `python event_api.py` to enable real-time logs.")
 
-    # Add Misi AI Chatbot Widget
-    if MISI_AVAILABLE:
-        # add_misi_to_page("bottom-right")
-    else:
-        st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!")
+# Add Misi AI Chatbot Widget
+if MISI_AVAILABLE:
+    # add_misi_to_page("bottom-right")
+    pass  # Placeholder for when Misi is properly integrated
+else:
+    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!")
 
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
-        <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Pod Explorer</p>
-        <p style="opacity: 0.8; margin: 0;">Last updated: """ + time.strftime('%Y-%m-%d %H:%M:%S') + """</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-except Exception:
-    st.info("ℹ️ An unexpected error occurred while loading the page")
-    st.info("🔄 Please refresh the page or contact support if the issue persists") 
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
+    <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Pod Explorer</p>
+    <p style="opacity: 0.8; margin: 0;">Last updated: """ + time.strftime('%Y-%m-%d %H:%M:%S') + """</p>
+</div>
+""", unsafe_allow_html=True) 
