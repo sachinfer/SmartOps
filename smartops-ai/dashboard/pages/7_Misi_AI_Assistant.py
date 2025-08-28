@@ -1,5 +1,5 @@
 """
-Misi AI Assistant - Dedicated Page
+Misi AI- Dedicated Page
 A reliable, full-page AI chatbot interface for SmartOps
 """
 

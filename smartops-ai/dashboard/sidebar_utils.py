@@ -606,38 +606,38 @@ def show_sidebar():
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">📊 Core Monitoring</div>', unsafe_allow_html=True)
     if st.button("🟩  Overview Dashboard", key="nav_overview", use_container_width=True):
-        st.switch_page("1_Overview")
+        st.info("🟩 You are currently on the Overview Dashboard")
     if st.button("🔥  Anomaly Detection", key="nav_anomaly", use_container_width=True):
-        st.switch_page("4_Anomaly_Detection")
+        st.info("🔥 Navigate to Anomaly Detection page")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Pod & Cluster Management
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🛰️ Pod & Cluster</div>', unsafe_allow_html=True)
     if st.button("🧭  Pod Explorer & Logs", key="nav_pod", use_container_width=True):
-        st.switch_page("2_Pod_Explorer_and_Logs")
+        st.info("🧭 Navigate to Pod Explorer & Logs page")
     if st.button("🔍  Kubernetes Shell & Explorer", key="nav_cluster", use_container_width=True):
-        st.switch_page("3_Kubernetes_Shell_and_Cluster_Explorer")
+        st.info("🔍 Navigate to Kubernetes Shell & Explorer page")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Operations & Scaling
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">⚡ Operations</div>', unsafe_allow_html=True)
     if st.button("⚡  Auto Scaling Control", key="nav_scale", use_container_width=True):
-        st.switch_page("5_Auto_Scaling_Recommendations_and_Control")
+        st.info("⚡ Navigate to Auto Scaling Control page")
     if st.button("🚀  Deployments", key="nav_deploy", use_container_width=True):
-        st.switch_page("9_Deployments")
+        st.info("🚀 Navigate to Deployments page")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- AI & Analytics
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🤖 AI & Analytics</div>', unsafe_allow_html=True)
     if st.button("🤖  AI Actions", key="nav_actions", use_container_width=True):
-        st.switch_page("8_AI_Actions")
+        st.info("🤖 Navigate to AI Actions page")
     if st.button("📝  Incident Timeline", key="nav_incident", use_container_width=True):
-        st.switch_page("6_Incident_Timeline_and_Postmortem_Report_Generator")
+        st.info("📝 Navigate to Incident Timeline page")
     if st.button("💬  Misi AI Assistant", key="nav_misi", use_container_width=True):
-        st.switch_page("7_Misi_AI_Assistant")
+        st.info("💬 Navigate to Misi AI Assistant page")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Quick Actions

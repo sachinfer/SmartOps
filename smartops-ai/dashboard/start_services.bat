@@ -19,9 +19,9 @@ if not exist "event_api.py" (
     exit /b 1
 )
 
-if not exist "pages\1_Overview.py" (
+if not exist "main_app.py" (
     echo ❌ Please run this script from the dashboard directory
-    echo Expected files: event_api.py, pages/1_Overview.py
+    echo Expected files: event_api.py, main_app.py
     pause
     exit /b 1
 )
@@ -73,7 +73,7 @@ timeout /t 3 /nobreak >nul
 
 REM Start Streamlit frontend
 echo 🎨 Starting Streamlit frontend service...
-start "Streamlit Frontend" cmd /k "streamlit run pages/1_Overview.py --server.port=8501 --server.address=0.0.0.0"
+start "Streamlit Frontend" cmd /k "streamlit run main_app.py --server.port=8501 --server.address=0.0.0.0"
 
 echo.
 echo 🎉 All services started successfully!
