@@ -606,38 +606,38 @@ def show_sidebar():
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">📊 Core Monitoring</div>', unsafe_allow_html=True)
     if st.button("🟩  Overview Dashboard", key="nav_overview", use_container_width=True):
-        st.switch_page("pages/1_Overview.py")
+        st.switch_page("1_Overview")
     if st.button("🔥  Anomaly Detection", key="nav_anomaly", use_container_width=True):
-        st.switch_page("pages/4_Anomaly_Detection.py")
+        st.switch_page("4_Anomaly_Detection")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Pod & Cluster Management
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🛰️ Pod & Cluster</div>', unsafe_allow_html=True)
     if st.button("🧭  Pod Explorer & Logs", key="nav_pod", use_container_width=True):
-        st.switch_page("pages/2_Pod_Explorer_and_Logs.py")
+        st.switch_page("2_Pod_Explorer_and_Logs")
     if st.button("🔍  Kubernetes Shell & Explorer", key="nav_cluster", use_container_width=True):
-        st.switch_page("pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
+        st.switch_page("3_Kubernetes_Shell_and_Cluster_Explorer")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Operations & Scaling
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">⚡ Operations</div>', unsafe_allow_html=True)
     if st.button("⚡  Auto Scaling Control", key="nav_scale", use_container_width=True):
-        st.switch_page("pages/5_Auto_Scaling_Recommendations_and_Control.py")
+        st.switch_page("5_Auto_Scaling_Recommendations_and_Control")
     if st.button("🚀  Deployments", key="nav_deploy", use_container_width=True):
-        st.switch_page("pages/9_Deployments.py")
+        st.switch_page("9_Deployments")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- AI & Analytics
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🤖 AI & Analytics</div>', unsafe_allow_html=True)
     if st.button("🤖  AI Actions", key="nav_actions", use_container_width=True):
-        st.switch_page("pages/8_AI_Actions.py")
+        st.switch_page("8_AI_Actions")
     if st.button("📝  Incident Timeline", key="nav_incident", use_container_width=True):
-        st.switch_page("pages/6_Incident_Timeline_and_Postmortem_Report_Generator.py")
+        st.switch_page("6_Incident_Timeline_and_Postmortem_Report_Generator")
     if st.button("💬  Misi AI Assistant", key="nav_misi", use_container_width=True):
-        st.switch_page("pages/7_Misi_AI_Assistant.py")
+        st.switch_page("7_Misi_AI_Assistant")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Quick Actions
