@@ -16,6 +16,11 @@ def add_misi_to_page(position="bottom-right"):
     
     html = """
     <style>
+    /* Enhanced CSS with beautiful animations and popup design */
+    * {
+        box-sizing: border-box;
+    }
+    
     .misi-icon-container {
         position: fixed;
         bottom: 20px;
@@ -35,6 +40,25 @@ def add_misi_to_page(position="bottom-right"):
         box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         transition: all 0.3s ease;
         animation: misi-pulse 2s infinite;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .misi-icon::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+        transform: rotate(45deg);
+        animation: misi-shine 3s infinite;
+    }
+    
+    @keyframes misi-shine {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
     }
     
     @keyframes misi-pulse {
@@ -44,7 +68,7 @@ def add_misi_to_page(position="bottom-right"):
     }
     
     .misi-icon:hover {
-        transform: scale(1.1);
+        transform: scale(1.1) rotate(5deg);
         box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
     }
     
@@ -53,12 +77,16 @@ def add_misi_to_page(position="bottom-right"):
         height: 50px;
         object-fit: contain;
         filter: brightness(0) invert(1);
+        z-index: 2;
+        position: relative;
     }
     
     .misi-icon .misi-icon-fallback {
         font-size: 40px;
         color: white;
         display: none;
+        z-index: 2;
+        position: relative;
     }
     
     .misi-icon img:not([src]), .misi-icon img[src=""], .misi-icon img[src*="error"] {
@@ -83,12 +111,16 @@ def add_misi_to_page(position="bottom-right"):
         white-space: nowrap;
         opacity: 0;
         transition: opacity 0.3s ease;
+        background: rgba(0,0,0,0.7);
+        padding: 4px 8px;
+        border-radius: 12px;
     }
     
     .misi-icon-container:hover .misi-icon-label {
         opacity: 1;
     }
     
+    /* Enhanced Chat Popup with beautiful animations */
     .misi-chat-popup {
         position: fixed;
         top: 0;
@@ -100,39 +132,51 @@ def add_misi_to_page(position="bottom-right"):
         display: none;
         flex-direction: column;
         overflow: hidden;
-        animation: misi-fade-in 0.3s ease-out;
+        animation: misi-fade-in 0.4s ease-out;
         backdrop-filter: blur(10px);
     }
     
     @keyframes misi-fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from { 
+            opacity: 0; 
+            backdrop-filter: blur(0px);
+        }
+        to { 
+            opacity: 1; 
+            backdrop-filter: blur(10px);
+        }
     }
     
     .misi-chat-content {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.8);
+        width: 90vw;
+        max-width: 500px;
+        height: 80vh;
+        max-height: 600px;
         background: white;
-        border-radius: 0;
-        box-shadow: none;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        animation: misi-slide-in-top 0.3s ease-out;
+        animation: misi-popup-enter 0.5s ease-out forwards;
         z-index: 10001;
     }
     
-    @keyframes misi-slide-in-top {
-        from {
+    @keyframes misi-popup-enter {
+        0% {
             opacity: 0;
-            transform: translateY(-100%);
+            transform: translate(-50%, -50%) scale(0.8) rotate(-5deg);
         }
-        to {
+        50% {
+            transform: translate(-50%, -50%) scale(1.05) rotate(2deg);
+        }
+        100% {
             opacity: 1;
-            transform: translateY(0);
+            transform: translate(-50%, -50%) scale(1) rotate(0deg);
         }
     }
     
@@ -145,6 +189,7 @@ def add_misi_to_page(position="bottom-right"):
         position: relative;
         width: 100%;
         box-sizing: border-box;
+        border-radius: 20px 20px 0 0;
     }
     
     .misi-header-icon {
@@ -156,6 +201,13 @@ def add_misi_to_page(position="bottom-right"):
         display: flex;
         align-items: center;
         justify-content: center;
+        animation: misi-icon-bounce 2s infinite;
+    }
+    
+    @keyframes misi-icon-bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-10px); }
+        60% { transform: translateY(-5px); }
     }
     
     .misi-header-icon-inner {
@@ -164,6 +216,12 @@ def add_misi_to_page(position="bottom-right"):
         background: white;
         border-radius: 50%;
         position: relative;
+        animation: misi-inner-rotate 4s linear infinite;
+    }
+    
+    @keyframes misi-inner-rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
     
     .misi-header-icon-lines {
@@ -184,6 +242,7 @@ def add_misi_to_page(position="bottom-right"):
         font-size: 24px;
         font-weight: 700;
         margin-bottom: 4px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
     .misi-chat-subtitle {
@@ -209,18 +268,19 @@ def add_misi_to_page(position="bottom-right"):
         justify-content: center;
         transition: all 0.3s ease;
         z-index: 10002;
+        backdrop-filter: blur(10px);
     }
     
     .misi-close-btn:hover {
-        background: rgba(255,255,255,0.3);
-        transform: scale(1.1);
         background: #ef4444;
+        transform: scale(1.1) rotate(90deg);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
     }
     
     .misi-chat-body {
         flex: 1;
         padding: 24px;
-        background: #f0f2f5;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         overflow-y: auto;
         display: flex;
         flex-direction: column;
@@ -242,6 +302,18 @@ def add_misi_to_page(position="bottom-right"):
         z-index: 1;
         opacity: 1 !important;
         visibility: visible !important;
+        animation: message-slide-in 0.4s ease-out;
+    }
+    
+    @keyframes message-slide-in {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .misi-message.user {
@@ -260,28 +332,35 @@ def add_misi_to_page(position="bottom-right"):
         padding: 12px 16px;
         border-radius: 18px;
         line-height: 1.4;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         word-wrap: break-word;
         max-width: 100%;
         position: relative;
         z-index: 2;
+        transition: all 0.3s ease;
     }
     
     .misi-message.user .misi-message-bubble {
-        background: #dcf8c6 !important;
+        background: linear-gradient(135deg, #dcf8c6 0%, #b8e6a8 100%) !important;
         color: #000 !important;
         border-bottom-right-radius: 4px;
         margin-bottom: 4px;
         border: 1px solid #b8e6a8;
+        box-shadow: 0 4px 12px rgba(184, 230, 168, 0.3);
     }
     
     .misi-message.assistant .misi-message-bubble {
-        background: white !important;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
         color: #1e293b !important;
         border: 1px solid #e2e8f0;
         border-bottom-left-radius: 4px;
         margin-bottom: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .misi-message-bubble:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
     
     .misi-message-timestamp {
@@ -289,6 +368,7 @@ def add_misi_to_page(position="bottom-right"):
         color: #64748b;
         margin: 0 4px;
         opacity: 0.7;
+        font-weight: 500;
     }
     
     .misi-message.user .misi-message-timestamp {
@@ -309,6 +389,13 @@ def add_misi_to_page(position="bottom-right"):
         max-width: 85%;
         border: 1px solid #e2e8f0;
         border-bottom-left-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        animation: typing-pulse 1.5s infinite;
+    }
+    
+    @keyframes typing-pulse {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 1; }
     }
     
     .misi-typing-dots {
@@ -362,10 +449,22 @@ def add_misi_to_page(position="bottom-right"):
         flex-wrap: wrap;
         gap: 8px;
         justify-content: center;
+        animation: suggestions-slide-up 0.5s ease-out;
+    }
+    
+    @keyframes suggestions-slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .misi-suggestion-btn {
-        background: #f1f5f9;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
         color: #475569;
         border: 1px solid #e2e8f0;
         padding: 8px 16px;
@@ -374,12 +473,15 @@ def add_misi_to_page(position="bottom-right"):
         cursor: pointer;
         transition: all 0.3s ease;
         font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .misi-suggestion-btn:hover {
-        background: #e2e8f0;
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
         color: #1e293b;
         border-color: #cbd5e1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     
     .misi-chat-input-container {
@@ -389,6 +491,19 @@ def add_misi_to_page(position="bottom-right"):
         display: flex;
         gap: 12px;
         align-items: center;
+        border-radius: 0 0 20px 20px;
+        animation: input-slide-up 0.6s ease-out;
+    }
+    
+    @keyframes input-slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .misi-chat-input {
@@ -409,13 +524,15 @@ def add_misi_to_page(position="bottom-right"):
         overflow: hidden;
         min-height: 50px;
         max-height: 120px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
     
     .misi-chat-input:focus {
         border-color: #10b981;
         background: white;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), 0 4px 12px rgba(0,0,0,0.1);
         outline: none;
+        transform: translateY(-1px);
     }
     
     .misi-chat-input:active {
@@ -430,7 +547,7 @@ def add_misi_to_page(position="bottom-right"):
     .misi-send-btn {
         width: 50px;
         height: 50px;
-        background: #10b981;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
         border: none;
         border-radius: 50%;
@@ -441,12 +558,57 @@ def add_misi_to_page(position="bottom-right"):
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .misi-send-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .misi-send-btn:hover::before {
+        left: 100%;
     }
     
     .misi-send-btn:hover {
-        background: #059669;
-        transform: scale(1.05);
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: scale(1.05) rotate(5deg);
         box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .misi-chat-content {
+            width: 95vw;
+            height: 90vh;
+            max-height: none;
+        }
+        
+        .misi-suggestions {
+            padding: 15px 20px;
+        }
+        
+        .misi-suggestion-btn {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+    }
+    
+    /* Loading animation for the icon */
+    .misi-icon.loading {
+        animation: misi-loading 1s infinite;
+    }
+    
+    @keyframes misi-loading {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
     </style>
     
@@ -479,11 +641,6 @@ def add_misi_to_page(position="bottom-right"):
                     <div class="misi-message-timestamp">12:00</div>
                 </div>
                 
-                <!-- Debug message to ensure visibility -->
-                <div style="background: #ff0000; color: white; padding: 15px; margin: 15px; border-radius: 8px; font-weight: bold; text-align: center; border: 3px solid #000;">
-                    🔍 DEBUG: This message should be visible! If you see this, the chat body is working.
-                </div>
-                
                 <div class="misi-typing-indicator" id="misi-typing-indicator">
                     <div class="misi-typing-dots">
                         <div class="misi-typing-dot"></div>
@@ -493,16 +650,14 @@ def add_misi_to_page(position="bottom-right"):
                 </div>
             </div>
             <div class="misi-suggestions">
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('pod')">Pods</button>
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('anomaly')">Anomaly</button>
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('scale')">Scale</button>
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('shell')">Shell</button>
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('incident')">Incident</button>
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('ai')">AI Actions</button>
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('deploy')">Deployments</button>
-                <button class="misi-suggestion-btn" onclick="sendMisiMessage('help')">Help</button>
-                <button class="misi-suggestion-btn" onclick="testMessageDisplay()" style="background: #ef4444; color: white;">Test Message</button>
-                <button class="misi-suggestion-btn" onclick="forceRefreshDisplay()" style="background: #3b82f6; color: white;">Refresh Display</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('pod')">🚀 Pods</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('anomaly')">⚠️ Anomaly</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('scale')">📈 Scale</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('shell')">💻 Shell</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('incident')">🚨 Incident</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('ai')">🤖 AI Actions</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('deploy')">🚀 Deployments</button>
+                <button class="misi-suggestion-btn" onclick="sendMisiMessage('help')">❓ Help</button>
             </div>
             <div class="misi-chat-input-container">
                 <input type="text" class="misi-chat-input" id="misi-chat-input"
@@ -517,19 +672,31 @@ def add_misi_to_page(position="bottom-right"):
     
     function toggleMisiPopup() {
         const popup = document.getElementById('misi-chat-popup');
+        const icon = document.getElementById('misi-icon');
+        
         if (popup) {
             misiPopupVisible = !misiPopupVisible;
-            popup.style.display = misiPopupVisible ? 'flex' : 'none';
             
             if (misiPopupVisible) {
+                // Add loading animation to icon
+                icon.classList.add('loading');
+                
+                // Show popup with enhanced animation
+                popup.style.display = 'flex';
+                
+                // Remove loading animation after popup is shown
                 setTimeout(() => {
+                    icon.classList.remove('loading');
+                    
                     const input = document.getElementById('misi-chat-input');
                     if (input) {
                         input.value = '';
                         input.focus();
                         console.log('Input focused and ready for input');
                     }
-                }, 300);
+                }, 500);
+            } else {
+                popup.style.display = 'none';
             }
         }
     }
@@ -672,46 +839,6 @@ def add_misi_to_page(position="bottom-right"):
         }
     }
     
-    function testMessageDisplay() {
-        console.log('Testing message display...');
-        
-        // Test if chat body exists
-        const chatBody = document.getElementById('misi-chat-body');
-        if (chatBody) {
-            console.log('Chat body found:', chatBody);
-            console.log('Chat body children:', chatBody.children.length);
-            console.log('Chat body styles:', chatBody.style.cssText);
-            
-            // Add a simple test message
-            const testDiv = document.createElement('div');
-            testDiv.textContent = 'TEST MESSAGE - This should be visible!';
-            testDiv.style.cssText = 'background: red; color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold;';
-            chatBody.appendChild(testDiv);
-            
-            console.log('Test message added. Total children:', chatBody.children.length);
-        } else {
-            console.error('Chat body not found in test function!');
-        }
-        
-        // Also test the normal message function
-        addMisiMessage('This is a test message from user', true);
-        setTimeout(() => {
-            addMisiMessage('This is a test response from AI', false);
-        }, 1000);
-    }
-
-    function forceRefreshDisplay() {
-        console.log('Forcing display refresh...');
-        const chatBody = document.getElementById('misi-chat-body');
-        if (chatBody) {
-            // Force a reflow to ensure all styles are applied
-            chatBody.offsetHeight;
-            console.log('Display refreshed. Total children:', chatBody.children.length);
-        } else {
-            console.error('Chat body not found for display refresh!');
-        }
-    }
-    
     document.addEventListener('DOMContentLoaded', function() {
         const icon = document.getElementById('misi-icon');
         const closeBtn = document.querySelector('.misi-close-btn');
@@ -770,6 +897,13 @@ def add_misi_to_page(position="bottom-right"):
                 }
             });
         }
+        
+        // Add some initial animation to the icon
+        setTimeout(() => {
+            if (icon) {
+                icon.style.animation = 'misi-pulse 2s infinite';
+            }
+        }, 1000);
     });
     </script>
     """
