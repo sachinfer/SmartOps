@@ -146,30 +146,31 @@ def add_misi_to_page(position="bottom-right"):
         to { opacity: 1; }
     }
     
-    .misi-chat-content {
-        position: fixed;
-        bottom: 80px;
-        right: 25px;
-        width: 320px;
-        height: 450px;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        animation: misi-popup-enter 0.4s ease-out forwards;
-        z-index: 10001;
-        border: 1px solid rgba(255,255,255,0.2);
-        backdrop-filter: blur(10px);
-        cursor: move;
-        user-select: none;
-        resize: both;
-        min-width: 280px;
-        min-height: 400px;
-        max-width: 600px;
-        max-height: 800px;
-    }
+         .misi-chat-content {
+         position: fixed;
+         top: 50%;
+         left: 50%;
+         transform: translate(-50%, -50%);
+         width: 320px;
+         height: 450px;
+         background: rgba(255, 255, 255, 0.95);
+         border-radius: 16px;
+         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+         display: flex;
+         flex-direction: column;
+         overflow: hidden;
+         animation: misi-popup-enter 0.4s ease-out forwards;
+         z-index: 10001;
+         border: 1px solid rgba(255,255,255,0.2);
+         backdrop-filter: blur(10px);
+         cursor: move;
+         user-select: none;
+         resize: both;
+         min-width: 280px;
+         min-height: 400px;
+         max-width: 600px;
+         max-height: 800px;
+     }
     
     @keyframes misi-popup-enter {
         0% {
@@ -808,48 +809,48 @@ def add_misi_to_page(position="bottom-right"):
          }
      }
      
-     function toggleZoom() {
+           function toggleZoom() {
          const chatContent = document.querySelector('.misi-chat-content');
          if (chatContent) {
              if (isZoomed) {
                  // Zoom out
                  currentScale = 1;
-                 chatContent.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1)`;
+                 chatContent.style.transform = `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(1)`;
                  isZoomed = false;
                  console.log('🔍 Zoomed out to:', currentScale);
              } else {
                  // Zoom in
                  currentScale = 1.5;
-                 chatContent.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1.5)`;
+                 chatContent.style.transform = `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(1.5)`;
                  isZoomed = true;
                  console.log('🔍 Zoomed in to:', currentScale);
              }
          }
      }
      
-     function zoomIn() {
+           function zoomIn() {
          const chatContent = document.querySelector('.misi-chat-content');
          if (chatContent && currentScale < 3) {
              currentScale = Math.min(currentScale + 0.25, 3);
-             chatContent.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(${currentScale})`;
+             chatContent.style.transform = `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(${currentScale})`;
              isZoomed = currentScale > 1;
          }
      }
      
-     function zoomOut() {
+           function zoomOut() {
          const chatContent = document.querySelector('.misi-chat-content');
          if (chatContent && currentScale > 0.5) {
              currentScale = Math.max(currentScale - 0.25, 0.5);
-             chatContent.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(${currentScale})`;
+             chatContent.style.transform = `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(${currentScale})`;
              isZoomed = currentScale > 1;
          }
      }
      
-     function resetZoom() {
+           function resetZoom() {
          const chatContent = document.querySelector('.misi-chat-content');
          if (chatContent) {
              currentScale = 1;
-             chatContent.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1)`;
+             chatContent.style.transform = `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(1)`;
              isZoomed = false;
          }
      }
@@ -1076,8 +1077,8 @@ def add_misi_to_page(position="bottom-right"):
              console.log('🔍 Current scale:', currentScale);
              
              // Test moving the widget
-             xOffset += 100;
-             yOffset += 50;
+             xOffset = 100;
+             yOffset = 50;
              setTranslate(xOffset, yOffset, chatContent);
              
              console.log('🚀 Moved widget to:', xOffset, yOffset);
@@ -1209,11 +1210,12 @@ def add_misi_to_page(position="bottom-right"):
               }
           }
          
-                   function setTranslate(xPos, yPos, el) {
-              // Apply both translation and current zoom scale
-              el.style.transform = `translate(${xPos}px, ${yPos}px) scale(${currentScale})`;
-              console.log('📍 Setting transform:', `translate(${xPos}px, ${yPos}px) scale(${currentScale})`);
-          }
+                                       function setTranslate(xPos, yPos, el) {
+               // Apply both translation and current zoom scale
+               // Start from center position and apply our offset
+               el.style.transform = `translate(calc(-50% + ${xPos}px), calc(-50% + ${yPos}px)) scale(${currentScale})`;
+               console.log('📍 Setting transform:', `translate(calc(-50% + ${xPos}px), calc(-50% + ${yPos}px)) scale(${currentScale})`);
+           }
          
                    function dragEnd() {
               if (isDragging) {
