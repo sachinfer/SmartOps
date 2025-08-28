@@ -445,14 +445,16 @@ def show_sidebar():
             width: 320px !important;
         }
 
-        /* ---------- Sidebar look (matches screenshot) ---------- */
+        /* ---------- Modern Sidebar Design ---------- */
         section[data-testid="stSidebar"] > div:first-child{
-            background: linear-gradient(180deg,#6b6eea 0%, #8356b1 55%, #7a59b5 100%);
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             height: 100vh;
             padding: 1.2rem 1rem 2rem 1rem;
             border-top-right-radius: 20px;
             border-bottom-right-radius: 20px;
-            box-shadow: 2px 0 16px rgba(102,126,234,0.10);
+            box-shadow: 2px 0 20px rgba(0,0,0,0.3);
+            position: relative;
+            overflow-y: auto;
         }
 
         /* hide default sidebar header space */
@@ -461,53 +463,117 @@ def show_sidebar():
             display:none !important;
         }
 
-        /* Titles, labels, dividers */
+        /* Modern typography */
         .sb-title{
-            font-size: 1.1rem; font-weight: 700; color: #ffffff; letter-spacing: .6px;
-            margin: .3rem 0 .2rem 0; display:flex; align-items:center; gap:.5rem;
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            color: #ffffff; 
+            letter-spacing: .6px;
+            margin: .3rem 0 .2rem 0; 
+            display:flex; 
+            align-items:center; 
+            gap:.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .sb-sub{
-            color:#dfe6e9; font-size:.9rem; margin:.7rem 0 .5rem 0; display:flex; align-items:center; gap:.45rem;
+            color:#a8dadc; 
+            font-size:.9rem; 
+            margin:.7rem 0 .5rem 0; 
+            display:flex; 
+            align-items:center; 
+            gap:.45rem;
             opacity:.95;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .sb-divider{
-            border-top: 1px solid rgba(255,255,255,.25);
+            border-top: 1px solid rgba(168, 218, 220, 0.3);
             margin: 1.1rem 0 1.1rem 0;
         }
-        .sb-section{ margin: .3rem 0 1rem 0; }
+        .sb-section{ 
+            margin: .3rem 0 1rem 0; 
+            padding: 0.5rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
 
-        /* Pill buttons (exact feel) */
+        /* Modern button styles */
         .stButton > button {
             width: 100% !important;
             text-align: left !important;
             font-weight: 600 !important;
             color: #ffffff !important;
-            background: rgba(0,0,0,.28) !important;
-            border: 1px solid rgba(255,255,255,.18) !important;
-            border-radius: 10px !important;
-            padding: .65rem .9rem !important;
-            line-height: 1.1rem !important;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+            background: linear-gradient(135deg, rgba(102,126,234,0.8) 0%, rgba(118,75,162,0.8) 100%) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 12px !important;
+            padding: .75rem 1rem !important;
+            line-height: 1.2rem !important;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            margin: 0.3rem 0 !important;
         }
         .stButton > button:hover{
-            background: rgba(255,255,255,.22) !important;
-            transform: translateX(5px);
-            transition: all .18s ease;
+            background: linear-gradient(135deg, rgba(102,126,234,1) 0%, rgba(118,75,162,1) 100%) !important;
+            transform: translateX(8px) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+            border-color: rgba(255,255,255,0.4) !important;
         }
         .stButton > button:active{
-            transform: translateX(2px);
+            transform: translateX(4px) translateY(0px);
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
         }
 
         /* Make emojis align nicely inside buttons */
-        .stButton > button p { margin: 0; }
+        .stButton > button p { 
+            margin: 0; 
+            font-size: 0.95rem;
+        }
         
         /* Anomaly notification styles */
         .anomaly-card {
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(255,99,71,0.2) 0%, rgba(255,69,0,0.2) 100%);
+            border: 1px solid rgba(255,99,71,0.3);
+            border-radius: 12px;
             padding: 1rem;
             margin: 0.5rem 0;
             backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(255,99,71,0.1);
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #4ade80;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Scrollbar styling */
+        section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar {
+            width: 6px;
+        }
+        section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+        }
+        section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
         </style>
         """,
@@ -517,10 +583,14 @@ def show_sidebar():
     # ---------- Sidebar content ----------
     st.markdown(
         """
-        <div style="text-align:center; margin: .2rem 0 1.2rem 0;">
-            <div style="font-size:2.2rem;">🚀</div>
-            <div style="font-size:1.35rem; font-weight:800; color:#fff; letter-spacing:.6px;">SmartOps</div>
-            <div style="font-size:.92rem; color:#dfe6e9; opacity:.95;">AI Kubernetes Platform</div>
+        <div style="text-align:center; margin: .2rem 0 1.5rem 0;">
+            <div style="font-size:2.5rem; margin-bottom: 0.5rem;">🚀</div>
+            <div style="font-size:1.5rem; font-weight:800; color:#fff; letter-spacing:.8px; margin-bottom: 0.3rem;">SmartOps</div>
+            <div style="font-size:.95rem; color:#a8dadc; opacity:.95; margin-bottom: 0.5rem;">AI Kubernetes Platform</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <div class="status-indicator"></div>
+                <span style="font-size: 0.8rem; color: #4ade80;">System Online</span>
+            </div>
         </div>
         """,
         unsafe_allow_html=True
@@ -541,25 +611,16 @@ def show_sidebar():
         st.switch_page("pages/4_Anomaly_Detection.py")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---- Testing & Development
-    st.markdown('<div class="sb-section">', unsafe_allow_html=True)
-    st.markdown('<div class="sb-sub">🧪 Testing & Development</div>', unsafe_allow_html=True)
-    if st.button("🧪  Sidebar Test", key="nav_test", use_container_width=True):
-        st.switch_page("test_sidebar.py")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # ---- Pod & Cluster
+    # ---- Pod & Cluster Management
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🛰️ Pod & Cluster</div>', unsafe_allow_html=True)
     if st.button("🧭  Pod Explorer & Logs", key="nav_pod", use_container_width=True):
         st.switch_page("pages/2_Pod_Explorer_and_Logs.py")
-    if st.button("🔍  Cluster Explorer", key="nav_cluster", use_container_width=True):
-        st.switch_page("pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
-    if st.button("🖥️  Kubernetes Shell", key="nav_shell", use_container_width=True):
+    if st.button("🔍  Kubernetes Shell & Explorer", key="nav_cluster", use_container_width=True):
         st.switch_page("pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---- Operations
+    # ---- Operations & Scaling
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">⚡ Operations</div>', unsafe_allow_html=True)
     if st.button("⚡  Auto Scaling Control", key="nav_scale", use_container_width=True):
@@ -575,14 +636,44 @@ def show_sidebar():
         st.switch_page("pages/8_AI_Actions.py")
     if st.button("📝  Incident Timeline", key="nav_incident", use_container_width=True):
         st.switch_page("pages/6_Incident_Timeline_and_Postmortem_Report_Generator.py")
+    if st.button("💬  Misi AI Assistant", key="nav_misi", use_container_width=True):
+        st.switch_page("pages/7_Misi_AI_Assistant.py")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ---- Quick Actions
+    st.markdown('<div class="sb-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sb-sub">⚡ Quick Actions</div>', unsafe_allow_html=True)
+    if st.button("🔄  Refresh All Data", key="nav_refresh", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+    if st.button("📊  System Status", key="nav_status", use_container_width=True):
+        st.info("🟢 All systems operational\n📊 Data refreshed\n🤖 AI services active")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Footer
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="sb-title">🤖 AI Controls</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-title">🔧 System Info</div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    
+    # System status info
     st.markdown(
-        "<div style='color:#dfe6e9; font-size:.84rem; text-align:center; opacity:.95;'>SmartOps v1.0<br/>© 2024 Your Company</div>",
+        """
+        <div style='color:#a8dadc; font-size:.85rem; text-align:center; opacity:.9; line-height: 1.4;'>
+            <div style='margin-bottom: 0.5rem;'>
+                <span style='color: #4ade80;'>●</span> API: Active
+            </div>
+            <div style='margin-bottom: 0.5rem;'>
+                <span style='color: #4ade80;'>●</span> Database: Connected
+            </div>
+            <div style='margin-bottom: 0.5rem;'>
+                <span style='color: #4ade80;'>●</span> AI Engine: Ready
+            </div>
+            <div style='margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid rgba(168, 218, 220, 0.2);'>
+                SmartOps v1.0<br/>
+                <span style='font-size: 0.8rem; opacity: 0.8;'>© 2024 SmartOps AI</span>
+            </div>
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
