@@ -343,6 +343,20 @@ def add_misi_to_page(position="bottom-right"):
         margin-bottom: 20px;
         width: 100%;
         box-sizing: border-box;
+        min-height: 60px;
+        background: transparent;
+    }
+    
+    .misi-message::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 0, 0, 0.1);
+        z-index: -1;
+        pointer-events: none;
     }
     
     @keyframes message-slide-in {
@@ -648,6 +662,11 @@ def add_misi_to_page(position="bottom-right"):
                     </div>
                 </div>
                 
+                <!-- Debug message to ensure visibility -->
+                <div style="background: #ff0000; color: white; padding: 15px; margin: 15px; border-radius: 8px; font-weight: bold; text-align: center; border: 3px solid #000; display: block !important; visibility: visible !important; opacity: 1 !important;">
+                    🔍 DEBUG: This message should be visible! If you see this, the chat body is working.
+                </div>
+                
                 <div class="misi-typing-indicator" id="misi-typing-indicator">
                     <div class="misi-typing-dots">
                         <div class="misi-typing-dot"></div>
@@ -806,6 +825,12 @@ def add_misi_to_page(position="bottom-right"):
                 bubbleDiv.style.visibility = 'visible';
                 bubbleDiv.style.opacity = '1';
             }, 500);
+            
+            // Final force refresh
+            setTimeout(() => {
+                messageDiv.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; position: relative !important; z-index: 10 !important; width: 100% !important; min-height: auto !important;';
+                bubbleDiv.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important;';
+            }, 1000);
         } else {
             console.error('Chat body not found!');
         }
