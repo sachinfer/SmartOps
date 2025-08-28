@@ -148,14 +148,13 @@ def add_misi_to_page(position="bottom-right"):
     
     .misi-chat-content {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 500px;
-        height: 650px;
+        bottom: 100px;
+        right: 30px;
+        width: 350px;
+        height: 500px;
         background: white;
         border-radius: 20px;
-        box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -167,11 +166,11 @@ def add_misi_to_page(position="bottom-right"):
     @keyframes misi-popup-enter {
         0% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.8);
+            transform: translateY(100px) scale(0.8);
         }
         100% {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: translateY(0) scale(1);
         }
     }
     
@@ -179,7 +178,7 @@ def add_misi_to_page(position="bottom-right"):
     .misi-chat-header {
         background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         color: white;
-        padding: 20px 25px;
+        padding: 15px 20px;
         text-align: left;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         position: relative;
@@ -318,12 +317,12 @@ def add_misi_to_page(position="bottom-right"):
     /* Clean White Chat Body */
     .misi-chat-body {
         flex: 1;
-        padding: 25px;
+        padding: 20px;
         background: white;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
         position: relative;
         width: 100%;
         box-sizing: border-box;
@@ -340,7 +339,7 @@ def add_misi_to_page(position="bottom-right"):
         opacity: 1 !important;
         visibility: visible !important;
         animation: message-slide-in 0.4s ease-out;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         width: 100%;
         box-sizing: border-box;
         min-height: 60px;
@@ -402,15 +401,19 @@ def add_misi_to_page(position="bottom-right"):
     
     .misi-message-content {
         flex: 1;
-        max-width: 80%;
+        max-width: 85%;
+        min-width: 0;
     }
     
     .misi-message-bubble {
         padding: 12px 16px;
-        border-radius: 18px;
+        border-radius: 16px;
         line-height: 1.4;
+        font-size: 14px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
         position: relative;
         z-index: 2;
         transition: all 0.3s ease;
@@ -419,6 +422,8 @@ def add_misi_to_page(position="bottom-right"):
         opacity: 1 !important;
         min-height: 20px;
         white-space: pre-wrap;
+        max-width: 100%;
+        box-sizing: border-box;
     }
     
     .misi-message.user .misi-message-bubble {
@@ -508,7 +513,7 @@ def add_misi_to_page(position="bottom-right"):
     
     /* Light Blue Input Field */
     .misi-chat-input-container {
-        padding: 20px 25px;
+        padding: 15px 20px;
         background: #f8fafc;
         border-top: 1px solid #e2e8f0;
         display: flex;
@@ -519,9 +524,9 @@ def add_misi_to_page(position="bottom-right"):
     
     .misi-chat-input {
         flex: 1;
-        padding: 16px 20px;
+        padding: 12px 16px;
         border: 2px solid #e2e8f0;
-        border-radius: 25px;
+        border-radius: 20px;
         font-size: 16px;
         outline: none;
         background: white;
@@ -530,10 +535,10 @@ def add_misi_to_page(position="bottom-right"):
         box-sizing: border-box;
         cursor: text;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        line-height: 1.5;
+        line-height: 1.4;
         resize: none;
         overflow: hidden;
-        min-height: 50px;
+        min-height: 45px;
         max-height: 120px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
@@ -593,21 +598,23 @@ def add_misi_to_page(position="bottom-right"):
     /* Responsive design */
     @media (max-width: 768px) {
         .misi-chat-content {
-            width: 95vw;
-            height: 80vh;
-            max-width: none;
+            width: 90vw;
+            height: 60vh;
+            max-width: 400px;
+            bottom: 80px;
+            right: 20px;
         }
         
         .misi-chat-input-container {
-            padding: 15px 20px;
+            padding: 12px 16px;
         }
         
         .misi-chat-header {
-            padding: 15px 20px;
+            padding: 12px 16px;
         }
         
         .misi-chat-body {
-            padding: 20px;
+            padding: 16px;
         }
     }
     
@@ -662,10 +669,7 @@ def add_misi_to_page(position="bottom-right"):
                     </div>
                 </div>
                 
-                <!-- Debug message to ensure visibility -->
-                <div style="background: #ff0000; color: white; padding: 15px; margin: 15px; border-radius: 8px; font-weight: bold; text-align: center; border: 3px solid #000; display: block !important; visibility: visible !important; opacity: 1 !important;">
-                    🔍 DEBUG: This message should be visible! If you see this, the chat body is working.
-                </div>
+
                 
                 <div class="misi-typing-indicator" id="misi-typing-indicator">
                     <div class="misi-typing-dots">
