@@ -110,41 +110,41 @@ def add_misi_to_page(position="bottom-right"):
     }
     
     .misi-chat-content {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 95%;
-        max-width: 1200px;
-        height: 90%;
-        max-height: 900px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
         background: white;
-        border-radius: 24px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        border-radius: 0;
+        box-shadow: none;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        animation: misi-slide-in 0.3s ease-out;
+        animation: misi-slide-in-top 0.3s ease-out;
+        z-index: 10001;
     }
     
-    @keyframes misi-slide-in {
+    @keyframes misi-slide-in-top {
         from {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.9);
+            transform: translateY(-100%);
         }
         to {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: translateY(0);
         }
     }
     
     .misi-chat-header {
         background: linear-gradient(135deg, #10b981, #059669);
         color: white;
-        padding: 24px;
+        padding: 20px 24px;
         text-align: center;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         position: relative;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .misi-header-icon {
@@ -199,20 +199,22 @@ def add_misi_to_page(position="bottom-right"):
         background: rgba(255,255,255,0.2);
         color: white;
         border: none;
-        font-size: 24px;
-        width: 40px;
-        height: 40px;
+        font-size: 28px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease;
+        z-index: 10002;
     }
     
     .misi-close-btn:hover {
         background: rgba(255,255,255,0.3);
         transform: scale(1.1);
+        background: #ef4444;
     }
     
     .misi-chat-body {
@@ -224,9 +226,11 @@ def add_misi_to_page(position="bottom-right"):
         flex-direction: column;
         min-height: 400px;
         position: relative;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        margin: 8px;
+        border: none;
+        border-radius: 0;
+        margin: 0;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .misi-message {
@@ -474,6 +478,12 @@ def add_misi_to_page(position="bottom-right"):
                     </div>
                     <div class="misi-message-timestamp">12:00</div>
                 </div>
+                
+                <!-- Debug message to ensure visibility -->
+                <div style="background: #ff0000; color: white; padding: 15px; margin: 15px; border-radius: 8px; font-weight: bold; text-align: center; border: 3px solid #000;">
+                    🔍 DEBUG: This message should be visible! If you see this, the chat body is working.
+                </div>
+                
                 <div class="misi-typing-indicator" id="misi-typing-indicator">
                     <div class="misi-typing-dots">
                         <div class="misi-typing-dot"></div>
@@ -492,6 +502,7 @@ def add_misi_to_page(position="bottom-right"):
                 <button class="misi-suggestion-btn" onclick="sendMisiMessage('deploy')">Deployments</button>
                 <button class="misi-suggestion-btn" onclick="sendMisiMessage('help')">Help</button>
                 <button class="misi-suggestion-btn" onclick="testMessageDisplay()" style="background: #ef4444; color: white;">Test Message</button>
+                <button class="misi-suggestion-btn" onclick="forceRefreshDisplay()" style="background: #3b82f6; color: white;">Refresh Display</button>
             </div>
             <div class="misi-chat-input-container">
                 <input type="text" class="misi-chat-input" id="misi-chat-input"
@@ -688,6 +699,18 @@ def add_misi_to_page(position="bottom-right"):
             addMisiMessage('This is a test response from AI', false);
         }, 1000);
     }
+
+    function forceRefreshDisplay() {
+        console.log('Forcing display refresh...');
+        const chatBody = document.getElementById('misi-chat-body');
+        if (chatBody) {
+            // Force a reflow to ensure all styles are applied
+            chatBody.offsetHeight;
+            console.log('Display refreshed. Total children:', chatBody.children.length);
+        } else {
+            console.error('Chat body not found for display refresh!');
+        }
+    }
     
     document.addEventListener('DOMContentLoaded', function() {
         const icon = document.getElementById('misi-icon');
@@ -695,6 +718,13 @@ def add_misi_to_page(position="bottom-right"):
         const input = document.getElementById('misi-chat-input');
         const sendBtn = document.getElementById('misi-send-btn');
         const popup = document.getElementById('misi-chat-popup');
+        
+        // Add keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && misiPopupVisible) {
+                closeMisiPopup();
+            }
+        });
         
         if (icon) {
             icon.addEventListener('click', toggleMisiPopup);
