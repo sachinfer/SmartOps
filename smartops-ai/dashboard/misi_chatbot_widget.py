@@ -114,10 +114,10 @@ def add_misi_to_page(position="bottom-right"):
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 90%;
-        max-width: 800px;
-        height: 80%;
-        max-height: 700px;
+        width: 95%;
+        max-width: 1200px;
+        height: 90%;
+        max-height: 900px;
         background: white;
         border-radius: 24px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -461,6 +461,7 @@ def add_misi_to_page(position="bottom-right"):
                 <button class="misi-suggestion-btn" onclick="sendMisiMessage('ai')">AI Actions</button>
                 <button class="misi-suggestion-btn" onclick="sendMisiMessage('deploy')">Deployments</button>
                 <button class="misi-suggestion-btn" onclick="sendMisiMessage('help')">Help</button>
+                <button class="misi-suggestion-btn" onclick="testMessageDisplay()" style="background: #ef4444; color: white;">Test Message</button>
             </div>
             <div class="misi-chat-input-container">
                 <input type="text" class="misi-chat-input" id="misi-chat-input"
@@ -508,6 +509,8 @@ def add_misi_to_page(position="bottom-right"):
     function addMisiMessage(message, isUser = false) {
         const chatBody = document.getElementById('misi-chat-body');
         if (chatBody) {
+            console.log('Adding message:', message, 'isUser:', isUser);
+            
             // Remove typing indicator if it exists
             const typingIndicator = document.getElementById('misi-typing-indicator');
             if (typingIndicator) {
@@ -531,11 +534,20 @@ def add_misi_to_page(position="bottom-right"):
             messageDiv.appendChild(timestamp);
             chatBody.appendChild(messageDiv);
             
+            // Force the message to be visible
+            messageDiv.style.display = 'flex';
+            messageDiv.style.visibility = 'visible';
+            messageDiv.style.opacity = '1';
+            
             // Scroll to bottom
             chatBody.scrollTop = chatBody.scrollHeight;
             
             // Force a reflow to ensure the message is visible
             messageDiv.offsetHeight;
+            
+            console.log('Message added successfully. Total messages:', chatBody.children.length);
+        } else {
+            console.error('Chat body not found!');
         }
     }
     
@@ -571,9 +583,13 @@ def add_misi_to_page(position="bottom-right"):
         if (textToSend) {
             console.log('Sending message:', textToSend);
             
+            // Add user message immediately
             addMisiMessage(textToSend, true);
+            
+            // Show typing indicator
             showTypingIndicator();
             
+            // Simulate AI response after delay
             setTimeout(() => {
                 hideTypingIndicator();
                 
@@ -599,9 +615,20 @@ def add_misi_to_page(position="bottom-right"):
                     response += "I can help you navigate SmartOps features. Try asking about pods, anomalies, scaling, shell access, incidents, AI actions, or deployments.";
                 }
                 
+                console.log('Sending AI response:', response);
                 addMisiMessage(response, false);
             }, 1500);
+        } else {
+            console.log('No message to send');
         }
+    }
+    
+    function testMessageDisplay() {
+        console.log('Testing message display...');
+        addMisiMessage('This is a test message from user', true);
+        setTimeout(() => {
+            addMisiMessage('This is a test response from AI', false);
+        }, 1000);
     }
     
     document.addEventListener('DOMContentLoaded', function() {
