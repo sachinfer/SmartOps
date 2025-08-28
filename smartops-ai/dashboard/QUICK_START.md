@@ -1,73 +1,88 @@
-# 🚀 SmartOps Dashboard Quick Start Guide
+# �� SmartOps Dashboard - Quick Start Guide
 
-## ⚡ Get Started in 3 Simple Steps
+## 📋 Prerequisites
 
-### 1. 🖥️ Start the Backend API Service
-Open a terminal/command prompt and run:
+- Python 3.8+
+- Kubernetes cluster access
+- kubectl configured
+- Docker (optional, for containerized deployment)
+
+## 🚀 Quick Start
+
+### 1. Clone and Setup
 
 ```bash
 cd smartops-ai/dashboard
+pip install -r requirements.txt
+```
+
+### 2. Start Services
+
+#### Option A: Using Startup Scripts (Recommended)
+
+**Windows:**
+```bash
+start_dashboard.bat
+```
+
+**PowerShell:**
+```powershell
+.\start_dashboard.ps1
+```
+
+**Python:**
+```bash
+python start_services.py
+```
+
+#### Option B: Manual Start
+
+```bash
+# Terminal 1: Start API backend
 python event_api.py
+
+# Terminal 2: Start dashboard (in new terminal)
+streamlit run pages/1_Overview.py
 ```
 
-**Expected Output:**
-```
-INFO:     Started server process [12345]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-```
+### 3. Access Dashboard
 
-### 2. 🌐 Start the Dashboard
-Open another terminal/command prompt and run:
+- **Dashboard**: http://localhost:8501
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+
+## 🔧 Configuration
+
+### Port Configuration
+
+- **API Port**: Default 8000
+- **Dashboard Port**: Use `streamlit run pages/1_Overview.py --server.port 8502`
+
+### Environment Variables
+
+Create `config.env` from `config.env.example`:
 
 ```bash
-cd smartops-ai/dashboard
-streamlit run streamlit_app.py
+cp config.env.example config.env
+# Edit config.env with your settings
 ```
 
-**Expected Output:**
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Port already in use**: Stop existing services or change ports
+2. **Dependencies missing**: Run `pip install -r requirements.txt`
+3. **Kubernetes access**: Ensure kubectl is configured
+
+### Debug Mode
+
+```bash
+streamlit run pages/1_Overview.py --logger.level debug
 ```
-You can now view your Streamlit app in your browser.
 
-Local URL: http://localhost:8501
-Network URL: http://192.168.1.100:8501
-```
+## 📚 Next Steps
 
-### 3. 🎯 Open Your Browser
-Navigate to: `http://localhost:8501`
-
-## 🔧 Troubleshooting
-
-### ❌ "Connection refused" or "Getting Started" messages?
-- **Solution**: Make sure the API service is running first (Step 1)
-- **Check**: Look for the API service terminal showing "Uvicorn running on http://127.0.0.1:8000"
-
-### ❌ Port already in use?
-- **Solution**: Kill existing processes or use different ports
-- **API Port**: Change `8000` in `event_api.py` if needed
-- **Dashboard Port**: Use `streamlit run streamlit_app.py --server.port 8502`
-
-### ❌ Python not found?
-- **Solution**: Install Python 3.8+ and required packages
-- **Install**: `pip install -r requirements.txt`
-
-## 📱 What You'll See
-
-✅ **Overview Page**: Cluster status, metrics, and health
-✅ **Pod Explorer**: Real-time pod data and logs
-✅ **Kubernetes Shell**: Execute kubectl commands
-✅ **Anomaly Detection**: AI-powered insights
-✅ **AI Actions**: Smart recommendations
-
-## 🎉 Success!
-Once both services are running, you'll see:
-- Real-time cluster data
-- Live pod status
-- Interactive shell commands
-- Beautiful, modern UI
-
-## 🆘 Need Help?
-- Check the terminal outputs for error messages
-- Ensure both services are running simultaneously
-- Verify ports 8000 (API) and 8501 (Dashboard) are available
+- Check the [STARTUP_GUIDE.md](STARTUP_GUIDE.md) for detailed setup
+- Review [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues
+- Explore the dashboard features and pages

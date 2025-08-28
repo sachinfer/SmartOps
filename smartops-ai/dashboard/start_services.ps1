@@ -18,14 +18,14 @@ try {
 # Check if we're in the right directory
 if (-not (Test-Path "event_api.py")) {
     Write-Host "❌ Please run this script from the dashboard directory" -ForegroundColor Red
-    Write-Host "Expected files: event_api.py, streamlit_app.py" -ForegroundColor Yellow
+    Write-Host "Expected files: event_api.py, pages/1_Overview.py" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-if (-not (Test-Path "streamlit_app.py")) {
+if (-not (Test-Path "pages\1_Overview.py")) {
     Write-Host "❌ Please run this script from the dashboard directory" -ForegroundColor Red
-    Write-Host "Expected files: event_api.py, streamlit_app.py" -ForegroundColor Yellow
+    Write-Host "Expected files: event_api.py, pages/1_Overview.py" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -84,7 +84,7 @@ Start-Sleep -Seconds 3
 Write-Host "🎨 Starting Streamlit frontend service..." -ForegroundColor Yellow
 $streamlitJob = Start-Job -ScriptBlock {
     Set-Location $using:PWD
-    streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+    streamlit run pages/1_Overview.py --server.port=8501 --server.address=0.0.0.0
 }
 
 Write-Host ""

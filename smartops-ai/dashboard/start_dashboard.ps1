@@ -8,7 +8,7 @@ Write-Host "Waiting for API service to start..." -ForegroundColor Yellow
 Start-Sleep -Seconds 5
 
 Write-Host "Starting Dashboard..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; streamlit run streamlit_app.py" -WindowStyle Normal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; streamlit run pages/1_Overview.py" -WindowStyle Normal
 
 Write-Host ""
 Write-Host "Services started!" -ForegroundColor Green

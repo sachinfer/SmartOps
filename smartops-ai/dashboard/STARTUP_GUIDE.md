@@ -29,13 +29,13 @@ cd smartops-ai/dashboard
 python event_api.py
 
 # Terminal 2: Start Dashboard (in new terminal)
-streamlit run streamlit_app.py
+streamlit run pages/1_Overview.py
 ```
 
 ### Option 3: One-Command Startup
 ```bash
 cd smartops-ai/dashboard
-start python event_api.py && timeout 5 && start streamlit run streamlit_app.py
+start python event_api.py && timeout 5 && start streamlit run pages/1_Overview.py
 ```
 
 ## 🔧 What I Fixed

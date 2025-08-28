@@ -12,7 +12,7 @@ timeout /t 3 /nobreak >nul
 
 echo 🌐 Starting Dashboard...
 echo.
-start "SmartOps Dashboard" cmd /k "cd /d %~dp0 && streamlit run streamlit_app.py"
+start "SmartOps Dashboard" cmd /k "cd /d %~dp0 && streamlit run pages/1_Overview.py"
 
 echo.
 echo ✅ Both services are starting up!
