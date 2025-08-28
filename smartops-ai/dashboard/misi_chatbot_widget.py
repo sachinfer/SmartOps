@@ -75,6 +75,24 @@ def add_misi_to_page(position="bottom-right"):
         overflow: hidden;
         animation: misi-slide-in 0.3s ease-out;
         border: 1px solid rgba(0,0,0,0.1);
+        max-width: 90vw;
+        max-height: 90vh;
+        min-width: 400px;
+        min-height: 500px;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Fallback positioning for edge cases */
+    .misi-chat-popup.fallback {
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+        transform: none;
+        width: auto;
+        height: auto;
     }
     
     @keyframes misi-slide-in {
@@ -304,6 +322,10 @@ def add_misi_to_page(position="bottom-right"):
             popup.style.display = misiPopupVisible ? 'flex' : 'none';
             
             if (misiPopupVisible) {
+                // Ensure popup is properly positioned
+                ensurePopupVisibility(popup);
+                
+                // Focus on input when opening
                 setTimeout(() => {
                     const input = document.getElementById('misi-chat-input');
                     if (input) {
@@ -312,6 +334,27 @@ def add_misi_to_page(position="bottom-right"):
                 }, 100);
             }
         }
+    }
+    
+    function ensurePopupVisibility(popup) {
+        // Reset to default positioning
+        popup.classList.remove('fallback');
+        popup.style.top = '50%';
+        popup.style.left = '50%';
+        popup.style.transform = 'translate(-50%, -50%)';
+        
+        // Check if popup is cut off
+        setTimeout(() => {
+            const rect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // If popup is cut off on left or right, use fallback positioning
+            if (rect.left < 0 || rect.right > viewportWidth || rect.top < 0 || rect.bottom > viewportHeight) {
+                popup.classList.add('fallback');
+                console.log('Using fallback positioning for popup');
+            }
+        }, 50);
     }
     
     function closeMisiPopup() {
@@ -419,6 +462,16 @@ def add_misi_to_page(position="bottom-right"):
                 sendMisiMessage();
             });
         }
+        
+        // Handle window resize to ensure popup stays visible
+        window.addEventListener('resize', function() {
+            if (misiPopupVisible) {
+                const popup = document.getElementById('misi-chat-popup');
+                if (popup) {
+                    ensurePopupVisibility(popup);
+                }
+            }
+        });
     });
     
     window.toggleMisiPopup = toggleMisiPopup;
