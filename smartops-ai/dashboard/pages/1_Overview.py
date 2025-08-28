@@ -8,9 +8,12 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
-from sidebar_utils import show_sidebar
 import sys
 import os
+
+# Add the parent directory to Python path to import sidebar_utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from sidebar_utils import show_sidebar
 
 # Import Misi from the dashboard directory
 try:
