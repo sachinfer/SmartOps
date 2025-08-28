@@ -211,5 +211,6 @@ if st.button("🔄 Retrain Model", key="retrain_model_btn"):
 # Add Misi AI Chatbot Widget
 if MISI_AVAILABLE:
     # add_misi_to_page("bottom-right")
+    pass  # Placeholder for when Misi is properly integrated
 else:
     st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 

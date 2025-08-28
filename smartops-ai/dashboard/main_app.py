@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SmartOps Dashboard - Page Router
+SmartOps Dashboard - Main Application
 Centralized navigation system for consistent sidebar behavior
 """
 

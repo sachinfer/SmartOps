@@ -42,7 +42,7 @@ python start_services.py
 python event_api.py
 
 # Terminal 2: Start dashboard (in new terminal)
-streamlit run page_router.py
+streamlit run main_app.py
 ```
 
 ### 3. Access Dashboard
