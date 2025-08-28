@@ -218,55 +218,78 @@ def add_misi_to_page(position="bottom-right"):
     .misi-chat-body {
         flex: 1;
         padding: 24px;
-        background: #f8fafc;
+        background: #f0f2f5;
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
     }
     
     .misi-message {
         margin-bottom: 16px;
         display: flex;
         flex-direction: column;
+        max-width: 85%;
     }
     
     .misi-message.user {
         align-items: flex-end;
+        align-self: flex-end;
     }
     
     .misi-message.assistant {
         align-items: flex-start;
+        align-self: flex-start;
     }
     
     .misi-message-bubble {
-        max-width: 80%;
-        padding: 16px 20px;
-        border-radius: 20px;
-        line-height: 1.5;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 12px 16px;
+        border-radius: 18px;
+        line-height: 1.4;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        word-wrap: break-word;
+        max-width: 100%;
     }
     
     .misi-message.user .misi-message-bubble {
-        background: #10b981;
-        color: white;
-        border-bottom-right-radius: 8px;
+        background: #dcf8c6;
+        color: #000;
+        border-bottom-right-radius: 4px;
+        margin-bottom: 4px;
     }
     
     .misi-message.assistant .misi-message-bubble {
         background: white;
         color: #1e293b;
         border: 1px solid #e2e8f0;
-        border-bottom-left-radius: 8px;
+        border-bottom-left-radius: 4px;
+        margin-bottom: 4px;
+    }
+    
+    .misi-message-timestamp {
+        font-size: 11px;
+        color: #64748b;
+        margin: 0 4px;
+        opacity: 0.7;
+    }
+    
+    .misi-message.user .misi-message-timestamp {
+        text-align: right;
+    }
+    
+    .misi-message.assistant .misi-message-timestamp {
+        text-align: left;
     }
     
     .misi-typing-indicator {
         display: none;
-        padding: 16px 20px;
-        background: #f1f5f9;
-        border-radius: 20px;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 18px;
         margin-bottom: 16px;
         align-self: flex-start;
-        max-width: 80%;
+        max-width: 85%;
         border: 1px solid #e2e8f0;
-        border-bottom-left-radius: 8px;
+        border-bottom-left-radius: 4px;
     }
     
     .misi-typing-dots {
@@ -419,6 +442,7 @@ def add_misi_to_page(position="bottom-right"):
                     <div class="misi-message-bubble">
                         Hi! I'm Misi, your SmartOps AI assistant. How can I help you today?
                     </div>
+                    <div class="misi-message-timestamp">12:00</div>
                 </div>
                 <div class="misi-typing-indicator" id="misi-typing-indicator">
                     <div class="misi-typing-dots">
@@ -484,6 +508,12 @@ def add_misi_to_page(position="bottom-right"):
     function addMisiMessage(message, isUser = false) {
         const chatBody = document.getElementById('misi-chat-body');
         if (chatBody) {
+            // Remove typing indicator if it exists
+            const typingIndicator = document.getElementById('misi-typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+            
             const messageDiv = document.createElement('div');
             messageDiv.className = `misi-message ${isUser ? 'user' : 'assistant'}`;
             
@@ -491,10 +521,21 @@ def add_misi_to_page(position="bottom-right"):
             bubbleDiv.className = 'misi-message-bubble';
             bubbleDiv.textContent = message;
             
+            // Add timestamp
+            const timestamp = document.createElement('div');
+            timestamp.className = 'misi-message-timestamp';
+            const now = new Date();
+            timestamp.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
             messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(timestamp);
             chatBody.appendChild(messageDiv);
             
+            // Scroll to bottom
             chatBody.scrollTop = chatBody.scrollHeight;
+            
+            // Force a reflow to ensure the message is visible
+            messageDiv.offsetHeight;
         }
     }
     
