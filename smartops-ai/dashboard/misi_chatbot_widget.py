@@ -761,6 +761,8 @@ def add_misi_to_page(position="bottom-right"):
                  <button class="misi-test-btn" onclick="testMessageDisplay()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🧪 Test</button>
                  <button class="misi-test-btn" onclick="testDragAndZoom()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🎯 Test Move</button>
                  <button class="misi-test-btn" onclick="testManualDrag()" style="background: #8b5cf6; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🖱️ Test Drag</button>
+                 <button class="misi-test-btn" onclick="moveUp()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">⬆️ Up</button>
+                 <button class="misi-test-btn" onclick="moveDown()" style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">⬇️ Down</button>
              </div>
              
              <!-- Resize handle -->
@@ -1116,54 +1118,72 @@ def add_misi_to_page(position="bottom-right"):
          }
      }
      
-     function testManualDrag() {
-         console.log('🖱️ Testing manual drag functionality...');
-         
-         const chatContent = document.querySelector('.misi-chat-content');
-         if (chatContent) {
-             console.log('✅ Chat content found');
-             console.log('🎯 Current drag state:', isDragging);
-             console.log('📍 Current position:', xOffset, yOffset);
-             
-             // Simulate a drag start
-             console.log('🎯 Simulating drag start...');
-             
-             // Create a fake mouse event
-             const fakeEvent = {
-                 target: chatContent.querySelector('.misi-chat-header'),
-                 clientX: 100,
-                 clientY: 100,
-                 preventDefault: () => console.log('preventDefault called'),
-                 stopPropagation: () => console.log('stopPropagation called')
-             };
-             
-             dragStart(fakeEvent);
-             
-             if (isDragging) {
-                 console.log('✅ Drag started successfully!');
-                 
-                 // Simulate dragging
-                 setTimeout(() => {
-                     const dragEvent = {
-                         clientX: 200,
-                         clientY: 150,
-                         preventDefault: () => console.log('preventDefault called')
-                     };
-                     
-                     drag(dragEvent);
-                     console.log('🔄 Dragged to:', xOffset, yOffset);
-                     
-                     // End drag
-                     dragEnd();
-                     console.log('✅ Drag ended');
-                 }, 1000);
-             } else {
-                 console.log('❌ Failed to start drag');
-             }
-         } else {
-             console.error('❌ Chat content not found!');
-         }
-     }
+           function testManualDrag() {
+          console.log('🖱️ Testing manual drag functionality...');
+          
+          const chatContent = document.querySelector('.misi-chat-content');
+          if (chatContent) {
+              console.log('✅ Chat content found');
+              console.log('🎯 Current drag state:', isDragging);
+              console.log('📍 Current position:', xOffset, yOffset);
+              
+              // Simulate a drag start
+              console.log('🎯 Simulating drag start...');
+              
+              // Create a fake mouse event
+              const fakeEvent = {
+                  target: chatContent.querySelector('.misi-chat-header'),
+                  clientX: 100,
+                  clientY: 100,
+                  preventDefault: () => console.log('preventDefault called'),
+                  stopPropagation: () => console.log('stopPropagation called')
+              };
+              
+              dragStart(fakeEvent);
+              
+              if (isDragging) {
+                  console.log('✅ Drag started successfully!');
+                  
+                  // Simulate dragging
+                  setTimeout(() => {
+                      const dragEvent = {
+                          clientX: 200,
+                          clientY: 150,
+                          preventDefault: () => console.log('preventDefault called')
+                      };
+                      
+                      drag(dragEvent);
+                      console.log('🔄 Dragged to:', xOffset, yOffset);
+                      
+                      // End drag
+                      dragEnd();
+                      console.log('✅ Drag ended');
+                  }, 1000);
+              } else {
+                  console.log('❌ Failed to start drag');
+              }
+          } else {
+              console.error('❌ Chat content not found!');
+          }
+      }
+      
+      function moveUp() {
+          const chatContent = document.querySelector('.misi-chat-content');
+          if (chatContent) {
+              yOffset -= 50;
+              setTranslate(xOffset, yOffset, chatContent);
+              console.log('⬆️ Moved up to:', xOffset, yOffset);
+          }
+      }
+      
+      function moveDown() {
+          const chatContent = document.querySelector('.misi-chat-content');
+          if (chatContent) {
+              yOffset += 50;
+              setTranslate(xOffset, yOffset, chatContent);
+              console.log('⬇️ Moved down to:', xOffset, yOffset);
+          }
+      }
     
          document.addEventListener('DOMContentLoaded', function() {
          const icon = document.getElementById('misi-icon');
@@ -1180,48 +1200,48 @@ def add_misi_to_page(position="bottom-right"):
          let initialX;
          let initialY;
          
-                                       function dragStart(e) {
-               console.log('🎯 dragStart called on:', e.target);
-               
-               // Don't start dragging if clicking on buttons
-               if (e.target.closest('.misi-close-btn') || 
-                   e.target.closest('.misi-menu-btn') || 
-                   e.target.closest('.misi-zoom-btn')) {
-                   console.log('🚫 Button clicked, not starting drag');
-                   return;
-               }
-               
-                               // Only allow dragging from the header
+                                                                               function dragStart(e) {
+                console.log('🎯 dragStart called on:', e.target);
+                
+                // Don't start dragging if clicking on buttons
+                if (e.target.closest('.misi-close-btn') || 
+                    e.target.closest('.misi-menu-btn') || 
+                    e.target.closest('.misi-zoom-btn')) {
+                    console.log('🚫 Button clicked, not starting drag');
+                    return;
+                }
+                
+                // Only allow dragging from the header
                 if (e.target.closest('.misi-chat-header')) {
-                   isDragging = true;
+                    isDragging = true;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    initialX = e.clientX;
+                    initialY = e.clientY;
+                    
+                    // Add dragging visual feedback
+                    chatContent.classList.add('dragging');
+                    
+                    console.log('🚀 Started dragging from:', initialX, initialY);
+                    console.log('📍 Current offsets:', xOffset, yOffset);
+                }
+            }
+         
+                                       function drag(e) {
+               if (isDragging) {
                    e.preventDefault();
-                   e.stopPropagation();
                    
-                   initialX = e.clientX - xOffset;
-                   initialY = e.clientY - yOffset;
+                   const deltaX = e.clientX - initialX;
+                   const deltaY = e.clientY - initialY;
                    
-                   // Add dragging visual feedback
-                   chatContent.classList.add('dragging');
+                   xOffset = deltaX;
+                   yOffset = deltaY;
                    
-                   console.log('🚀 Started dragging from:', initialX, initialY);
-                   console.log('📍 Current offsets:', xOffset, yOffset);
+                   setTranslate(xOffset, yOffset, chatContent);
+                   console.log('🔄 Dragging to:', xOffset, yOffset);
                }
            }
-         
-                   function drag(e) {
-              if (isDragging) {
-                  e.preventDefault();
-                  
-                  currentX = e.clientX - initialX;
-                  currentY = e.clientY - initialY;
-                  
-                  xOffset = currentX;
-                  yOffset = currentY;
-                  
-                  setTranslate(currentX, currentY, chatContent);
-                  console.log('🔄 Dragging to:', currentX, currentY);
-              }
-          }
          
                                        function setTranslate(xPos, yPos, el) {
                // Apply both translation and current zoom scale
