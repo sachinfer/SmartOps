@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 import requests
-from sidebar_utils import show_sidebar
-import sys
-import os
+import json
+import time
+from datetime import datetime, timedelta
+import pytz
 
 # Import Misi from the dashboard directory
 try:
@@ -21,8 +22,9 @@ def check_api_health():
     except Exception:
         return False
 
-with st.sidebar:
-    show_sidebar()
+# Remove the sidebar call - it's now handled centrally
+# with st.sidebar:
+#     show_sidebar()
 
 st.title("🖥️ Kubernetes Shell and Cluster Explorer")
 

@@ -364,49 +364,6 @@ def show_sidebar():
         unsafe_allow_html=True
     )
 
-    # st.markdown('<div class="sb-title">🧭 Navigation</div>', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-
-    # # ---- Core Monitoring (Static)
-    # st.markdown('<div class="sb-section">', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-sub">📊 Core Monitoring</div>', unsafe_allow_html=True)
-    # st.info("🟩 Overview Dashboard")
-    # st.info("🔥 Anomaly Detection")
-    # st.markdown('</div>', unsafe_allow_html=True)
-
-    # # ---- Pod & Cluster Management (Static)
-    # st.markdown('<div class="sb-section">', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-sub">🛰️ Pod & Cluster</div>', unsafe_allow_html=True)
-    # st.info("🧭 Pod Explorer & Logs")
-    # st.info("🔍 Kubernetes Shell & Explorer")
-    # st.markdown('</div>', unsafe_allow_html=True)
-
-    # # ---- Operations & Scaling (Static)
-    # st.markdown('<div class="sb-section">', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-sub">⚡ Operations</div>', unsafe_allow_html=True)
-    # st.info("⚡ Auto Scaling Control")
-    # st.info("🚀 Deployments")
-    # st.markdown('</div>', unsafe_allow_html=True)
-
-    # # ---- AI & Analytics (Static)
-    # st.markdown('<div class="sb-section">', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-sub">🤖 AI & Analytics</div>', unsafe_allow_html=True)
-    # st.info("🤖 AI Actions")
-    # st.info("📝 Incident Timeline")
-    # st.info("💬 Misi AI")
-    # st.markdown('</div>', unsafe_allow_html=True)
-
-    # # ---- Quick Actions (Static)
-    # st.markdown('<div class="sb-section">', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-sub">⚡ Quick Actions</div>', unsafe_allow_html=True)
-    # st.info("🔄 Refresh All Data")
-    # st.info("📊 System Status")
-    # st.markdown('</div>', unsafe_allow_html=True)
-
-    # # Footer (Static)
-    # st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-title">🔧 System Info</div>', unsafe_allow_html=True)
-    # st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     
     # Static system status info
     st.markdown(
