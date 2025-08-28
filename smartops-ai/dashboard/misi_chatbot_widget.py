@@ -205,10 +205,23 @@ def add_misi_to_page(position="bottom-right"):
         transition: all 0.3s ease;
     }
     
-    .misi-chat-header:hover {
-        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-    }
+         .misi-chat-header:hover {
+         background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+         transform: translateY(-1px);
+     }
+     
+     .misi-chat-header::after {
+         content: '⋮⋮';
+         position: absolute;
+         right: 120px;
+         top: 50%;
+         transform: translateY(-50%);
+         font-size: 12px;
+         opacity: 0.6;
+         color: rgba(255,255,255,0.8);
+         pointer-events: none;
+     }
     
          .misi-chat-header:active {
          cursor: grabbing;
@@ -707,7 +720,7 @@ def add_misi_to_page(position="bottom-right"):
                         </div>
                     </div>
                                          <div class="misi-chat-title">AI ChatBot</div>
-                     <div style="font-size: 11px; opacity: 0.8; margin-top: 2px;">Click & drag to move</div>
+                     <div style="font-size: 11px; opacity: 0.8; margin-top: 2px; cursor: move;">🖱️ Click & drag to move</div>
                 </div>
                                  <div class="misi-header-right">
                      <button class="misi-zoom-btn" onclick="toggleZoom()" title="Toggle Zoom">🔍</button>
@@ -1178,8 +1191,8 @@ def add_misi_to_page(position="bottom-right"):
                    return;
                }
                
-               // Allow dragging from anywhere on the header or the chat content
-               if (e.target.closest('.misi-chat-header') || e.target.closest('.misi-chat-content')) {
+                               // Only allow dragging from the header
+                if (e.target.closest('.misi-chat-header')) {
                    isDragging = true;
                    e.preventDefault();
                    e.stopPropagation();
@@ -1318,20 +1331,16 @@ def add_misi_to_page(position="bottom-right"):
             });
         }
         
-                           // Add drag event listeners
-          if (chatContent) {
-              console.log('🎯 Setting up drag events for chat content');
-              chatContent.addEventListener('mousedown', dragStart);
-              document.addEventListener('mousemove', drag);
-              document.addEventListener('mouseup', dragEnd);
-              
-              // Also add drag events to the header specifically
-              const header = chatContent.querySelector('.misi-chat-header');
-              if (header) {
-                  console.log('🎯 Setting up drag events for header');
-                  header.addEventListener('mousedown', dragStart);
-              }
-          }
+                                                       // Add drag event listeners only to the header
+           if (chatContent) {
+               const header = chatContent.querySelector('.misi-chat-header');
+               if (header) {
+                   console.log('🎯 Setting up drag events for header only');
+                   header.addEventListener('mousedown', dragStart);
+                   document.addEventListener('mousemove', drag);
+                   document.addEventListener('mouseup', dragEnd);
+               }
+           }
          
          // Add resize functionality
          const resizeHandle = document.getElementById('misi-resize-handle');
