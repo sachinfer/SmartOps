@@ -143,16 +143,13 @@ def add_misi_to_page(position="bottom-right"):
     
     .misi-chat-content {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0.9);
-        width: 90vw;
-        max-width: 450px;
-        height: 70vh;
-        max-height: 600px;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
         background: white;
-        border-radius: 20px 20px 0 0;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        border-radius: 0;
+        box-shadow: none;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -163,11 +160,11 @@ def add_misi_to_page(position="bottom-right"):
     @keyframes misi-popup-enter {
         0% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.9);
+            transform: translateY(-100%);
         }
         100% {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: translateY(0);
         }
     }
     
@@ -175,13 +172,13 @@ def add_misi_to_page(position="bottom-right"):
     .misi-chat-header {
         background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         color: white;
-        padding: 20px 24px;
+        padding: 25px 30px;
         text-align: left;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         position: relative;
         width: 100%;
         box-sizing: border-box;
-        border-radius: 20px 20px 0 0;
+        border-radius: 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -312,15 +309,16 @@ def add_misi_to_page(position="bottom-right"):
     /* Clean White Chat Body */
     .misi-chat-body {
         flex: 1;
-        padding: 20px;
+        padding: 30px;
         background: white;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 20px;
         position: relative;
         width: 100%;
         box-sizing: border-box;
+        min-height: 0;
     }
     
     .misi-message {
@@ -482,13 +480,13 @@ def add_misi_to_page(position="bottom-right"):
     
     /* Light Blue Input Field */
     .misi-chat-input-container {
-        padding: 20px;
+        padding: 25px 30px;
         background: #f8fafc;
         border-top: 1px solid #e2e8f0;
         display: flex;
         gap: 12px;
         align-items: center;
-        border-radius: 0 0 20px 20px;
+        border-radius: 0;
     }
     
     .misi-chat-input {
@@ -567,13 +565,21 @@ def add_misi_to_page(position="bottom-right"):
     /* Responsive design */
     @media (max-width: 768px) {
         .misi-chat-content {
-            width: 95vw;
-            height: 85vh;
+            width: 100vw;
+            height: 100vh;
             max-height: none;
         }
         
         .misi-chat-input-container {
-            padding: 15px 20px;
+            padding: 20px 25px;
+        }
+        
+        .misi-chat-header {
+            padding: 20px 25px;
+        }
+        
+        .misi-chat-body {
+            padding: 25px;
         }
     }
     
