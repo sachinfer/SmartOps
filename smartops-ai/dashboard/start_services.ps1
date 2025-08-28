@@ -18,14 +18,14 @@ try {
 # Check if we're in the right directory
 if (-not (Test-Path "event_api.py")) {
     Write-Host "❌ Please run this script from the dashboard directory" -ForegroundColor Red
-    Write-Host "Expected files: event_api.py, misi24x7_main.py" -ForegroundColor Yellow
+    Write-Host "Expected files: event_api.py, misi24x7.py" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-if (-not (Test-Path "misi24x7_main.py")) {
+if (-not (Test-Path "misi24x7.py")) {
     Write-Host "❌ Please run this script from the dashboard directory" -ForegroundColor Red
-    Write-Host "Expected files: event_api.py, misi24x7_main.py" -ForegroundColor Yellow
+    Write-Host "Expected files: event_api.py, misi24x7.py" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -84,7 +84,7 @@ Start-Sleep -Seconds 3
 Write-Host "🎨 Starting Streamlit frontend service..." -ForegroundColor Yellow
         $streamlitJob = Start-Job -ScriptBlock {
             Set-Location $using:PWD
-            streamlit run misi24x7_main.py --server.port=8501 --server.address=0.0.0.0
+            streamlit run misi24x7.py --server.port=8501 --server.address=0.0.0.0
         }
 
 Write-Host ""

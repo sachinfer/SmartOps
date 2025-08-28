@@ -14,14 +14,14 @@ if errorlevel 1 (
 REM Check if we're in the right directory
 if not exist "event_api.py" (
     echo ❌ Please run this script from the dashboard directory
-    echo Expected files: event_api.py, misi24x7_main.py
+    echo Expected files: event_api.py, misi24x7.py
     pause
     exit /b 1
 )
 
-if not exist "misi24x7_main.py" (
+if not exist "misi24x7.py" (
     echo ❌ Please run this script from the dashboard directory
-    echo Expected files: event_api.py, misi24x7_main.py
+    echo Expected files: event_api.py, misi24x7.py
     pause
     exit /b 1
 )
@@ -73,7 +73,7 @@ timeout /t 3 /nobreak >nul
 
 REM Start Streamlit frontend
 echo 🎨 Starting Streamlit frontend service...
-        start "Streamlit Frontend" cmd /k "streamlit run misi24x7_main.py --server.port=8501 --server.address=0.0.0.0"
+        start "Streamlit Frontend" cmd /k "streamlit run misi24x7.py --server.port=8501 --server.address=0.0.0.0"
 
 echo.
 echo 🎉 All services started successfully!
