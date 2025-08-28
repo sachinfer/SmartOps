@@ -143,28 +143,30 @@ def add_misi_to_page(position="bottom-right"):
     
     .misi-chat-content {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 450px;
+        height: 600px;
         background: white;
-        border-radius: 0;
-        box-shadow: none;
+        border-radius: 20px;
+        box-shadow: 0 25px 80px rgba(0,0,0,0.4);
         display: flex;
         flex-direction: column;
         overflow: hidden;
         animation: misi-popup-enter 0.4s ease-out forwards;
         z-index: 10001;
+        border: 1px solid rgba(255,255,255,0.1);
     }
     
     @keyframes misi-popup-enter {
         0% {
             opacity: 0;
-            transform: translateY(-100%);
+            transform: translate(-50%, -50%) scale(0.8);
         }
         100% {
             opacity: 1;
-            transform: translateY(0);
+            transform: translate(-50%, -50%) scale(1);
         }
     }
     
@@ -178,10 +180,12 @@ def add_misi_to_page(position="bottom-right"):
         position: relative;
         width: 100%;
         box-sizing: border-box;
-        border-radius: 0;
+        border-radius: 20px 20px 0 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        cursor: move;
+        user-select: none;
     }
     
     .misi-header-left {
@@ -486,7 +490,7 @@ def add_misi_to_page(position="bottom-right"):
         display: flex;
         gap: 12px;
         align-items: center;
-        border-radius: 0;
+        border-radius: 0 0 20px 20px;
     }
     
     .misi-chat-input {
@@ -565,9 +569,9 @@ def add_misi_to_page(position="bottom-right"):
     /* Responsive design */
     @media (max-width: 768px) {
         .misi-chat-content {
-            width: 100vw;
-            height: 100vh;
-            max-height: none;
+            width: 95vw;
+            height: 80vh;
+            max-width: none;
         }
         
         .misi-chat-input-container {
@@ -851,6 +855,52 @@ def add_misi_to_page(position="bottom-right"):
         const input = document.getElementById('misi-chat-input');
         const sendBtn = document.getElementById('misi-send-btn');
         const popup = document.getElementById('misi-chat-popup');
+        const chatContent = document.querySelector('.misi-chat-content');
+        
+        // Draggable functionality
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+        
+        function dragStart(e) {
+            if (e.target.closest('.misi-close-btn') || e.target.closest('.misi-menu-btn')) {
+                return;
+            }
+            
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            
+            if (e.target.closest('.misi-chat-header')) {
+                isDragging = true;
+            }
+        }
+        
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                
+                xOffset = currentX;
+                yOffset = currentY;
+                
+                setTranslate(currentX, currentY, chatContent);
+            }
+        }
+        
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate(calc(-50% + ${xPos}px), calc(-50% + ${yPos}px))`;
+        }
+        
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+        }
         
         // Add keyboard support
         document.addEventListener('keydown', function(e) {
@@ -902,6 +952,13 @@ def add_misi_to_page(position="bottom-right"):
                     closeMisiPopup();
                 }
             });
+        }
+        
+        // Add drag event listeners
+        if (chatContent) {
+            chatContent.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
         }
         
         // Add some initial animation to the icon
