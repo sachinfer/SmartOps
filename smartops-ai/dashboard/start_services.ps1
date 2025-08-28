@@ -23,12 +23,12 @@ if (-not (Test-Path "event_api.py")) {
     exit 1
 }
 
-if (-not (Test-Path "main_app.py")) {
-    Write-Host "❌ Please run this script from the dashboard directory" -ForegroundColor Red
-    Write-Host "Expected files: event_api.py, main_app.py" -ForegroundColor Yellow
-    Read-Host "Press Enter to exit"
-    exit 1
-}
+        if (-not (Test-Path "page_router.py")) {
+            Write-Host "❌ Please run this script from the dashboard directory" -ForegroundColor Red
+            Write-Host "Expected files: event_api.py, page_router.py" -ForegroundColor Yellow
+            Read-Host "Press Enter to exit"
+            exit 1
+        }
 
 Write-Host "✅ In correct directory" -ForegroundColor Green
 
@@ -82,10 +82,10 @@ Start-Sleep -Seconds 3
 
 # Start Streamlit frontend
 Write-Host "🎨 Starting Streamlit frontend service..." -ForegroundColor Yellow
-$streamlitJob = Start-Job -ScriptBlock {
-    Set-Location $using:PWD
-    streamlit run main_app.py --server.port=8501 --server.address=0.0.0.0
-}
+        $streamlitJob = Start-Job -ScriptBlock {
+            Set-Location $using:PWD
+            streamlit run page_router.py --server.port=8501 --server.address=0.0.0.0
+        }
 
 Write-Host ""
 Write-Host "🎉 All services started successfully!" -ForegroundColor Green

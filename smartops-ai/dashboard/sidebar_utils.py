@@ -432,6 +432,11 @@ def debug_database():
     st.markdown("---")
 
 def show_sidebar():
+    # Check if sidebar has already been initialized to prevent regeneration
+    if 'sidebar_initialized' not in st.session_state:
+        st.session_state.sidebar_initialized = True
+        st.session_state.current_page = "overview"
+    
     # ---------- Hide everything except the sidebar ----------
     st.markdown(
         """
@@ -527,33 +532,19 @@ def show_sidebar():
 
         /* Make emojis align nicely inside buttons */
         .stButton > button p { 
-            margin: 0; 
-            font-size: 0.95rem;
-        }
-        
-        /* Anomaly notification styles */
-        .anomaly-card {
-            background: linear-gradient(135deg, rgba(255,99,71,0.2) 0%, rgba(255,69,0,0.2) 100%);
-            border: 1px solid rgba(255,99,71,0.3);
-            border-radius: 12px;
-            padding: 1rem;
-            margin: 0.5rem 0;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(255,99,71,0.1);
+            margin: 0 !important; 
+            padding: 0 !important; 
+            line-height: 1.2rem !important;
         }
 
-        /* Status indicators */
+        /* Status indicator animation */
         .status-indicator {
-            display: inline-block;
             width: 8px;
             height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
             background: #4ade80;
-            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+            border-radius: 50%;
             animation: pulse 2s infinite;
         }
-
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -569,15 +560,15 @@ def show_sidebar():
             border-radius: 3px;
         }
         section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgba(255,255,255,0.3);
             border-radius: 3px;
         }
         section[data-testid="stSidebar"] > div:first-child::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            background: rgba(255,255,255,0.5);
         }
         </style>
         """,
-        unsafe_allow_html=True,
+        unsafe_allow_html=True
     )
 
     # ---------- Sidebar content ----------
@@ -606,38 +597,47 @@ def show_sidebar():
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">📊 Core Monitoring</div>', unsafe_allow_html=True)
     if st.button("🟩  Overview Dashboard", key="nav_overview", use_container_width=True):
-        st.info("🟩 You are currently on the Overview Dashboard")
+        st.session_state.current_page = "overview"
+        st.rerun()
     if st.button("🔥  Anomaly Detection", key="nav_anomaly", use_container_width=True):
-        st.info("🔥 Navigate to Anomaly Detection page")
+        st.session_state.current_page = "anomaly"
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Pod & Cluster Management
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🛰️ Pod & Cluster</div>', unsafe_allow_html=True)
     if st.button("🧭  Pod Explorer & Logs", key="nav_pod", use_container_width=True):
-        st.info("🧭 Navigate to Pod Explorer & Logs page")
+        st.session_state.current_page = "pod_explorer"
+        st.rerun()
     if st.button("🔍  Kubernetes Shell & Explorer", key="nav_cluster", use_container_width=True):
-        st.info("🔍 Navigate to Kubernetes Shell & Explorer page")
+        st.session_state.current_page = "kubernetes_shell"
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Operations & Scaling
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">⚡ Operations</div>', unsafe_allow_html=True)
     if st.button("⚡  Auto Scaling Control", key="nav_scale", use_container_width=True):
-        st.info("⚡ Navigate to Auto Scaling Control page")
+        st.session_state.current_page = "auto_scaling"
+        st.rerun()
     if st.button("🚀  Deployments", key="nav_deploy", use_container_width=True):
-        st.info("🚀 Navigate to Deployments page")
+        st.session_state.current_page = "deployments"
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- AI & Analytics
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🤖 AI & Analytics</div>', unsafe_allow_html=True)
     if st.button("🤖  AI Actions", key="nav_actions", use_container_width=True):
-        st.info("🤖 Navigate to AI Actions page")
+        st.session_state.current_page = "ai_actions"
+        st.rerun()
     if st.button("📝  Incident Timeline", key="nav_incident", use_container_width=True):
-        st.info("📝 Navigate to Incident Timeline page")
+        st.session_state.current_page = "incident_timeline"
+        st.rerun()
     if st.button("💬  Misi AI Assistant", key="nav_misi", use_container_width=True):
-        st.info("💬 Navigate to Misi AI Assistant page")
+        st.session_state.current_page = "misi_ai"
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ---- Quick Actions
@@ -677,5 +677,10 @@ def show_sidebar():
         unsafe_allow_html=True
     )
 
-# Note: This function should be called from individual pages, not run here
-# show_sidebar()
+def get_current_page():
+    """Get the current page from session state"""
+    return st.session_state.get('current_page', 'overview')
+
+def set_current_page(page_name):
+    """Set the current page in session state"""
+    st.session_state.current_page = page_name

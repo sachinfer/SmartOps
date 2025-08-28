@@ -20,16 +20,16 @@ except ImportError:
     MISI_AVAILABLE = False
     st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
-# Page config
-st.set_page_config(
-    page_title="Kubernetes Cluster Overview - SmartOps AI",
-    page_icon="📊",
-    layout="wide"
-)
-
-# Sidebar
-with st.sidebar:
-    show_sidebar()
+def show_page():
+    """Main page function - called by the router"""
+    # Page config
+    st.set_page_config(
+        page_title="Kubernetes Cluster Overview - SmartOps AI",
+        page_icon="📊",
+        layout="wide"
+    )
+    
+    # Note: Sidebar is now handled by the router, not here
 
 # Function to fetch real-time pod data
 @st.cache_data(ttl=30)  # Cache for 30 seconds
@@ -1011,6 +1011,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # Add Misi AI Chatbot Widget
 if MISI_AVAILABLE:
     # add_misi_to_page("bottom-right")
+    pass  # Placeholder for when Misi is properly integrated
 else:
     st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!")
 
@@ -1030,3 +1031,7 @@ st.markdown(f"""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Main execution block
+if __name__ == "__main__":
+    show_page()
