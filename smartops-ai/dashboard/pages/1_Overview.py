@@ -8,12 +8,9 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
+from sidebar_utils import show_sidebar
 import sys
 import os
-
-# Add the parent directory to Python path to import sidebar_utils
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sidebar_utils import show_sidebar
 
 # Import Misi from the dashboard directory
 try:
@@ -1014,7 +1011,6 @@ st.markdown("</div>", unsafe_allow_html=True)
 # Add Misi AI Chatbot Widget
 if MISI_AVAILABLE:
     # add_misi_to_page("bottom-right")
-    pass  # Placeholder for when Misi is properly integrated
 else:
     st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!")
 

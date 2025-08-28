@@ -1,77 +1,11 @@
 """
-Misi AI- Dedicated Page
+Misi AI Assistant - Dedicated Page
 A reliable, full-page AI chatbot interface for SmartOps
 """
 
 import streamlit as st
 import time
 from datetime import datetime
-
-# Page configuration
-st.set_page_config(
-    page_title="Misi AI Assistant",
-    page_icon="🤖",
-    layout="wide"
-)
-
-# Initialize session state for chat history
-if 'misi_chat_history' not in st.session_state:
-    st.session_state.misi_chat_history = []
-
-# Header
-st.title("🤖 Misi AI Assistant")
-st.markdown("Your intelligent SmartOps companion. Ask me anything about your Kubernetes cluster!")
-
-# Sidebar with suggestions
-with st.sidebar:
-    st.header("💡 Quick Suggestions")
-    
-    suggestions = [
-        "How do I check pod status?",
-        "Show me anomaly detection",
-        "Help with auto-scaling",
-        "Kubernetes shell commands",
-        "Deployment troubleshooting"
-    ]
-    
-    for suggestion in suggestions:
-        if st.button(suggestion, key=f"sugg_{suggestion}"):
-            st.session_state.misi_chat_history.append({
-                "role": "user",
-                "content": suggestion,
-                "timestamp": datetime.now()
-            })
-            st.rerun()
-
-# Chat messages display
-for message in st.session_state.misi_chat_history:
-    if message["role"] == "user":
-        st.chat_message("user").write(message["content"])
-    else:
-        st.chat_message("assistant").write(message["content"])
-
-# Input section
-user_input = st.chat_input("Ask Misi anything about SmartOps...")
-
-if user_input:
-    # Add user message
-    st.session_state.misi_chat_history.append({
-        "role": "user",
-        "content": user_input,
-        "timestamp": datetime.now()
-    })
-    
-    # Generate AI response
-    ai_response = generate_ai_response(user_input)
-    
-    # Add AI response
-    st.session_state.misi_chat_history.append({
-        "role": "assistant",
-        "content": ai_response,
-        "timestamp": datetime.now()
-    })
-    
-    st.rerun()
 
 def generate_ai_response(user_input):
     """Generate AI response based on user input"""
@@ -162,3 +96,69 @@ Try asking about:
 • "Help with auto-scaling"
 
 What specific SmartOps feature would you like to learn about?"""
+
+# Page configuration
+st.set_page_config(
+    page_title="Misi AI Assistant",
+    page_icon="🤖",
+    layout="wide"
+)
+
+# Initialize session state for chat history
+if 'misi_chat_history' not in st.session_state:
+    st.session_state.misi_chat_history = []
+
+# Header
+st.title("🤖 Misi AI Assistant")
+st.markdown("Your intelligent SmartOps companion. Ask me anything about your Kubernetes cluster!")
+
+# Sidebar with suggestions
+with st.sidebar:
+    st.header("💡 Quick Suggestions")
+    
+    suggestions = [
+        "How do I check pod status?",
+        "Show me anomaly detection",
+        "Help with auto-scaling",
+        "Kubernetes shell commands",
+        "Deployment troubleshooting"
+    ]
+    
+    for suggestion in suggestions:
+        if st.button(suggestion, key=f"sugg_{suggestion}"):
+            st.session_state.misi_chat_history.append({
+                "role": "user",
+                "content": suggestion,
+                "timestamp": datetime.now()
+            })
+            st.rerun()
+
+# Chat messages display
+for message in st.session_state.misi_chat_history:
+    if message["role"] == "user":
+        st.chat_message("user").write(message["content"])
+    else:
+        st.chat_message("assistant").write(message["content"])
+
+# Input section
+user_input = st.chat_input("Ask Misi anything about SmartOps...")
+
+if user_input:
+    # Add user message
+    st.session_state.misi_chat_history.append({
+        "role": "user",
+        "content": user_input,
+        "timestamp": datetime.now()
+    })
+    
+    # Generate AI response
+    ai_response = generate_ai_response(user_input)
+    
+    # Add AI response
+    st.session_state.misi_chat_history.append({
+        "role": "assistant",
+        "content": ai_response,
+        "timestamp": datetime.now()
+    })
+    
+    st.rerun()
