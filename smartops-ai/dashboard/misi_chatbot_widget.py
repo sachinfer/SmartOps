@@ -127,13 +127,18 @@ def add_misi_to_page(position="bottom-right"):
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.3);
         z-index: 10000;
         display: none;
         flex-direction: column;
         overflow: hidden;
         animation: misi-fade-in 0.3s ease-out;
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(3px);
+        pointer-events: none;
+    }
+    
+    .misi-chat-popup.active {
+        pointer-events: auto;
     }
     
     @keyframes misi-fade-in {
@@ -146,8 +151,8 @@ def add_misi_to_page(position="bottom-right"):
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 450px;
-        height: 600px;
+        width: 500px;
+        height: 650px;
         background: white;
         border-radius: 20px;
         box-shadow: 0 25px 80px rgba(0,0,0,0.4);
@@ -174,7 +179,7 @@ def add_misi_to_page(position="bottom-right"):
     .misi-chat-header {
         background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         color: white;
-        padding: 25px 30px;
+        padding: 20px 25px;
         text-align: left;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         position: relative;
@@ -313,12 +318,12 @@ def add_misi_to_page(position="bottom-right"):
     /* Clean White Chat Body */
     .misi-chat-body {
         flex: 1;
-        padding: 30px;
+        padding: 25px;
         background: white;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 16px;
         position: relative;
         width: 100%;
         box-sizing: border-box;
@@ -335,6 +340,9 @@ def add_misi_to_page(position="bottom-right"):
         opacity: 1 !important;
         visibility: visible !important;
         animation: message-slide-in 0.4s ease-out;
+        margin-bottom: 20px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     @keyframes message-slide-in {
@@ -395,6 +403,8 @@ def add_misi_to_page(position="bottom-right"):
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
+        min-height: 20px;
+        white-space: pre-wrap;
     }
     
     .misi-message.user .misi-message-bubble {
@@ -484,7 +494,7 @@ def add_misi_to_page(position="bottom-right"):
     
     /* Light Blue Input Field */
     .misi-chat-input-container {
-        padding: 25px 30px;
+        padding: 20px 25px;
         background: #f8fafc;
         border-top: 1px solid #e2e8f0;
         display: flex;
@@ -575,15 +585,15 @@ def add_misi_to_page(position="bottom-right"):
         }
         
         .misi-chat-input-container {
-            padding: 20px 25px;
+            padding: 15px 20px;
         }
         
         .misi-chat-header {
-            padding: 20px 25px;
+            padding: 15px 20px;
         }
         
         .misi-chat-body {
-            padding: 25px;
+            padding: 20px;
         }
     }
     
@@ -650,6 +660,7 @@ def add_misi_to_page(position="bottom-right"):
                 <input type="text" class="misi-chat-input" id="misi-chat-input"
                        placeholder="Enter Message" />
                 <button class="misi-send-btn" id="misi-send-btn">📤</button>
+                <button class="misi-test-btn" onclick="testMessageDisplay()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🧪 Test</button>
             </div>
         </div>
     </div>
@@ -670,6 +681,7 @@ def add_misi_to_page(position="bottom-right"):
                 
                 // Show popup with enhanced animation
                 popup.style.display = 'flex';
+                popup.classList.add('active');
                 
                 // Remove loading animation after popup is shown
                 setTimeout(() => {
@@ -684,6 +696,7 @@ def add_misi_to_page(position="bottom-right"):
                 }, 400);
             } else {
                 popup.style.display = 'none';
+                popup.classList.remove('active');
             }
         }
     }
@@ -693,6 +706,7 @@ def add_misi_to_page(position="bottom-right"):
         if (popup) {
             misiPopupVisible = false;
             popup.style.display = 'none';
+            popup.classList.remove('active');
             
             const input = document.getElementById('misi-chat-input');
             if (input) {
@@ -754,24 +768,44 @@ def add_misi_to_page(position="bottom-right"):
             messageDiv.style.setProperty('width', '100%', 'important');
             messageDiv.style.setProperty('min-height', 'auto', 'important');
             
+            // Force the bubble to be visible
+            bubbleDiv.style.setProperty('display', 'block', 'important');
+            bubbleDiv.style.setProperty('visibility', 'visible', 'important');
+            bubbleDiv.style.setProperty('opacity', '1', 'important');
+            
             // Scroll to bottom
             chatBody.scrollTop = chatBody.scrollHeight;
             
             // Force a reflow to ensure the message is visible
             messageDiv.offsetHeight;
+            bubbleDiv.offsetHeight;
             
             // Additional debugging
             console.log('Message added successfully. Total messages:', chatBody.children.length);
             console.log('Message element:', messageDiv);
             console.log('Message display style:', messageDiv.style.display);
             console.log('Message visibility style:', messageDiv.style.visibility);
+            console.log('Bubble element:', bubbleDiv);
+            console.log('Bubble display style:', bubbleDiv.style.display);
             
-            // Force display refresh
+            // Force display refresh with multiple attempts
             setTimeout(() => {
                 messageDiv.style.display = 'flex';
                 messageDiv.style.visibility = 'visible';
                 messageDiv.style.opacity = '1';
+                bubbleDiv.style.display = 'block';
+                bubbleDiv.style.visibility = 'visible';
+                bubbleDiv.style.opacity = '1';
             }, 100);
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'flex';
+                messageDiv.style.visibility = 'visible';
+                messageDiv.style.opacity = '1';
+                bubbleDiv.style.display = 'block';
+                bubbleDiv.style.visibility = 'visible';
+                bubbleDiv.style.opacity = '1';
+            }, 500);
         } else {
             console.error('Chat body not found!');
         }
@@ -846,6 +880,37 @@ def add_misi_to_page(position="bottom-right"):
             }, 1500);
         } else {
             console.log('No message to send');
+        }
+    }
+    
+    function testMessageDisplay() {
+        console.log('🧪 Testing message display...');
+        
+        // Test if chat body exists
+        const chatBody = document.getElementById('misi-chat-body');
+        if (chatBody) {
+            console.log('✅ Chat body found:', chatBody);
+            console.log('📊 Chat body children:', chatBody.children.length);
+            console.log('🎨 Chat body styles:', chatBody.style.cssText);
+            
+            // Add a simple test message with forced styles
+            const testDiv = document.createElement('div');
+            testDiv.textContent = '🧪 TEST MESSAGE - This should be visible!';
+            testDiv.style.cssText = 'background: #ef4444; color: white; padding: 15px; margin: 15px; border-radius: 8px; font-weight: bold; text-align: center; border: 3px solid #000; display: block !important; visibility: visible !important; opacity: 1 !important;';
+            chatBody.appendChild(testDiv);
+            
+            console.log('✅ Test message added. Total children:', chatBody.children.length);
+            
+            // Also test the normal message function
+            setTimeout(() => {
+                addMisiMessage('This is a test message from user', true);
+            }, 500);
+            
+            setTimeout(() => {
+                addMisiMessage('This is a test response from AI', false);
+            }, 1000);
+        } else {
+            console.error('❌ Chat body not found in test function!');
         }
     }
     
