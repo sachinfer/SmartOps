@@ -14,7 +14,7 @@ import os
 
 # Import Misi from the dashboard directory
 try:
-    from misi_chatbot_widget import add_misi_to_page
+    # from misi_chatbot_widget import add_misi_to_page
     MISI_AVAILABLE = True
 except ImportError:
     MISI_AVAILABLE = False
@@ -1010,7 +1010,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # Add Misi AI Chatbot Widget
 if MISI_AVAILABLE:
-    add_misi_to_page("bottom-right")
+    # add_misi_to_page("bottom-right")
 else:
     st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!")
 
