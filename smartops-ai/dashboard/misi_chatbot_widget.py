@@ -294,6 +294,14 @@ class MisiChatbotWidget:
             background: rgba(255, 255, 255, 0.1);
             color: white;
             backdrop-filter: blur(10px);
+            pointer-events: auto !important;
+            user-select: auto !important;
+            -webkit-user-select: auto !important;
+            -moz-user-select: auto !important;
+            -ms-user-select: auto !important;
+            cursor: text !important;
+            position: relative;
+            z-index: 10001;
         }
         
         .misi-send-btn {
@@ -341,6 +349,28 @@ class MisiChatbotWidget:
             {role: 'assistant', content: 'Hi! I\\'m Misi, your SmartOps AI assistant. How can I help you today?'}
         ];
         
+        // Function to ensure input is interactive
+        function ensureInputInteractive() {
+            const input = document.getElementById('misi-chat-input');
+            if (input) {
+                // Force input to be interactive
+                input.style.pointerEvents = 'auto';
+                input.style.userSelect = 'auto';
+                input.style.cursor = 'text';
+                input.removeAttribute('readonly');
+                input.removeAttribute('disabled');
+                
+                // Remove any conflicting styles
+                input.style.opacity = '1';
+                input.style.visibility = 'visible';
+                input.style.display = 'block';
+                
+                console.log('Input made interactive');
+                return input;
+            }
+            return null;
+        }
+        
         // Function to toggle popup visibility
         function toggleMisiPopup() {
             console.log('toggleMisiPopup called');
@@ -351,11 +381,20 @@ class MisiChatbotWidget:
                 console.log('Popup visibility:', misiPopupVisible);
                 
                 if (misiPopupVisible) {
-                    // Focus on input when opening
-                    const input = document.getElementById('misi-chat-input');
-                    if (input) {
-                        setTimeout(() => input.focus(), 100);
-                    }
+                    // Focus on input when opening with multiple attempts
+                    setTimeout(() => {
+                        const input = ensureInputInteractive();
+                        if (input) {
+                            input.focus();
+                            input.click();
+                            console.log('Input focused and clicked');
+                            
+                            // Force focus again
+                            input.focus();
+                        } else {
+                            console.error('Input element not found for focus');
+                        }
+                    }, 200);
                 }
             } else {
                 console.error('Popup element not found');
@@ -533,13 +572,42 @@ class MisiChatbotWidget:
             }
             
             if (input) {
+                // Ensure input is always interactive
+                input.style.pointerEvents = 'auto';
+                input.style.userSelect = 'auto';
+                input.removeAttribute('readonly');
+                input.removeAttribute('disabled');
+                
+                // Add multiple event listeners for better compatibility
                 input.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         console.log('Enter key pressed, calling sendMisiMessage');
                         sendMisiMessage();
                     }
                 });
-                console.log('Input keypress listener added');
+                
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        console.log('Enter key down, calling sendMisiMessage');
+                        sendMisiMessage();
+                    }
+                });
+                
+                input.addEventListener('input', function(e) {
+                    console.log('Input event:', e.target.value);
+                });
+                
+                input.addEventListener('focus', function(e) {
+                    console.log('Input focused');
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                });
+                
+                input.addEventListener('blur', function(e) {
+                    console.log('Input blurred');
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                });
+                
+                console.log('Input event listeners added');
             }
             
             if (sendBtn) {
