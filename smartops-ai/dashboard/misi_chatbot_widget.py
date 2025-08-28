@@ -222,23 +222,34 @@ def add_misi_to_page(position="bottom-right"):
         overflow-y: auto;
         display: flex;
         flex-direction: column;
+        min-height: 400px;
+        position: relative;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        margin: 8px;
     }
     
     .misi-message {
         margin-bottom: 16px;
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         max-width: 85%;
+        position: relative;
+        z-index: 1;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
     
     .misi-message.user {
         align-items: flex-end;
         align-self: flex-end;
+        margin-left: auto;
     }
     
     .misi-message.assistant {
         align-items: flex-start;
         align-self: flex-start;
+        margin-right: auto;
     }
     
     .misi-message-bubble {
@@ -248,21 +259,25 @@ def add_misi_to_page(position="bottom-right"):
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         word-wrap: break-word;
         max-width: 100%;
+        position: relative;
+        z-index: 2;
     }
     
     .misi-message.user .misi-message-bubble {
-        background: #dcf8c6;
-        color: #000;
+        background: #dcf8c6 !important;
+        color: #000 !important;
         border-bottom-right-radius: 4px;
         margin-bottom: 4px;
+        border: 1px solid #b8e6a8;
     }
     
     .misi-message.assistant .misi-message-bubble {
-        background: white;
-        color: #1e293b;
+        background: white !important;
+        color: #1e293b !important;
         border: 1px solid #e2e8f0;
         border-bottom-left-radius: 4px;
         margin-bottom: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
     .misi-message-timestamp {
@@ -315,6 +330,21 @@ def add_misi_to_page(position="bottom-right"):
             opacity: 0.5;
         }
         40% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes message-highlight {
+        0% {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+        50% {
+            transform: scale(1.02);
+            opacity: 1;
+        }
+        100% {
             transform: scale(1);
             opacity: 1;
         }
@@ -534,10 +564,15 @@ def add_misi_to_page(position="bottom-right"):
             messageDiv.appendChild(timestamp);
             chatBody.appendChild(messageDiv);
             
-            // Force the message to be visible
-            messageDiv.style.display = 'flex';
-            messageDiv.style.visibility = 'visible';
-            messageDiv.style.opacity = '1';
+            // Force the message to be visible with important styles
+            messageDiv.style.setProperty('display', 'flex', 'important');
+            messageDiv.style.setProperty('visibility', 'visible', 'important');
+            messageDiv.style.setProperty('opacity', '1', 'important');
+            messageDiv.style.setProperty('position', 'relative', 'important');
+            messageDiv.style.setProperty('z-index', '10', 'important');
+            
+            // Add animation to highlight the new message
+            messageDiv.style.animation = 'message-highlight 0.5s ease-out';
             
             // Scroll to bottom
             chatBody.scrollTop = chatBody.scrollHeight;
@@ -546,6 +581,9 @@ def add_misi_to_page(position="bottom-right"):
             messageDiv.offsetHeight;
             
             console.log('Message added successfully. Total messages:', chatBody.children.length);
+            console.log('Message element:', messageDiv);
+            console.log('Message display style:', messageDiv.style.display);
+            console.log('Message visibility style:', messageDiv.style.visibility);
         } else {
             console.error('Chat body not found!');
         }
@@ -625,6 +663,26 @@ def add_misi_to_page(position="bottom-right"):
     
     function testMessageDisplay() {
         console.log('Testing message display...');
+        
+        // Test if chat body exists
+        const chatBody = document.getElementById('misi-chat-body');
+        if (chatBody) {
+            console.log('Chat body found:', chatBody);
+            console.log('Chat body children:', chatBody.children.length);
+            console.log('Chat body styles:', chatBody.style.cssText);
+            
+            // Add a simple test message
+            const testDiv = document.createElement('div');
+            testDiv.textContent = 'TEST MESSAGE - This should be visible!';
+            testDiv.style.cssText = 'background: red; color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold;';
+            chatBody.appendChild(testDiv);
+            
+            console.log('Test message added. Total children:', chatBody.children.length);
+        } else {
+            console.error('Chat body not found in test function!');
+        }
+        
+        // Also test the normal message function
         addMisiMessage('This is a test message from user', true);
         setTimeout(() => {
             addMisiMessage('This is a test response from AI', false);
