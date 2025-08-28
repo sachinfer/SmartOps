@@ -209,10 +209,16 @@ def add_misi_to_page(position="bottom-right"):
         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     }
     
-    .misi-chat-header:active {
-        cursor: grabbing;
-        transform: scale(0.98);
-    }
+         .misi-chat-header:active {
+         cursor: grabbing;
+         transform: scale(0.98);
+     }
+     
+     .misi-chat-content.dragging {
+         cursor: grabbing !important;
+         box-shadow: 0 15px 50px rgba(0,0,0,0.3) !important;
+         transition: none !important;
+     }
     
     .misi-header-left {
         display: flex;
@@ -699,7 +705,8 @@ def add_misi_to_page(position="bottom-right"):
                             <div class="misi-robot-mouth"></div>
                         </div>
                     </div>
-                    <div class="misi-chat-title">AI ChatBot</div>
+                                         <div class="misi-chat-title">AI ChatBot</div>
+                     <div style="font-size: 11px; opacity: 0.8; margin-top: 2px;">Click & drag to move</div>
                 </div>
                                  <div class="misi-header-right">
                      <button class="misi-zoom-btn" onclick="toggleZoom()" title="Toggle Zoom">🔍</button>
@@ -739,6 +746,7 @@ def add_misi_to_page(position="bottom-right"):
                  <button class="misi-send-btn" id="misi-send-btn">📤</button>
                  <button class="misi-test-btn" onclick="testMessageDisplay()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🧪 Test</button>
                  <button class="misi-test-btn" onclick="testDragAndZoom()" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🎯 Test Move</button>
+                 <button class="misi-test-btn" onclick="testManualDrag()" style="background: #8b5cf6; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-left: 10px;">🖱️ Test Drag</button>
              </div>
              
              <!-- Resize handle -->
@@ -1093,6 +1101,55 @@ def add_misi_to_page(position="bottom-right"):
              console.error('❌ Chat content not found!');
          }
      }
+     
+     function testManualDrag() {
+         console.log('🖱️ Testing manual drag functionality...');
+         
+         const chatContent = document.querySelector('.misi-chat-content');
+         if (chatContent) {
+             console.log('✅ Chat content found');
+             console.log('🎯 Current drag state:', isDragging);
+             console.log('📍 Current position:', xOffset, yOffset);
+             
+             // Simulate a drag start
+             console.log('🎯 Simulating drag start...');
+             
+             // Create a fake mouse event
+             const fakeEvent = {
+                 target: chatContent.querySelector('.misi-chat-header'),
+                 clientX: 100,
+                 clientY: 100,
+                 preventDefault: () => console.log('preventDefault called'),
+                 stopPropagation: () => console.log('stopPropagation called')
+             };
+             
+             dragStart(fakeEvent);
+             
+             if (isDragging) {
+                 console.log('✅ Drag started successfully!');
+                 
+                 // Simulate dragging
+                 setTimeout(() => {
+                     const dragEvent = {
+                         clientX: 200,
+                         clientY: 150,
+                         preventDefault: () => console.log('preventDefault called')
+                     };
+                     
+                     drag(dragEvent);
+                     console.log('🔄 Dragged to:', xOffset, yOffset);
+                     
+                     // End drag
+                     dragEnd();
+                     console.log('✅ Drag ended');
+                 }, 1000);
+             } else {
+                 console.log('❌ Failed to start drag');
+             }
+         } else {
+             console.error('❌ Chat content not found!');
+         }
+     }
     
          document.addEventListener('DOMContentLoaded', function() {
          const icon = document.getElementById('misi-icon');
@@ -1109,29 +1166,33 @@ def add_misi_to_page(position="bottom-right"):
          let initialX;
          let initialY;
          
-                   function dragStart(e) {
-              // Don't start dragging if clicking on buttons
-              if (e.target.closest('.misi-close-btn') || 
-                  e.target.closest('.misi-menu-btn') || 
-                  e.target.closest('.misi-zoom-btn')) {
-                  return;
-              }
-              
-              // Allow dragging from anywhere on the header
-              if (e.target.closest('.misi-chat-header')) {
-                  isDragging = true;
-                  e.preventDefault();
-                  
-                  initialX = e.clientX - xOffset;
-                  initialY = e.clientY - yOffset;
-                  
-                  // Add dragging visual feedback
-                  chatContent.style.cursor = 'grabbing';
-                  chatContent.style.boxShadow = '0 15px 50px rgba(0,0,0,0.3)';
-                  
-                  console.log('🚀 Started dragging from:', initialX, initialY);
-              }
-          }
+                                       function dragStart(e) {
+               console.log('🎯 dragStart called on:', e.target);
+               
+               // Don't start dragging if clicking on buttons
+               if (e.target.closest('.misi-close-btn') || 
+                   e.target.closest('.misi-menu-btn') || 
+                   e.target.closest('.misi-zoom-btn')) {
+                   console.log('🚫 Button clicked, not starting drag');
+                   return;
+               }
+               
+               // Allow dragging from anywhere on the header or the chat content
+               if (e.target.closest('.misi-chat-header') || e.target.closest('.misi-chat-content')) {
+                   isDragging = true;
+                   e.preventDefault();
+                   e.stopPropagation();
+                   
+                   initialX = e.clientX - xOffset;
+                   initialY = e.clientY - yOffset;
+                   
+                   // Add dragging visual feedback
+                   chatContent.classList.add('dragging');
+                   
+                   console.log('🚀 Started dragging from:', initialX, initialY);
+                   console.log('📍 Current offsets:', xOffset, yOffset);
+               }
+           }
          
                    function drag(e) {
               if (isDragging) {
@@ -1160,9 +1221,8 @@ def add_misi_to_page(position="bottom-right"):
                   initialY = currentY;
                   isDragging = false;
                   
-                  // Reset cursor and shadow
-                  chatContent.style.cursor = 'move';
-                  chatContent.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
+                                     // Reset cursor and shadow
+                   chatContent.classList.remove('dragging');
                   console.log('✅ Stopped dragging at:', xOffset, yOffset);
               }
           }
@@ -1256,12 +1316,20 @@ def add_misi_to_page(position="bottom-right"):
             });
         }
         
-                 // Add drag event listeners
-         if (chatContent) {
-             chatContent.addEventListener('mousedown', dragStart);
-             document.addEventListener('mousemove', drag);
-             document.addEventListener('mouseup', dragEnd);
-         }
+                           // Add drag event listeners
+          if (chatContent) {
+              console.log('🎯 Setting up drag events for chat content');
+              chatContent.addEventListener('mousedown', dragStart);
+              document.addEventListener('mousemove', drag);
+              document.addEventListener('mouseup', dragEnd);
+              
+              // Also add drag events to the header specifically
+              const header = chatContent.querySelector('.misi-chat-header');
+              if (header) {
+                  console.log('🎯 Setting up drag events for header');
+                  header.addEventListener('mousedown', dragStart);
+              }
+          }
          
          // Add resize functionality
          const resizeHandle = document.getElementById('misi-resize-handle');
