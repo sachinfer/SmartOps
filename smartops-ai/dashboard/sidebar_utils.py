@@ -98,19 +98,25 @@ def get_anomaly_data():
 
 def get_time_ago(timestamp):
     """Convert timestamp to human readable time ago"""
-    now = datetime.now()
-    diff = now - timestamp
-    
-    if diff.days > 0:
-        return f"{diff.days}d ago"
-    elif diff.seconds > 3600:
-        hours = diff.seconds // 3600
-        return f"{hours}h ago"
-    elif diff.seconds > 60:
-        minutes = diff.seconds // 60
-        return f"{minutes}m ago"
-    else:
-        return "Just now"
+    try:
+        now = datetime.now()
+        if isinstance(timestamp, str):
+            timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        
+        diff = now - timestamp
+        
+        if diff.days > 0:
+            return f"{diff.days}d ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours}h ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes}m ago"
+        else:
+            return "Just now"
+    except Exception as e:
+        return "Unknown time"
 
 def kill_pod(pod_name, namespace="smartops"):
     """Kill a problematic pod permanently"""
@@ -206,237 +212,8 @@ def ignore_anomaly(pod_name):
     st.session_state.ignored_anomalies.add(pod_name)
     st.rerun()
 
-def show_anomaly_notifications():
-    """Display anomaly notifications in the sidebar"""
-    # Add refresh button and debug button
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        st.markdown('<div class="sb-title">🚨 Active Anomalies</div>', unsafe_allow_html=True)
-    with col2:
-        if st.button("🔄", key="refresh_anomalies", help="Refresh anomalies"):
-            st.rerun()
-    with col3:
-        if st.button("🐛", key="debug_anomalies", help="Debug database"):
-            debug_database()
-    
-    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-    
-    # Get anomaly data
-    anomalies_df = get_anomaly_data()
-    
-    if anomalies_df.empty:
-        st.markdown(
-            '<div style="color: #dfe6e9; font-size: 0.9rem; text-align: center; padding: 1rem;">✅ No active anomalies</div>',
-            unsafe_allow_html=True
-        )
-        return
-    
-    # Filter out ignored anomalies
-    ignored = st.session_state.get('ignored_anomalies', set())
-    active_anomalies = anomalies_df[~anomalies_df['pod_name'].isin(ignored)]
-    
-    # Remove duplicate pods (keep only the most recent entry for each pod)
-    active_anomalies = active_anomalies.drop_duplicates(subset=['pod_name'], keep='first')
-    
-    if active_anomalies.empty:
-        st.markdown(
-            '<div style="color: #dfe6e9; font-size: 0.9rem; text-align: center; padding: 1rem;">✅ All anomalies handled</div>',
-            unsafe_allow_html=True
-        )
-        return
-    
-    # Show anomaly count with notification badge
-    anomaly_count = len(active_anomalies)
-    st.markdown(
-        f'<div style="color: #ff6b6b; font-size: 0.9rem; text-align: center; padding: 0.5rem; background: rgba(255,107,107,0.1); border-radius: 8px; margin-bottom: 1rem;">🚨 {anomaly_count} Active Anomaly{"s" if anomaly_count > 1 else ""}</div>',
-        unsafe_allow_html=True
-    )
-    
-    # Display each anomaly
-    for idx, (_, row) in enumerate(active_anomalies.iterrows()):
-        pod_name = row['pod_name']
-        cpu_percent = row['cpu_percent']
-        memory_mb = row['memory_mb']
-        time_ago = row['time_ago']
-        
-        # Anomaly severity based on CPU usage
-        if cpu_percent > 90:
-            severity_icon = "🔴"
-            severity_color = "#ff6b6b"
-            severity_text = "CRITICAL"
-        elif cpu_percent > 70:
-            severity_icon = "🟠"
-            severity_color = "#ffa726"
-            severity_text = "HIGH"
-        else:
-            severity_icon = "🟡"
-            severity_color = "#ffd54f"
-            severity_text = "MEDIUM"
-        
-        # Anomaly card
-        st.markdown(
-            f"""
-            <div style="
-                background: rgba(0,0,0,0.2); 
-                border: 1px solid {severity_color}; 
-                border-radius: 10px; 
-                padding: 1rem; 
-                margin: 0.5rem 0;
-                backdrop-filter: blur(10px);
-            ">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    <span style="font-size: 1.2rem;">{severity_icon}</span>
-                    <span style="color: {severity_color}; font-weight: bold;">{pod_name}</span>
-                    <span style="color: {severity_color}; font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">{severity_text}</span>
-                </div>
-                <div style="color: #dfe6e9; font-size: 0.85rem; margin-bottom: 0.5rem;">
-                    CPU: <strong>{cpu_percent}%</strong> | Memory: <strong>{memory_mb}MB</strong>
-                </div>
-                <div style="color: #bdc3c7; font-size: 0.8rem; margin-bottom: 0.8rem;">
-                    {time_ago}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        
-        # Action buttons with unique keys
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button(f"🗑️ Kill", key=f"kill_{pod_name}_{idx}", use_container_width=True):
-                success, message = kill_pod(pod_name)
-                if success:
-                    st.success(message)
-                    st.rerun()
-                else:
-                    st.error(message)
-                    # Show alternatives when kubectl is not available
-                    if "kubectl not available" in message:
-                        show_pod_killing_alternatives()
-        
-        with col2:
-            if st.button(f"👁️ Ignore", key=f"ignore_{pod_name}_{idx}", use_container_width=True):
-                ignore_anomaly(pod_name)
-    
-    # Show ignored anomalies count
-    if ignored:
-        st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div style="color: #bdc3c7; font-size: 0.8rem; text-align: center;">👁️ {len(ignored)} anomalies ignored</div>',
-            unsafe_allow_html=True
-        )
-    
-    # Quick Actions Section
-    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="sb-title">⚡ Quick Actions</div>', unsafe_allow_html=True)
-    
-    # Get current anomalies for quick actions
-    current_anomalies = get_anomaly_data()
-    if not current_anomalies.empty:
-        st.markdown("**🚨 Active Anomaly Pods:**")
-        for idx, (_, row) in enumerate(current_anomalies.iterrows()):
-            pod_name = row['pod_name']
-            cpu_percent = row['cpu_percent']
-            
-            # Create a copy-paste command
-            kill_command = f"kubectl delete pod {pod_name} -n smartops --force --grace-period=0"
-            
-            st.markdown(f"""
-            <div style="
-                background: rgba(255,107,107,0.1); 
-                border: 1px solid #ff6b6b; 
-                border-radius: 8px; 
-                padding: 0.8rem; 
-                margin: 0.5rem 0;
-            ">
-                <div style="color: #ff6b6b; font-weight: bold; margin-bottom: 0.5rem;">
-                    🔴 {pod_name} (CPU: {cpu_percent}%)
-                </div>
-                <div style="font-size: 0.8rem; color: #dfe6e9;">
-                    Copy and run this command:
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.code(kill_command, language="bash")
-            
-            # Add a copy button
-            if st.button(f"📋 Copy Command", key=f"copy_{pod_name}_{idx}", use_container_width=True):
-                st.success(f"Command copied! Run: {kill_command}")
-    else:
-        st.markdown("✅ No active anomalies")
-    
-    st.markdown("---")
-    
-    # Show namespace info
-    st.markdown("**📋 Current Namespace:** `smartops`")
-    
-    # Add a button to refresh pod list
-    if st.button("🔄 Refresh Pod List", key="refresh_pods", use_container_width=True):
-        st.rerun()
-
-def debug_database():
-    """Debug database connection and show detailed information"""
-    st.markdown("---")
-    st.markdown("**🐛 Database Debug Information**")
-    
-    # Try multiple possible database paths
-    db_paths = [
-        '/app/dashboard/data/data.db',  # Production path
-        'smartops-ai/dashboard/data/data.db',  # Local development
-        'data/data.db',  # Relative path
-        'dashboard/data/data.db'  # Another relative path
-    ]
-    
-    for db_path in db_paths:
-        try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            
-            # Check if table exists
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='anomalies'")
-            if cursor.fetchone():
-                st.success(f"✅ Table found in: {db_path}")
-                
-                # Get table structure
-                cursor.execute("PRAGMA table_info(anomalies)")
-                columns = cursor.fetchall()
-                st.info(f"📋 Table structure: {[col[1] for col in columns]}")
-                
-                # Get row count
-                cursor.execute("SELECT COUNT(*) FROM anomalies")
-                count = cursor.fetchone()[0]
-                st.info(f"📊 Total records: {count}")
-                
-                # Get sample data
-                cursor.execute("SELECT * FROM anomalies LIMIT 3")
-                sample = cursor.fetchall()
-                st.info(f"📝 Sample data: {sample}")
-                
-                # Get data types
-                cursor.execute("SELECT * FROM anomalies LIMIT 1")
-                sample_row = cursor.fetchone()
-                if sample_row:
-                    st.info(f"🔍 Sample row types: {[type(val).__name__ for val in sample_row]}")
-                
-                conn.close()
-                break
-            else:
-                st.warning(f"⚠️ Table 'anomalies' not found in: {db_path}")
-                conn.close()
-                
-        except Exception as e:
-            st.error(f"❌ Error with {db_path}: {str(e)}")
-    
-    st.markdown("---")
-
 def show_sidebar():
-    # Check if sidebar has already been initialized to prevent regeneration
-    if 'sidebar_initialized' not in st.session_state:
-        st.session_state.sidebar_initialized = True
-        st.session_state.current_page = "overview"
-    
+    # Static sidebar - never changes, no session state needed
     # ---------- Hide everything except the sidebar ----------
     st.markdown(
         """
@@ -571,7 +348,7 @@ def show_sidebar():
         unsafe_allow_html=True
     )
 
-    # ---------- Sidebar content ----------
+    # ---------- Static Sidebar Content (Never Changes) ----------
     st.markdown(
         """
         <div style="text-align:center; margin: .2rem 0 1.5rem 0;">
@@ -587,75 +364,51 @@ def show_sidebar():
         unsafe_allow_html=True
     )
 
-    # Show anomaly notifications at the top
-    show_anomaly_notifications()
-    
     st.markdown('<div class="sb-title">🧭 Navigation</div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
 
-    # ---- Core Monitoring
+    # ---- Core Monitoring (Static)
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">📊 Core Monitoring</div>', unsafe_allow_html=True)
-    if st.button("🟩  Overview Dashboard", key="nav_overview", use_container_width=True):
-        st.session_state.current_page = "overview"
-        st.rerun()
-    if st.button("🔥  Anomaly Detection", key="nav_anomaly", use_container_width=True):
-        st.session_state.current_page = "anomaly"
-        st.rerun()
+    st.info("🟩 Overview Dashboard")
+    st.info("🔥 Anomaly Detection")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---- Pod & Cluster Management
+    # ---- Pod & Cluster Management (Static)
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🛰️ Pod & Cluster</div>', unsafe_allow_html=True)
-    if st.button("🧭  Pod Explorer & Logs", key="nav_pod", use_container_width=True):
-        st.session_state.current_page = "pod_explorer"
-        st.rerun()
-    if st.button("🔍  Kubernetes Shell & Explorer", key="nav_cluster", use_container_width=True):
-        st.session_state.current_page = "kubernetes_shell"
-        st.rerun()
+    st.info("🧭 Pod Explorer & Logs")
+    st.info("🔍 Kubernetes Shell & Explorer")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---- Operations & Scaling
+    # ---- Operations & Scaling (Static)
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">⚡ Operations</div>', unsafe_allow_html=True)
-    if st.button("⚡  Auto Scaling Control", key="nav_scale", use_container_width=True):
-        st.session_state.current_page = "auto_scaling"
-        st.rerun()
-    if st.button("🚀  Deployments", key="nav_deploy", use_container_width=True):
-        st.session_state.current_page = "deployments"
-        st.rerun()
+    st.info("⚡ Auto Scaling Control")
+    st.info("🚀 Deployments")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---- AI & Analytics
+    # ---- AI & Analytics (Static)
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">🤖 AI & Analytics</div>', unsafe_allow_html=True)
-    if st.button("🤖  AI Actions", key="nav_actions", use_container_width=True):
-        st.session_state.current_page = "ai_actions"
-        st.rerun()
-    if st.button("📝  Incident Timeline", key="nav_incident", use_container_width=True):
-        st.session_state.current_page = "incident_timeline"
-        st.rerun()
-    if st.button("💬  Misi AI Assistant", key="nav_misi", use_container_width=True):
-        st.session_state.current_page = "misi_ai"
-        st.rerun()
+    st.info("🤖 AI Actions")
+    st.info("📝 Incident Timeline")
+    st.info("💬 Misi AI")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---- Quick Actions
+    # ---- Quick Actions (Static)
     st.markdown('<div class="sb-section">', unsafe_allow_html=True)
     st.markdown('<div class="sb-sub">⚡ Quick Actions</div>', unsafe_allow_html=True)
-    if st.button("🔄  Refresh All Data", key="nav_refresh", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-    if st.button("📊  System Status", key="nav_status", use_container_width=True):
-        st.info("🟢 All systems operational\n📊 Data refreshed\n🤖 AI services active")
+    st.info("🔄 Refresh All Data")
+    st.info("📊 System Status")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Footer
+    # Footer (Static)
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-title">🔧 System Info</div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     
-    # System status info
+    # Static system status info
     st.markdown(
         """
         <div style='color:#a8dadc; font-size:.85rem; text-align:center; opacity:.9; line-height: 1.4;'>
