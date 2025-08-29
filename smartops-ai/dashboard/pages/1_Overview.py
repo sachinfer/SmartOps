@@ -29,6 +29,16 @@ except ImportError:
             st.cache_data.clear()
             st.rerun()
 
+# Page config
+st.set_page_config(
+    page_title="Kubernetes Cluster Overview - SmartOps AI",
+    page_icon="📊",
+    layout="wide"
+)
+
+# Show the sidebar
+show_sidebar()
+
 # Environment detection for K8s cluster
 def get_cluster_environment():
     """Detect if running in Kubernetes cluster and get service endpoints"""
@@ -131,15 +141,9 @@ except ImportError:
 
 def show_page():
     """Main page function - called by the router"""
-    # Page config
-    st.set_page_config(
-        page_title="Kubernetes Cluster Overview - SmartOps AI",
-        page_icon="📊",
-        layout="wide"
-    )
+    # Page config is now handled at the top level
     
-    # Show the sidebar
-    show_sidebar()
+    # Show the main dashboard content
 
 # Function to fetch real-time pod data
 @st.cache_data(ttl=30)  # Cache for 30 seconds
