@@ -22,18 +22,31 @@ except ImportError:
     # Fallback: create a simple sidebar function
     def show_sidebar():
         st.sidebar.title("SmartOps Dashboard")
-        st.sidebar.info("Navigation menu will appear here")
         st.sidebar.markdown("---")
-        st.sidebar.markdown("### Quick Actions")
+        st.sidebar.markdown("### 📊 Dashboard")
+        st.sidebar.markdown("• Overview")
+        st.sidebar.markdown("• Pod Explorer")
+        st.sidebar.markdown("• Kubernetes Shell")
+        st.sidebar.markdown("• Anomaly Detection")
+        st.sidebar.markdown("• Auto Scaling")
+        st.sidebar.markdown("• Incident Timeline")
+        st.sidebar.markdown("• AI Assistant")
+        st.sidebar.markdown("• AI Actions")
+        st.sidebar.markdown("• Deployments")
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### ⚡ Quick Actions")
         if st.sidebar.button("🔄 Refresh Data"):
             st.cache_data.clear()
             st.rerun()
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("**Status:** Online")
 
-# Page config
+# Page config - MUST be the first Streamlit command
 st.set_page_config(
     page_title="Kubernetes Cluster Overview - SmartOps AI",
     page_icon="📊",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Show the sidebar
@@ -1364,7 +1377,7 @@ st.markdown(f"""
 
 # Main execution block
 if __name__ == "__main__":
-    show_page()
+    main()
 
 # Call show_page() for Streamlit
-show_page()
+main()
