@@ -1,25 +1,11 @@
 @echo off
-echo 🚀 SmartOps Dashboard Startup Script
-echo ======================================
+echo Starting SmartOps Dashboard...
 echo.
+echo This will start the Streamlit dashboard in a new command window.
+echo The dashboard will be available at: http://localhost:8501
+echo.
+echo Press any key to continue...
+pause >nul
 
-echo 📍 Starting Backend API Service...
-echo.
-start "SmartOps API Service" cmd /k "cd /d %~dp0 && python event_api.py"
-
-echo ⏳ Waiting for API service to start...
-timeout /t 3 /nobreak >nul
-
-echo 🌐 Starting Dashboard...
-echo.
-start "SmartOps Dashboard" cmd /k "cd /d %~dp0 && streamlit run misi24x7.py"
-
-echo.
-echo ✅ Both services are starting up!
-echo.
-echo 📱 Dashboard will open at: http://localhost:8501
-echo 🔌 API service runs at: http://localhost:8000
-echo.
-echo 💡 Keep both terminal windows open while using the dashboard
-echo.
-pause
+echo Starting dashboard...
+start "SmartOps Dashboard" cmd /k "cd /d %~dp0 && streamlit run pages/1_Overview.py"

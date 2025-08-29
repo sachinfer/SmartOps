@@ -42,7 +42,7 @@ python start_services.py
 python event_api.py
 
 # Terminal 2: Start dashboard (in new terminal)
-streamlit run misi24x7.py
+streamlit run pages/1_Overview.py
 ```
 
 ### 3. Access Dashboard
