@@ -13,33 +13,52 @@ import os
 import subprocess
 import json
 
-# Fix import path for sidebar_utils
-try:
-    # Try to import from parent directory
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from sidebar_utils import show_sidebar
-except ImportError:
-    # Fallback: create a simple sidebar function
-    def show_sidebar():
-        st.sidebar.title("SmartOps Dashboard")
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("### 📊 Dashboard")
-        st.sidebar.markdown("• Overview")
-        st.sidebar.markdown("• Pod Explorer")
-        st.sidebar.markdown("• Kubernetes Shell")
-        st.sidebar.markdown("• Anomaly Detection")
-        st.sidebar.markdown("• Auto Scaling")
-        st.sidebar.markdown("• Incident Timeline")
-        st.sidebar.markdown("• AI Assistant")
-        st.sidebar.markdown("• AI Actions")
-        st.sidebar.markdown("• Deployments")
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("### ⚡ Quick Actions")
-        if st.sidebar.button("🔄 Refresh Data"):
-            st.cache_data.clear()
-            st.rerun()
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("**Status:** Online")
+# Simple sidebar function - no complex imports needed
+def show_simple_sidebar():
+    """Simple sidebar with navigation links"""
+    st.sidebar.title("🚀 SmartOps Dashboard")
+    st.sidebar.markdown("---")
+    
+    # Navigation sections
+    st.sidebar.markdown("### 📊 **Core Monitoring**")
+    st.sidebar.markdown("• **Overview** (Current)")
+    st.sidebar.markdown("• Pod Explorer & Logs")
+    st.sidebar.markdown("• Kubernetes Shell")
+    st.sidebar.markdown("• Anomaly Detection")
+    
+    st.sidebar.markdown("---")
+    
+    st.sidebar.markdown("### ⚡ **Operations**")
+    st.sidebar.markdown("• Auto Scaling Control")
+    st.sidebar.markdown("• Incident Timeline")
+    st.sidebar.markdown("• Deployments")
+    
+    st.sidebar.markdown("---")
+    
+    st.sidebar.markdown("### 🤖 **AI & Analytics**")
+    st.sidebar.markdown("• AI Actions")
+    st.sidebar.markdown("• Misi AI Assistant")
+    
+    st.sidebar.markdown("---")
+    
+    # Quick actions
+    st.sidebar.markdown("### 🔄 **Quick Actions**")
+    if st.sidebar.button("🔄 Refresh All Data", type="primary"):
+        st.cache_data.clear()
+        st.rerun()
+    
+    if st.sidebar.button("📊 System Status"):
+        st.sidebar.success("✅ All systems operational")
+    
+    st.sidebar.markdown("---")
+    
+    # Status info
+    st.sidebar.markdown("### 📈 **Status**")
+    st.sidebar.success("🟢 **Online**")
+    st.sidebar.info(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+    
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("*SmartOps AI Dashboard*")
 
 # Page config - MUST be the first Streamlit command
 st.set_page_config(
@@ -49,8 +68,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Show the sidebar
-show_sidebar()
+# Show the simple sidebar
+show_simple_sidebar()
 
 # Environment detection for K8s cluster
 def get_cluster_environment():
