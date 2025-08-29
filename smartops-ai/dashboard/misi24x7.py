@@ -18,6 +18,36 @@ except ImportError:
         st.sidebar.title("SmartOps Dashboard")
         st.sidebar.info("Navigation menu will appear here")
 
+# Import all page modules
+try:
+    import importlib.util
+    import sys
+    
+    # Import pages using importlib to handle numeric filenames
+    def import_page(module_name, function_name):
+        spec = importlib.util.spec_from_file_location(
+            module_name, 
+            f"pages/{module_name}.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return getattr(module, function_name)
+    
+    show_overview = import_page("1_Overview", "show_page")
+    show_pod_explorer = import_page("2_Pod_Explorer_and_Logs", "show_page")
+    show_k8s_shell = import_page("3_Kubernetes_Shell_and_Cluster_Explorer", "show_page")
+    show_anomaly_detection = import_page("4_Anomaly_Detection", "show_page")
+    show_auto_scaling = import_page("5_Auto_Scaling_Recommendations_and_Control", "show_page")
+    show_incident_timeline = import_page("6_Incident_Timeline_and_Postmortem_Report_Generator", "show_page")
+    show_misi_ai = import_page("7_Misi_AI_Assistant", "show_page")
+    show_ai_actions = import_page("8_AI_Actions", "show_page")
+    show_deployments = import_page("9_Deployments", "show_page")
+    
+    PAGES_AVAILABLE = True
+except ImportError as e:
+    st.error(f"Error importing pages: {e}")
+    PAGES_AVAILABLE = False
+
 # Page configuration
 st.set_page_config(
     page_title="Misi 24x7 - AI-Powered Solutions",
