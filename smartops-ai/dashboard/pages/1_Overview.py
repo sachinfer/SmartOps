@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Kubernetes Cluster Overview - SmartOps AI
-New Relic-style monitoring dashboard
+New Relic-style monitoring dashboard for K8s Cluster
 """
 
 import streamlit as st
@@ -11,6 +11,100 @@ from datetime import datetime
 from sidebar_utils import show_sidebar
 import sys
 import os
+import subprocess
+import json
+
+# Environment detection for K8s cluster
+def get_cluster_environment():
+    """Detect if running in Kubernetes cluster and get service endpoints"""
+    try:
+        # Check if running in K8s cluster
+        k8s_host = os.environ.get('KUBERNETES_SERVICE_HOST')
+        if k8s_host:
+            return "kubernetes"
+        
+        # Check if running in Docker
+        if os.path.exists('/.dockerenv'):
+            return "docker"
+        
+        # Check for Google Cloud specific environment variables
+        gcp_project = os.environ.get('GOOGLE_CLOUD_PROJECT')
+        gcp_zone = os.environ.get('GOOGLE_CLOUD_ZONE')
+        if gcp_project or gcp_zone:
+            return "google_cloud"
+        
+        return "local"
+    except:
+        return "local"
+
+def get_api_endpoint():
+    """Get the appropriate API endpoint based on environment"""
+    env = get_cluster_environment()
+    
+    if env == "kubernetes":
+        # In K8s cluster, use service names
+        # Try multiple possible service names for different deployments
+        service_names = [
+            "smartops-api-service:8000",
+            "smartops-api:8000", 
+            "smartops-backend:8000",
+            "api-service:8000"
+        ]
+        
+        # Check which service is available
+        for service in service_names:
+            try:
+                response = requests.get(f"http://{service}/", timeout=2)
+                if response.status_code == 200:
+                    return f"http://{service}"
+            except:
+                continue
+        
+        # If no service found, return the default
+        return "http://smartops-api-service:8000"
+        
+    elif env == "google_cloud":
+        # In Google Cloud, try multiple endpoints
+        gcp_endpoints = [
+            "http://smartops-api-service:8000",
+            "http://smartops-api:8000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000"
+        ]
+        
+        # Check which endpoint is available
+        for endpoint in gcp_endpoints:
+            try:
+                response = requests.get(f"{endpoint}/", timeout=2)
+                if response.status_code == 200:
+                    return endpoint
+            except:
+                continue
+        
+        # If no endpoint found, return the default
+        return "http://smartops-api-service:8000"
+        
+    elif env == "docker":
+        # In Docker, try service name or localhost
+        docker_endpoints = [
+            "http://smartops-api:8000",
+            "http://localhost:8000",
+            "http://host.docker.internal:8000"
+        ]
+        
+        # Check which endpoint is available
+        for endpoint in docker_endpoints:
+            try:
+                response = requests.get(f"{endpoint}/", timeout=2)
+                if response.status_code == 200:
+                    return endpoint
+            except:
+                continue
+        
+        return "http://smartops-api:8000"
+    else:
+        # Local development
+        return "http://localhost:8000"
 
 # Import Misi from the dashboard directory
 try:
@@ -35,7 +129,8 @@ def show_page():
 @st.cache_data(ttl=30)  # Cache for 30 seconds
 def fetch_pod_data():
     try:
-        response = requests.get("http://localhost:8000/pods", timeout=10)
+        api_endpoint = get_api_endpoint()
+        response = requests.get(f"{api_endpoint}/pods", timeout=10)
         if response.status_code == 200:
             return response.json().get("pods", [])
         else:
@@ -60,21 +155,23 @@ def get_pod_status_counts(pods):
 @st.cache_data(ttl=30)  # Cache for 30 seconds
 def fetch_node_data():
     try:
-        response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes"}, timeout=10)
+        api_endpoint = get_api_endpoint()
+        response = requests.get(f"{api_endpoint}/kubectl_get", params={"resource_type": "nodes"}, timeout=10)
         if response.status_code == 200:
             return response.json().get("output", [])
         else:
             # Don't show error to user, just return empty list
             return []
     except Exception as e:
-        # Don't show technical error to user, just return empty list
+        # Don't show error to user, just return empty list
         return []
 
 # Function to get namespace count
 @st.cache_data(ttl=30)
 def get_namespace_count():
     try:
-        response = requests.get("http://localhost:8000/namespaces", timeout=10)
+        api_endpoint = get_api_endpoint()
+        response = requests.get(f"{api_endpoint}/namespaces", timeout=10)
         if response.status_code == 200:
             namespaces = response.json().get("namespaces", [])
             return len(namespaces)
@@ -87,7 +184,8 @@ def get_namespace_count():
 @st.cache_data(ttl=30)
 def get_available_namespaces():
     try:
-        response = requests.get("http://localhost:8000/namespaces", timeout=10)
+        api_endpoint = get_api_endpoint()
+        response = requests.get(f"{api_endpoint}/namespaces", timeout=10)
         if response.status_code == 200:
             namespaces = response.json().get("namespaces", [])
             return [ns.get('name', '') for ns in namespaces if ns.get('name')]
@@ -100,10 +198,11 @@ def get_available_namespaces():
 @st.cache_data(ttl=30)  # Cache for 30 seconds
 def fetch_pod_data_by_namespace(namespace="all"):
     try:
+        api_endpoint = get_api_endpoint()
         if namespace == "all":
-            response = requests.get("http://localhost:8000/pods", timeout=10)
+            response = requests.get(f"{api_endpoint}/pods", timeout=10)
         else:
-            response = requests.get("http://localhost:8000/kubectl_get", 
+            response = requests.get(f"{api_endpoint}/kubectl_get", 
                                  params={"resource_type": "pods", "namespace": namespace}, timeout=10)
         
         if response.status_code == 200:
@@ -120,16 +219,25 @@ def fetch_pod_data_by_namespace(namespace="all"):
 def check_api_health():
     """Check if the backend API service is accessible"""
     try:
-        response = requests.get("http://localhost:8000/", timeout=5)
+        api_endpoint = get_api_endpoint()
+        env = get_cluster_environment()
+        
+        # Log the environment and endpoint being tested
+        st.sidebar.info(f"🔍 Testing API endpoint: {api_endpoint}")
+        st.sidebar.info(f"🌍 Environment detected: {env}")
+        
+        response = requests.get(f"{api_endpoint}/", timeout=5)
         return response.status_code == 200
-    except:
+    except Exception as e:
+        st.sidebar.error(f"❌ API Health Check Failed: {str(e)}")
         return False
 
 # Function to get service count
 @st.cache_data(ttl=30)
 def get_service_count():
     try:
-        response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "services", "all_namespaces": True}, timeout=10)
+        api_endpoint = get_api_endpoint()
+        response = requests.get(f"{api_endpoint}/kubectl_get", params={"resource_type": "services", "all_namespaces": True}, timeout=10)
         if response.status_code == 200:
             services = response.json().get("output", [])
             return len(services)
@@ -137,6 +245,128 @@ def get_service_count():
             return 16  # Fallback to default
     except Exception:
         return 16  # Fallback to default
+
+# Function to get cluster info directly from kubectl
+def get_cluster_info():
+    """Get cluster information directly using kubectl commands"""
+    try:
+        # Get cluster info
+        result = subprocess.run(['kubectl', 'cluster-info'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return result.stdout
+        return "Cluster info not available"
+    except Exception as e:
+        return f"Error getting cluster info: {str(e)}"
+
+# Function to get node info directly
+def get_nodes_info():
+    """Get node information directly using kubectl"""
+    try:
+        result = subprocess.run(['kubectl', 'get', 'nodes', '-o', 'json'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            nodes_data = json.loads(result.stdout)
+            return nodes_data.get('items', [])
+        return []
+    except Exception as e:
+        st.sidebar.warning(f"⚠️ kubectl nodes command failed: {str(e)}")
+        return []
+
+# Function to get pods info directly
+def get_pods_info():
+    """Get pods information directly using kubectl"""
+    try:
+        result = subprocess.run(['kubectl', 'get', 'pods', '--all-namespaces', '-o', 'json'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            pods_data = json.loads(result.stdout)
+            return pods_data.get('items', [])
+        return []
+    except Exception as e:
+        st.sidebar.warning(f"⚠️ kubectl pods command failed: {str(e)}")
+        return []
+
+# Function to get services info directly
+def get_services_info():
+    """Get services information directly using kubectl"""
+    try:
+        result = subprocess.run(['kubectl', 'get', 'services', '--all-namespaces', '-o', 'json'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            services_data = json.loads(result.stdout)
+            return services_data.get('items', [])
+        return []
+    except Exception as e:
+        st.sidebar.warning(f"⚠️ kubectl services command failed: {str(e)}")
+        return []
+
+# Function to get namespaces info directly
+def get_namespaces_info():
+    """Get namespaces information directly using kubectl"""
+    try:
+        result = subprocess.run(['kubectl', 'get', 'namespaces', '-o', 'json'], capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            namespaces_data = json.loads(result.stdout)
+            return namespaces_data.get('items', [])
+        return []
+    except Exception as e:
+        st.sidebar.warning(f"⚠️ kubectl namespaces command failed: {str(e)}")
+        return []
+
+# Enhanced data fetching with fallback to direct kubectl
+def get_enhanced_pod_data():
+    """Get pod data with fallback to direct kubectl"""
+    # Try API first
+    pods = fetch_pod_data()
+    if pods:
+        return pods
+    
+    # Fallback to direct kubectl
+    try:
+        pods_info = get_pods_info()
+        if pods_info:
+            formatted_pods = []
+            for pod in pods_info:
+                metadata = pod.get('metadata', {})
+                status = pod.get('status', {})
+                formatted_pods.append({
+                    'name': metadata.get('name', 'Unknown'),
+                    'namespace': metadata.get('namespace', 'default'),
+                    'status': status.get('phase', 'Unknown'),
+                    'age': 'Unknown',
+                    'ready': f"{status.get('readyReplicas', 0)}/{status.get('replicas', 0)}"
+                })
+            return formatted_pods
+    except:
+        pass
+    
+    return []
+
+def get_enhanced_node_data():
+    """Get node data with fallback to direct kubectl"""
+    # Try API first
+    nodes = fetch_node_data()
+    if nodes:
+        return nodes
+    
+    # Fallback to direct kubectl
+    try:
+        nodes_info = get_nodes_info()
+        if nodes_info:
+            formatted_nodes = []
+            for node in nodes_info:
+                metadata = node.get('metadata', {})
+                status = node.get('status', {})
+                formatted_nodes.append({
+                    'name': metadata.get('name', 'Unknown'),
+                    'status': 'Ready' if status.get('conditions', [{}])[0].get('status') == 'True' else 'NotReady',
+                    'roles': 'worker',
+                    'age': 'Unknown',
+                    'version': status.get('nodeInfo', {}).get('kubeletVersion', 'Unknown'),
+                    'internal_ip': status.get('addresses', [{}])[0].get('address', 'Unknown') if status.get('addresses') else 'Unknown'
+                })
+            return formatted_nodes
+    except:
+        pass
+    
+    return []
 
 # New Relic-style CSS
 st.markdown("""
@@ -726,6 +956,49 @@ st.markdown("""
 # Check if API service is running and show helpful message
 api_available = check_api_health()
 
+# Show cluster environment information
+env = get_cluster_environment()
+st.markdown(f"""
+<div class="status-message" style="background: rgba(45, 55, 72, 0.9); border-color: rgba(102, 126, 234, 0.5);">
+    <div class="status-icon">🌍</div>
+    <div class="status-text">
+        <strong>Environment:</strong> {env.upper()} | 
+        <strong>API Status:</strong> {'✅ Available' if api_available else '❌ Not Available'} | 
+        <strong>Cluster:</strong> {'🟢 Connected' if env == 'kubernetes' else '🟡 Local/Docker'}
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Show Google Cloud specific information
+if env == "google_cloud":
+    gcp_project = os.environ.get('GOOGLE_CLOUD_PROJECT', 'Not Set')
+    gcp_zone = os.environ.get('GOOGLE_CLOUD_ZONE', 'Not Set')
+    gcp_region = os.environ.get('GOOGLE_CLOUD_REGION', 'Not Set')
+    
+    st.markdown(f"""
+    <div class="status-message" style="background: rgba(56, 178, 172, 0.2); border-color: rgba(56, 178, 172, 0.5);">
+        <div class="status-icon">☁️</div>
+        <div class="status-text">
+            <strong>Google Cloud Info:</strong> Project: {gcp_project} | Zone: {gcp_zone} | Region: {gcp_region}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Show troubleshooting tips for Google Cloud
+    if not api_available:
+        st.markdown("""
+        <div class="status-message" style="background: rgba(229, 62, 62, 0.2); border-color: rgba(229, 62, 62, 0.5);">
+            <div class="status-icon">🔧</div>
+            <div class="status-text">
+                <strong>Google Cloud Troubleshooting:</strong><br/>
+                • Check if smartops-api-service is deployed and running<br/>
+                • Verify service names and ports in your deployment<br/>
+                • Check network policies and firewall rules<br/>
+                • Ensure services are in the same namespace
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
 
 
 
@@ -789,11 +1062,13 @@ st.markdown("""
 # New Relic-style Cluster Metrics
 st.markdown('<div class="section-header">📊 Cluster Metrics</div>', unsafe_allow_html=True)
 
-# Get live or fallback data for metrics
+# Get live or fallback data for metrics with enhanced fallback
 node_count = 1 if not api_available else len(fetch_node_data()) if fetch_node_data() else 1
 pod_count = len(fetch_pod_data()) if fetch_pod_data() and api_available else 18
 service_count = get_service_count()
 namespace_count = get_namespace_count()
+
+
 
 st.markdown(f"""
 <div class="metric-grid">
@@ -867,14 +1142,14 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Fetch real-time pod data
-pods = fetch_pod_data()
+# Fetch real-time pod data with enhanced fallback
+pods = get_enhanced_pod_data()
 
 # Get pod status counts
-if pods and api_available:
+if pods:
     status_counts = get_pod_status_counts(pods)
 else:
-    # Fallback to default values if API is not available
+    # Fallback to default values if no data available
     status_counts = {'Running': 18, 'Pending': 0, 'Failed': 0, 'Succeeded': 0}
 
 # Create a DataFrame for the chart
@@ -925,65 +1200,48 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Fetch real-time node data
-if api_available:
-    try:
-        # Get actual node data from API
-        response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes"}, timeout=10)
-        
-        if response.status_code == 200:
-            nodes_data = response.json().get("output", [])
-            if nodes_data:
-                node_data_list = []
-                for node in nodes_data:
-                    node_name = node.get('name', 'Unknown')
-                    status = node.get('status', 'Unknown')
-                    roles = node.get('roles', '<none>')
-                    age = node.get('age', '')
-                    version = node.get('version', '')
-                    internal_ip = node.get('internal_ip', '')
-                    
-                    # Determine health status
-                    if status == 'Ready':
-                        health = '🟢 Healthy'
-                    else:
-                        health = '🔴 Unhealthy'
-                    
-                    node_data_list.append({
-                        'Node Name': node_name,
-                        'Status': status,
-                        'Roles': roles,
-                        'Health': health,
-                        'Age': age,
-                        'Version': version,
-                        'Internal IP': internal_ip
-                    })
-                
-                if node_data_list:
-                    node_data = pd.DataFrame(node_data_list)
-                    st.dataframe(
-                        node_data,
-                        use_container_width=True,
-                        hide_index=True,
-                        height=200
-                    )
-                else:
-                    st.warning("No node data found")
-            else:
-                st.warning("No nodes found in cluster")
-        else:
-            # Fallback to sample node info
-            node_data = pd.DataFrame({
-                'Node Name': ['Cluster Node'],
-                'Status': ['Ready'],
-                'Health': ['🟢 Healthy'],
-                'Info': ['Cluster information'],
-                'Version': ['v1.28.0'],
-                'Internal IP': ['192.168.1.100']
-            })
-            st.dataframe(node_data, use_container_width=True, hide_index=True, height=200)
+# Fetch real-time node data with enhanced fallback
+try:
+    # Try to get node data using enhanced function
+    nodes_data = get_enhanced_node_data()
+    
+    if nodes_data:
+        node_data_list = []
+        for node in nodes_data:
+            node_name = node.get('name', 'Unknown')
+            status = node.get('status', 'Unknown')
+            roles = node.get('roles', '<none>')
+            age = node.get('age', 'Unknown')
+            version = node.get('version', 'Unknown')
+            internal_ip = node.get('internal_ip', 'Unknown')
             
-    except Exception as e:
+            # Determine health status
+            if status == 'Ready':
+                health = '🟢 Healthy'
+            else:
+                health = '🔴 Unhealthy'
+            
+            node_data_list.append({
+                'Node Name': node_name,
+                'Status': status,
+                'Roles': roles,
+                'Health': health,
+                'Age': age,
+                'Version': version,
+                'Internal IP': internal_ip
+            })
+        
+        if node_data_list:
+            node_data = pd.DataFrame(node_data_list)
+            st.dataframe(
+                node_data,
+                use_container_width=True,
+                hide_index=True,
+                height=200
+            )
+        else:
+            st.warning("No node data found")
+    else:
         # Fallback to sample node info
         node_data = pd.DataFrame({
             'Node Name': ['Cluster Node'],
@@ -994,8 +1252,10 @@ if api_available:
             'Internal IP': ['192.168.1.100']
         })
         st.dataframe(node_data, use_container_width=True, hide_index=True, height=200)
-else:
-    # Show sample node info when API is not available
+        
+except Exception as e:
+    # Fallback to sample node info on error
+    st.warning(f"Error fetching node data: {str(e)}")
     node_data = pd.DataFrame({
         'Node Name': ['Cluster Node'],
         'Status': ['Ready'],
