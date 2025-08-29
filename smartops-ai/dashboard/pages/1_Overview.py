@@ -8,11 +8,26 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
-from sidebar_utils import show_sidebar
 import sys
 import os
 import subprocess
 import json
+
+# Fix import path for sidebar_utils
+try:
+    # Try to import from parent directory
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from sidebar_utils import show_sidebar
+except ImportError:
+    # Fallback: create a simple sidebar function
+    def show_sidebar():
+        st.sidebar.title("SmartOps Dashboard")
+        st.sidebar.info("Navigation menu will appear here")
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### Quick Actions")
+        if st.sidebar.button("🔄 Refresh Data"):
+            st.cache_data.clear()
+            st.rerun()
 
 # Environment detection for K8s cluster
 def get_cluster_environment():
