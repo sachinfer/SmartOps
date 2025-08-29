@@ -138,7 +138,8 @@ def show_page():
         layout="wide"
     )
     
-    # Note: Sidebar is now handled by the router, not here
+    # Show the sidebar
+    show_sidebar()
 
 # Function to fetch real-time pod data
 @st.cache_data(ttl=30)  # Cache for 30 seconds
@@ -969,106 +970,103 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Check if API service is running and show helpful message
-api_available = check_api_health()
+# api_available = check_api_health()
 
 # Show cluster environment information
-env = get_cluster_environment()
-st.markdown(f"""
-<div class="status-message" style="background: rgba(45, 55, 72, 0.9); border-color: rgba(102, 126, 234, 0.5);">
-    <div class="status-icon">🌍</div>
-    <div class="status-text">
-        <strong>Environment:</strong> {env.upper()} | 
-        <strong>API Status:</strong> {'✅ Available' if api_available else '❌ Not Available'} | 
-        <strong>Cluster:</strong> {'🟢 Connected' if env == 'kubernetes' else '🟡 Local/Docker'}
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# env = get_cluster_environment()
+# st.markdown(f"""
+# <div class="status-message" style="background: rgba(45, 55, 72, 0.9); border-color: rgba(102, 126, 234, 0.5);">
+#     <div class="status-icon">🌍</div>
+#     <div class="status-text">
+#         <strong>Environment:</strong> {env.upper()} | 
+#         <strong>API Status:</strong> {'✅ Available' if api_available else '❌ Not Available'} | 
+#         <strong>Cluster:</strong> {'🟢 Connected' if env == 'kubernetes' else '🟡 Local/Docker'}
+#     </div>
+# </div>
+# """, unsafe_allow_html=True)
 
 # Show Google Cloud specific information
-if env == "google_cloud":
-    gcp_project = os.environ.get('GOOGLE_CLOUD_PROJECT', 'Not Set')
-    gcp_zone = os.environ.get('GOOGLE_CLOUD_ZONE', 'Not Set')
-    gcp_region = os.environ.get('GOOGLE_CLOUD_REGION', 'Not Set')
-    
-    st.markdown(f"""
-    <div class="status-message" style="background: rgba(56, 178, 172, 0.2); border-color: rgba(56, 178, 172, 0.5);">
-        <div class="status-icon">☁️</div>
-        <div class="status-text">
-            <strong>Google Cloud Info:</strong> Project: {gcp_project} | Zone: {gcp_zone} | Region: {gcp_region}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Show troubleshooting tips for Google Cloud
-    if not api_available:
-        st.markdown("""
-        <div class="status-message" style="background: rgba(229, 62, 62, 0.2); border-color: rgba(229, 62, 62, 0.5);">
-            <div class="status-icon">🔧</div>
-            <div class="status-text">
-                <strong>Google Cloud Troubleshooting:</strong><br/>
-                • Check if smartops-api-service is deployed and running<br/>
-                • Verify service names and ports in your deployment<br/>
-                • Check network policies and firewall rules<br/>
-                • Ensure services are in the same namespace
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Add connectivity test button
-        if st.button("🔍 Test API Connectivity", type="primary"):
-            st.markdown("### 📡 Connectivity Test Results")
-            connectivity_results = test_connectivity()
-            for result in connectivity_results:
-                st.text(result)
-            
-            st.markdown("""
-            **🔧 Next Steps:**
-            1. **Check if smartops-api-service is running:**
-               ```bash
-               kubectl get pods -n <namespace>
-               kubectl get services -n <namespace>
-               ```
-            
-            2. **Check service endpoints:**
-               ```bash
-               kubectl get endpoints smartops-api-service -n <namespace>
-               ```
-            
-            3. **Check logs:**
-               ```bash
-               kubectl logs -f deployment/smartops-api-service -n <namespace>
-               ```
-            
-            4. **Verify network policies:**
-               ```bash
-               kubectl get networkpolicies -n <namespace>
-               ```
-            """)
+# if env == "google_cloud":
+#     gcp_project = os.environ.get('GOOGLE_CLOUD_PROJECT', 'Not Set')
+#     gcp_zone = os.environ.get('GOOGLE_CLOUD_ZONE', 'Not Set')
+#     gcp_region = os.environ.get('GOOGLE_CLOUD_REGION', 'Not Set')
+#     
+#     st.markdown(f"""
+#     <div class="status-message" style="background: rgba(56, 178, 172, 0.2); border-color: rgba(56, 178, 172, 0.5);">
+#         <div class="status-icon">☁️</div>
+#         <div class="status-text">
+#             <strong>Google Cloud Info:</strong> Project: {gcp_project} | Zone: {gcp_zone} | Region: {gcp_region}
+#         </div>
+#     </div>
+#     """, unsafe_allow_html=True)
+#     
+#     # Show troubleshooting tips for Google Cloud
+#     if not api_available:
+#         st.markdown("""
+#         <div class="status-message" style="background: rgba(229, 62, 62, 0.2); border-color: rgba(229, 62, 62, 0.5);">
+#             <div class="status-icon">🔧</div>
+#             <div class="status-text">
+#                 <strong>Google Cloud Troubleshooting:</strong><br/>
+#                 • Check if smartops-api-service is deployed and running<br/>
+#                 • Verify service names and ports in your deployment<br/>
+#                 • Check network policies and firewall rules<br/>
+#                 • Ensure services are in the same namespace
+#             </div>
+#         </div>
+#         """, unsafe_allow_html=True)
+#         
+#         # Add connectivity test button
+#         if st.button("🔍 Test API Connectivity", type="primary"):
+#             st.markdown("### 📡 Connectivity Test Results")
+#             connectivity_results = test_connectivity()
+#             for result in connectivity_results:
+#                 st.text(result)
+#             
+#             st.markdown("""
+#             **🔧 Next Steps:**
+#             1. **Check if smartops-api-service is running:**
+#                ```bash
+#                kubectl get pods -n <namespace>
+#                kubectl get services -n <namespace>
+#                ```
+#             
+#             2. **Check service endpoints:**
+#                ```bash
+#                kubectl get endpoints smartops-api-service -n <namespace>
+#                ```
+#             
+#             3. **Check logs:**
+#                ```bash
+#                kubectl logs -f deployment/smartops-api-service -n <namespace>
+#                ```
+#             
+#             4. **Verify network policies:**
+#                ```bash
+#                kubectl get networkpolicies -n <namespace>
+#                ```
+#             """)
 
 # Add connectivity test function
-def test_connectivity():
-    """Test connectivity to different endpoints and show results"""
-    endpoints_to_test = [
-        "http://smartops-api-service:8000",
-        "http://smartops-api:8000",
-        "http://smartops-backend:8000",
-        "http://api-service:8000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000"
-    ]
-    
-    results = []
-    for endpoint in endpoints_to_test:
-        try:
-            response = requests.get(f"{endpoint}/", timeout=3)
-            if response.status_code == 200:
-                results.append(f"✅ {endpoint} - Available")
-            else:
-                results.append(f"⚠️ {endpoint} - Status {response.status_code}")
-        except Exception as e:
-            results.append(f"❌ {endpoint} - {str(e)}")
-    
-    return results
+# def test_connectivity():
+#     """Test connectivity to different endpoints and show results"""
+#     endpoints_to_test = [
+#         "http://smartops-api-service:8000",
+#         "http://smartops-api:8000",
+#         "http://smartops-backend:8000",
+#         "http://api-service:8000",
+#         "http://localhost:8000",
+#         "http://127.0.0.1:8000"
+#     ]
+#     
+#     results = []
+#     for endpoint in endpoints_to_test:
+#         try:
+#             response = requests.get(f"{endpoint}/", timeout=3)
+#             if response.status_code == 200:
+#                 results.append(f"✅ {endpoint} - Available")
+#             else:
+#                 results.append(f"⚠️ {endpoint} - Status {response.status_code}")
+#         except Exception as e:
 
 
 # New Relic-style Time Selector
