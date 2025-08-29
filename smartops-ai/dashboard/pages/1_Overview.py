@@ -1396,7 +1396,6 @@ st.markdown(f"""
 
 # Main execution block
 if __name__ == "__main__":
-    main()
+    pass
 
-# Call show_page() for Streamlit
-main()
+# For Streamlit, the page content will run automatically
