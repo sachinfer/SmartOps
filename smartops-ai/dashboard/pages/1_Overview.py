@@ -1361,3 +1361,6 @@ st.markdown(f"""
 # Main execution block
 if __name__ == "__main__":
     show_page()
+
+# Call show_page() for Streamlit
+show_page()
