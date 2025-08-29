@@ -298,9 +298,21 @@ def get_service_count():
     except Exception:
         return 16  # Fallback to default
 
+# Function to check if kubectl is available
+def is_kubectl_available():
+    """Check if kubectl command is available"""
+    try:
+        result = subprocess.run(['which', 'kubectl'], capture_output=True, text=True, timeout=5)
+        return result.returncode == 0
+    except:
+        return False
+
 # Function to get cluster info directly from kubectl
 def get_cluster_info():
     """Get cluster information directly using kubectl commands"""
+    if not is_kubectl_available():
+        return "kubectl not available in container"
+    
     try:
         # Get cluster info
         result = subprocess.run(['kubectl', 'cluster-info'], capture_output=True, text=True, timeout=10)
@@ -313,6 +325,10 @@ def get_cluster_info():
 # Function to get node info directly
 def get_nodes_info():
     """Get node information directly using kubectl"""
+    if not is_kubectl_available():
+        st.sidebar.warning("⚠️ kubectl not available in container")
+        return []
+    
     try:
         result = subprocess.run(['kubectl', 'get', 'nodes', '-o', 'json'], capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
@@ -326,6 +342,10 @@ def get_nodes_info():
 # Function to get pods info directly
 def get_pods_info():
     """Get pods information directly using kubectl"""
+    if not is_kubectl_available():
+        st.sidebar.warning("⚠️ kubectl not available in container")
+        return []
+    
     try:
         result = subprocess.run(['kubectl', 'get', 'pods', '--all-namespaces', '-o', 'json'], capture_output=True, text=True, timeout=10)
         if result.returncode == 0:

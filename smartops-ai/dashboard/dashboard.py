@@ -48,8 +48,9 @@ show_page = import_overview_page()
 def create_sidebar():
     """Create a comprehensive sidebar with navigation"""
     
-    # Main title
+    # Main title with branding
     st.sidebar.title("🚀 SmartOps Dashboard")
+    st.sidebar.markdown("**by Misi 24x7**")
     st.sidebar.markdown("---")
     
     # Navigation sections
@@ -108,7 +109,8 @@ def create_sidebar():
         st.sidebar.info("🌍 **Environment:** Unknown")
     
     st.sidebar.markdown("---")
-    st.sidebar.markdown("*SmartOps AI Dashboard*")
+    st.sidebar.markdown("**SmartOps by Misi 24x7**")
+    st.sidebar.markdown("*Enterprise Kubernetes Monitoring*")
 
 # Show the sidebar
 create_sidebar()
