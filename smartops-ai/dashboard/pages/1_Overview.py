@@ -998,9 +998,62 @@ if env == "google_cloud":
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Add connectivity test button
+        if st.button("🔍 Test API Connectivity", type="primary"):
+            st.markdown("### 📡 Connectivity Test Results")
+            connectivity_results = test_connectivity()
+            for result in connectivity_results:
+                st.text(result)
+            
+            st.markdown("""
+            **🔧 Next Steps:**
+            1. **Check if smartops-api-service is running:**
+               ```bash
+               kubectl get pods -n <namespace>
+               kubectl get services -n <namespace>
+               ```
+            
+            2. **Check service endpoints:**
+               ```bash
+               kubectl get endpoints smartops-api-service -n <namespace>
+               ```
+            
+            3. **Check logs:**
+               ```bash
+               kubectl logs -f deployment/smartops-api-service -n <namespace>
+               ```
+            
+            4. **Verify network policies:**
+               ```bash
+               kubectl get networkpolicies -n <namespace>
+               ```
+            """)
 
-
-
+# Add connectivity test function
+def test_connectivity():
+    """Test connectivity to different endpoints and show results"""
+    endpoints_to_test = [
+        "http://smartops-api-service:8000",
+        "http://smartops-api:8000",
+        "http://smartops-backend:8000",
+        "http://api-service:8000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000"
+    ]
+    
+    results = []
+    for endpoint in endpoints_to_test:
+        try:
+            response = requests.get(f"{endpoint}/", timeout=3)
+            if response.status_code == 200:
+                results.append(f"✅ {endpoint} - Available")
+            else:
+                results.append(f"⚠️ {endpoint} - Status {response.status_code}")
+        except Exception as e:
+            results.append(f"❌ {endpoint} - {str(e)}")
+    
+    return results
 
 
 # New Relic-style Time Selector
