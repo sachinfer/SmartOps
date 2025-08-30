@@ -1,0 +1,19 @@
+{{- if and .Values.dashboard.enabled .Values.dashboard.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "smartops.fullname" . }}-dashboard-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+    app: smartops-dashboard
+spec:
+  accessModes:
+    - {{ .Values.dashboard.persistence.accessMode }}
+  {{- if .Values.dashboard.persistence.storageClass }}
+  storageClassName: {{ .Values.dashboard.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.dashboard.persistence.size }}
+{{- end }}

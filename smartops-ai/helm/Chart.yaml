@@ -1,0 +1,19 @@
+apiVersion: v2
+name: smartops
+description: A Helm chart for SmartOps - AI-powered Kubernetes operations and anomaly detection platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - kubernetes
+  - operations
+  - ai
+  - anomaly-detection
+  - monitoring
+home: https://github.com/sachinfer/SmartOps
+sources:
+  - https://github.com/sachinfer/SmartOps
+maintainers:
+  - name: sachinfer
+    email: support@smartops.ai
+icon: https://raw.githubusercontent.com/sachinfer/SmartOps/main/smartops-ai/misi24x7/misi_24x7_logo.png

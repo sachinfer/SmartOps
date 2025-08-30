@@ -1,0 +1,44 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+{{- if .Values.dashboard.enabled }}
+{{- if eq .Values.dashboard.service.type "LoadBalancer" }}
+The SmartOps Dashboard is being exposed as a LoadBalancer service.
+
+{{- if .Values.global.namespace }}
+You can access the dashboard using the LoadBalancer IP address:
+  $ kubectl get svc -n {{ .Values.global.namespace }} {{ include "smartops.fullname" . }}-dashboard-service
+
+{{- end }}
+{{- else if eq .Values.dashboard.service.type "NodePort" }}
+The SmartOps Dashboard is being exposed as a NodePort service.
+
+{{- if .Values.global.namespace }}
+You can access the dashboard using:
+  $ kubectl get svc -n {{ .Values.global.namespace }} {{ include "smartops.fullname" . }}-dashboard-service
+{{- end }}
+{{- else if eq .Values.dashboard.service.type "ClusterIP" }}
+The SmartOps Dashboard is being exposed as a ClusterIP service.
+
+{{- if .Values.global.namespace }}
+You can access the dashboard using port-forward:
+  $ kubectl port-forward -n {{ .Values.global.namespace }} svc/{{ include "smartops.fullname" . }}-dashboard-service 8501:80
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.anomaly.enabled }}
+The Anomaly Detection service is running and monitoring your cluster for anomalies.
+{{- end }}
+
+{{- if .Values.monitor.enabled }}
+The Monitor service is running as a CronJob to collect metrics every {{ .Values.monitor.cronjob.schedule }}.
+{{- end }}
+
+For more information, visit: {{ .Chart.Home }}

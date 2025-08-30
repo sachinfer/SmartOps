@@ -1,0 +1,131 @@
+{{- if .Values.dashboard.serviceAccount.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.dashboard.serviceAccount.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+  {{- with .Values.dashboard.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.dashboard.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.dashboard.serviceAccount.name }}-role
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+rules:
+  {{- toYaml .Values.dashboard.rbac.rules | nindent 2 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.dashboard.serviceAccount.name }}-rolebinding
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.dashboard.serviceAccount.name }}
+  namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.dashboard.serviceAccount.name }}-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+
+{{- if .Values.anomaly.serviceAccount.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.anomaly.serviceAccount.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+  {{- with .Values.anomaly.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.anomaly.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.anomaly.serviceAccount.name }}-role
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+rules:
+  {{- toYaml .Values.anomaly.rbac.rules | nindent 2 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.anomaly.serviceAccount.name }}-rolebinding
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.anomaly.serviceAccount.name }}
+  namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.anomaly.serviceAccount.name }}-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+
+{{- if .Values.monitor.serviceAccount.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.monitor.serviceAccount.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+  {{- with .Values.monitor.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.monitor.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.monitor.serviceAccount.name }}-role
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+rules:
+  {{- toYaml .Values.monitor.rbac.rules | nindent 2 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.monitor.serviceAccount.name }}-rolebinding
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.monitor.serviceAccount.name }}
+  namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.monitor.serviceAccount.name }}-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

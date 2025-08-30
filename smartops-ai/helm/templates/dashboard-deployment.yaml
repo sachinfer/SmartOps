@@ -1,0 +1,51 @@
+{{- if .Values.dashboard.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smartops.fullname" . }}-dashboard
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+    app: smartops-dashboard
+spec:
+  replicas: {{ .Values.dashboard.replicaCount }}
+  selector:
+    matchLabels:
+      app: smartops-dashboard
+  template:
+    metadata:
+      labels:
+        app: smartops-dashboard
+        {{- include "smartops.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.dashboard.serviceAccount.name }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: dashboard
+        image: {{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}
+        imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
+        ports:
+        - containerPort: 8501
+        {{- if .Values.containerSecurityContext }}
+        securityContext:
+          {{- toYaml .Values.containerSecurityContext | nindent 10 }}
+        {{- end }}
+        {{- if .Values.dashboard.resources }}
+        resources:
+          {{- toYaml .Values.dashboard.resources | nindent 10 }}
+        {{- end }}
+        {{- if .Values.dashboard.persistence.enabled }}
+        volumeMounts:
+        - name: dashboard-data
+          mountPath: /app/dashboard/data
+        {{- end }}
+      {{- if .Values.dashboard.persistence.enabled }}
+      volumes:
+      - name: dashboard-data
+        persistentVolumeClaim:
+          claimName: {{ include "smartops.fullname" . }}-dashboard-pvc
+      {{- end }}
+{{- end }}

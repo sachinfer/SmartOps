@@ -1,0 +1,23 @@
+{{- if .Values.dashboard.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "smartops.fullname" . }}-dashboard-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "smartops.labels" . | nindent 4 }}
+    app: smartops-dashboard
+spec:
+  type: {{ .Values.dashboard.service.type }}
+  selector:
+    app: smartops-dashboard
+  ports:
+    - name: streamlit
+      protocol: TCP
+      port: {{ .Values.dashboard.service.port }}
+      targetPort: {{ .Values.dashboard.service.targetPort }}
+    - name: event-api
+      protocol: TCP
+      port: {{ .Values.dashboard.service.eventApiPort }}
+      targetPort: {{ .Values.dashboard.service.eventApiTargetPort }}
+{{- end }}
