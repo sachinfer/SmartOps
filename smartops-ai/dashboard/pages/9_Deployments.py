@@ -147,8 +147,10 @@ try:
             st.metric("📈 Events Monitored", st.session_state.last_event_count)
             
     with col3:
-        current_time = datetime.now().strftime('%I:%M:%S %p')
-        st.metric("🕐 Current Time", current_time)
+        # Get current time in IST
+        ist_tz = pytz.timezone('Asia/Kolkata')
+        current_time = datetime.now(ist_tz).strftime('%I:%M:%S %p')
+        st.metric("🕐 Current Time (IST)", current_time)
 
     st.markdown("---")
 
