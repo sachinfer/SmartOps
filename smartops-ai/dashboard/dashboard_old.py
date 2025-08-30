@@ -20,30 +20,6 @@ st.set_page_config(
 # Add the current directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Import the Overview page content using importlib
-def import_overview_page():
-    """Import the Overview page using importlib since it starts with a number"""
-    try:
-        # Get the path to the Overview page
-        overview_path = os.path.join(os.path.dirname(__file__), "pages", "1_Overview.py")
-        
-        # Load the module
-        spec = importlib.util.spec_from_file_location("overview", overview_path)
-        overview_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(overview_module)
-        
-        return overview_module.show_page
-    except Exception as e:
-        st.error(f"Error importing Overview page: {e}")
-        # Return a fallback function
-        def fallback_page():
-            st.title("Overview Page")
-            st.write("Error loading Overview page content")
-        return fallback_page
-
-# Get the show_page function
-show_page = import_overview_page()
-
 # Create the sidebar with navigation
 def create_sidebar():
     """Create a comprehensive sidebar with navigation"""
@@ -55,9 +31,6 @@ def create_sidebar():
     
     # Navigation sections
     st.sidebar.markdown("### 📊 **Core Monitoring**")
-    
-    # Current page indicator
-    st.sidebar.markdown("• **🟩 Overview** (Current)")
     
     # Other pages as navigation items
     st.sidebar.markdown("• 🧭 Pod Explorer & Logs")
@@ -115,6 +88,62 @@ def create_sidebar():
 # Show the sidebar
 create_sidebar()
 
-# Show the main page content
+# Main content area
+st.title("🚀 SmartOps Dashboard")
+st.markdown("**Welcome to SmartOps - Enterprise Kubernetes Monitoring by Misi 24x7**")
 st.markdown("---")
-show_page()
+
+# Display overview information
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        label="Active Pods",
+        value="24",
+        delta="+2"
+    )
+
+with col2:
+    st.metric(
+        label="CPU Usage",
+        value="68%",
+        delta="-5%"
+    )
+
+with col3:
+    st.metric(
+        label="Memory Usage",
+        value="72%",
+        delta="+3%"
+    )
+
+st.markdown("---")
+
+# Quick access to key features
+st.subheader("🚀 Quick Access")
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("### 📊 **Monitoring & Analytics**")
+    st.markdown("• [Pod Explorer & Logs](?page=2_Pod_Explorer_and_Logs)")
+    st.markdown("• [Kubernetes Shell](?page=3_Kubernetes_Shell_and_Cluster_Explorer)")
+    st.markdown("• [Anomaly Detection](?page=4_Anomaly_Detection)")
+
+with col2:
+    st.markdown("### ⚡ **Operations & Control**")
+    st.markdown("• [Auto Scaling Control](?page=5_Auto_Scaling_Recommendations_and_Control)")
+    st.markdown("• [Incident Timeline](?page=6_Incident_Timeline_and_Postmortem_Report_Generator)")
+    st.markdown("• [Deployments](?page=9_Deployments)")
+
+st.markdown("---")
+
+# System overview
+st.subheader("📈 System Overview")
+st.info("""
+**SmartOps Dashboard** provides comprehensive monitoring and control for your Kubernetes clusters. 
+Use the navigation in the sidebar to access different features, or click the quick links above.
+""")
+
+# Footer
+st.markdown("---")
+st.markdown("*SmartOps Dashboard - Powered by Misi 24x7*")

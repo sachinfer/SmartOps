@@ -98,11 +98,7 @@ Try asking about:
 What specific SmartOps feature would you like to learn about?"""
 
 # Page configuration
-st.set_page_config(
-    page_title="Misi AI Assistant",
-    page_icon="🤖",
-    layout="wide"
-)
+# Page config is handled by the main app
 
 # Initialize session state for chat history
 if 'misi_chat_history' not in st.session_state:

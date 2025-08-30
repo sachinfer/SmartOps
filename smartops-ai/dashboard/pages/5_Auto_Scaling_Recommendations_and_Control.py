@@ -14,14 +14,7 @@ except ImportError:
 
 def show_page():
     """Main page function - called by the router"""
-    # Page config
-    st.set_page_config(
-        page_title="Auto Scaling Recommendations and Control - SmartOps AI",
-        page_icon="⚡",
-        layout="wide"
-    )
-    
-    # Note: Sidebar is now handled by the router, not here
+    # Note: Page config is handled by the main app, not here
 
     st.title("⚖️ Auto-Scaling Recommendations and Control")
     st.write("""

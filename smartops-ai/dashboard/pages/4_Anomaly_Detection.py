@@ -52,12 +52,7 @@ def load_anomalies_df():
 def has_namespace_column(df):
     return 'namespace' in df.columns
 
-# Page config
-st.set_page_config(
-    page_title="Anomaly Detection - SmartOps AI",
-    page_icon="🔥",
-    layout="wide"
-)
+# Page config is handled by the main app
 
 # Modern CSS styling
 st.markdown("""

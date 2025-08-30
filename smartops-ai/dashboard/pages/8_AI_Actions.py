@@ -20,12 +20,7 @@ def check_api_health():
     except Exception:
         return False
 
-# Page config
-st.set_page_config(
-    page_title="AI Actions - SmartOps AI",
-    page_icon="🤖",
-    layout="wide"
-)
+# Page config is handled by the main app
 
 # Modern CSS styling
 st.markdown("""

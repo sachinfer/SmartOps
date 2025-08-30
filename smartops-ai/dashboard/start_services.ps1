@@ -21,14 +21,14 @@ Write-Host "Checking required files..." -ForegroundColor Yellow
 
 if (-not (Test-Path "event_api.py")) {
     Write-Host "❌ ERROR: event_api.py not found!" -ForegroundColor Red
-    Write-Host "Expected files: event_api.py, pages/1_Overview.py" -ForegroundColor Yellow
+    Write-Host "Expected files: event_api.py, main.py" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-if (-not (Test-Path "pages/1_Overview.py")) {
-    Write-Host "❌ ERROR: pages/1_Overview.py not found!" -ForegroundColor Red
-    Write-Host "Expected files: event_api.py, pages/1_Overview.py" -ForegroundColor Yellow
+if (-not (Test-Path "main.py")) {
+    Write-Host "❌ ERROR: main.py not found!" -ForegroundColor Red
+    Write-Host "Expected files: event_api.py, main.py" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -83,7 +83,7 @@ Start-Sleep -Seconds 3
 
 # Start Streamlit frontend
 Write-Host "🎨 Starting Streamlit frontend service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; streamlit run pages/1_Overview.py --server.port=8501 --server.address=0.0.0.0" -WindowStyle Normal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; streamlit run main.py --server.port=8501 --server.address=0.0.0.0" -WindowStyle Normal
 
 Write-Host ""
 Write-Host "🎉 All services started successfully!" -ForegroundColor Green

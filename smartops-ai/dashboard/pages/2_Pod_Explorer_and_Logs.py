@@ -19,13 +19,7 @@ except ImportError:
     MISI_AVAILABLE = False
     st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
-# Page config - Fix routing issues
-st.set_page_config(
-    page_title="Pod Explorer",
-    page_icon="🛰️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Page config is handled by the main app
 
 # Custom CSS for better styling - matching Deployment page
 st.markdown("""

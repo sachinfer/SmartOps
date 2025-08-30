@@ -15,14 +15,14 @@ echo.
 echo Checking required files...
 if not exist "event_api.py" (
     echo ❌ ERROR: event_api.py not found!
-    echo Expected files: event_api.py, pages/1_Overview.py
+    echo Expected files: event_api.py, main.py
     pause
     exit /b 1
 )
 
-if not exist "pages\1_Overview.py" (
-    echo ❌ ERROR: pages\1_Overview.py not found!
-    echo Expected files: event_api.py, pages/1_Overview.py
+if not exist "main.py" (
+    echo ❌ ERROR: main.py not found!
+    echo Expected files: event_api.py, main.py
     pause
     exit /b 1
 )
@@ -30,7 +30,7 @@ if not exist "pages\1_Overview.py" (
 echo ✅ All required files found!
 echo.
 
-start "Streamlit Frontend" cmd /k "streamlit run pages/1_Overview.py --server.port=8501 --server.address=0.0.0.0"
+start "Streamlit Frontend" cmd /k "streamlit run main.py --server.port=8501 --server.address=0.0.0.0"
 
 echo.
 echo ✅ Both services are starting up!

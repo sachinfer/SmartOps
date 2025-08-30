@@ -60,13 +60,7 @@ def show_simple_sidebar():
     st.sidebar.markdown("---")
     st.sidebar.markdown("*SmartOps AI Dashboard*")
 
-# Page config - MUST be the first Streamlit command
-st.set_page_config(
-    page_title="Kubernetes Cluster Overview - SmartOps AI",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Page config is handled by the main app
 
 # Show the simple sidebar
 show_simple_sidebar()

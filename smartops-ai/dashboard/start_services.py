@@ -72,7 +72,7 @@ def start_streamlit():
     try:
         # Start Streamlit in background
         process = subprocess.Popen([
-            sys.executable, "-m", "streamlit", "run", "pages/1_Overview.py",
+            sys.executable, "-m", "streamlit", "run", "main.py",
             "--server.port", "8501", "--server.address", "0.0.0.0"
         ], cwd=Path(__file__).parent)
         
@@ -96,9 +96,9 @@ def main():
     print("=" * 50)
     
     # Check if we're in the right directory
-    if not Path("event_api.py").exists() or not Path("pages/1_Overview.py").exists():
+    if not Path("event_api.py").exists() or not Path("main.py").exists():
         print("❌ Please run this script from the dashboard directory")
-        print("   Expected files: event_api.py, pages/1_Overview.py")
+        print("   Expected files: event_api.py, main.py")
         sys.exit(1)
     
     # Check dependencies
