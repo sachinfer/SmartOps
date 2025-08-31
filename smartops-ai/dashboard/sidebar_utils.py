@@ -227,6 +227,7 @@ def show_sidebar():
     st.sidebar.markdown("• Incident Timeline")
     st.sidebar.markdown("• AI Assistant")
     st.sidebar.markdown("• AI Actions")
+    st.sidebar.markdown("• Pod Management & Kill")
     st.sidebar.markdown("• Deployments")
     
     st.sidebar.markdown("---")
