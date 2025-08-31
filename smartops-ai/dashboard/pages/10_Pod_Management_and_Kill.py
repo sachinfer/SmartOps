@@ -114,51 +114,16 @@ def show_page():
         # Handle nested structure where pods might be inside a 'pods' key
         if isinstance(pods_data, dict) and 'pods' in pods_data:
             actual_pods = pods_data['pods']
-            st.info(f"🔍 Debug: Found nested structure with 'pods' key containing {len(actual_pods) if actual_pods else 0} pods")
         else:
             actual_pods = pods_data
-            st.info(f"🔍 Debug: Using direct pod data structure with {len(actual_pods) if actual_pods else 0} pods")
         
         if not actual_pods:
             st.warning("⚠️ No pod data found in the response")
-            st.info("🔍 This could mean:")
-            st.info("   • No pods are currently running in SmartOps namespace")
-            st.info("   • API is not returning the expected data structure")
-            st.info("   • There's a namespace filtering issue")
-            
-            # Show sample data for demonstration
-            st.markdown("#### 📋 Sample Data for Testing")
-            sample_pods = [
-                {
-                    "name": "smartops-dashboard-12345",
-                    "status": "Running",
-                    "ready": "1/1",
-                    "age": "2h",
-                    "cpu_usage": "50m",
-                    "memory_usage": "128Mi"
-                },
-                {
-                    "name": "smartops-api-67890",
-                    "status": "Running", 
-                    "ready": "1/1",
-                    "age": "1h",
-                    "cpu_usage": "25m",
-                    "memory_usage": "64Mi"
-                }
-            ]
-            
-            st.info("📊 Showing sample data for demonstration purposes")
-            actual_pods = sample_pods
+            return
         
         pods_df = pd.DataFrame(actual_pods)
         
-        # Debug: Show what columns we actually have
-        st.info(f"🔍 Debug: DataFrame columns: {list(pods_df.columns)}")
-        st.info(f"🔍 Debug: First row: {pods_df.iloc[0].to_dict() if len(pods_df) > 0 else 'No data'}")
-        
-        # Debug: Show the full API response structure
-        st.info(f"🔍 Debug: Full API response structure: {pods_data}")
-        st.info(f"🔍 Debug: Actual pods data: {actual_pods}")
+
         
         # Get real-time resource usage for each pod (optional)
         pod_resources = get_pod_resource_usage()
