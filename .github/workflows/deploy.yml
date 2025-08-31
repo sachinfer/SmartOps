@@ -8,6 +8,7 @@ on:
       - gcp2
       - dash
       - misi
+      - kill
   workflow_dispatch:
 
 jobs:
