@@ -18,6 +18,54 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Force wide layout with additional CSS and JavaScript
+st.markdown("""
+<style>
+    /* Force wide layout override */
+    .reportview-container .main .block-container {
+        max-width: 100% !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        width: 100% !important;
+    }
+    
+    /* Override Streamlit's default wide layout */
+    .wide .block-container {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+</style>
+
+<script>
+    // JavaScript to force full width
+    function forceFullWidth() {
+        // Override any remaining width constraints
+        const containers = document.querySelectorAll('.block-container, .main, [data-testid="stAppViewContainer"]');
+        containers.forEach(container => {
+            container.style.maxWidth = '100%';
+            container.style.width = '100%';
+            container.style.margin = '0';
+            container.style.paddingLeft = '0.5rem';
+            container.style.paddingRight = '0.5rem';
+        });
+        
+        // Force all content to full width
+        const content = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric, .stColumns');
+        content.forEach(element => {
+            element.style.width = '100%';
+            element.style.maxWidth = '100%';
+        });
+    }
+    
+    // Run on page load and after any dynamic content
+    document.addEventListener('DOMContentLoaded', forceFullWidth);
+    window.addEventListener('load', forceFullWidth);
+    
+    // Run periodically to catch any dynamic content
+    setInterval(forceFullWidth, 1000);
+</script>
+""", unsafe_allow_html=True)
+
 # Custom CSS for dark theme and full-width
 st.markdown("""
 <style>
@@ -103,31 +151,112 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Force full width */
+    /* Force full width - More aggressive overrides */
     .main .block-container {
         max-width: 100% !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
+        width: 100% !important;
     }
     
     /* Override Streamlit's default max-width */
     .block-container {
         max-width: 100% !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        width: 100% !important;
     }
     
     /* Ensure the main content area uses full width */
     .main {
         width: 100% !important;
         max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Override Streamlit's default container */
+    .stApp > div:first-child {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Force all containers to full width */
+    .stApp > div {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Override any remaining width constraints */
+    [data-testid="stAppViewContainer"] {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Additional aggressive overrides */
+    .stApp > div[data-testid="stAppViewContainer"] {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Override any CSS variables that might be setting width */
+    :root {
+        --main-width: 100% !important;
+        --max-width: 100% !important;
+    }
+    
+    /* Force all direct children to full width */
+    .stApp > * {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Override any remaining container constraints */
+    .stApp > div > div {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Ensure sidebar doesn't affect main content width */
+    .main .block-container {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
     }
     
     /* Ensure all content uses full width */
     .stMarkdown, .stDataFrame, .stMetric, .stColumns {
         width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Force columns to use full width */
+    .stColumns > div {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Override any remaining width constraints */
+    .stMarkdown > div {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Ensure metric cards use full width */
+    .metric-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Force navigation cards to full width */
+    .nav-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     /* Better spacing for wide layout */
@@ -229,38 +358,80 @@ def import_page(page_name):
             
             # Check if the page has a show_page function
             if hasattr(page_module, 'show_page'):
-                # Create a wrapper that applies consistent styling
+                # Create a wrapper that applies consistent styling and error handling
                 def styled_page():
-                    # Apply page-specific styling
-                    st.markdown(f"""
-                    <style>
-                        /* Page-specific full-width styling */
-                        .stPage {{
-                            background-color: #0e1117 !important;
-                            color: #fafafa !important;
-                        }}
+                    try:
+                        # Apply page-specific styling
+                        st.markdown(f"""
+                        <style>
+                            /* Page-specific full-width styling */
+                            .stPage {{
+                                background-color: #0e1117 !important;
+                                color: #fafafa !important;
+                            }}
+                            
+                            /* Force full width for this page - More aggressive */
+                            .main .block-container {{
+                                max-width: 100% !important;
+                                padding-left: 0.5rem !important;
+                                padding-right: 0.5rem !important;
+                                width: 100% !important;
+                                margin: 0 !important;
+                            }}
+                            
+                            /* Override all container constraints */
+                            .block-container {{
+                                max-width: 100% !important;
+                                width: 100% !important;
+                                padding: 0.5rem !important;
+                                margin: 0 !important;
+                            }}
+                            
+                            /* Force all elements to full width */
+                            .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable {{
+                                width: 100% !important;
+                                max-width: 100% !important;
+                            }}
+                            
+                            /* Override Streamlit's default layout */
+                            [data-testid="stAppViewContainer"] {{
+                                max-width: 100% !important;
+                                width: 100% !important;
+                            }}
+                            
+                            /* Better spacing */
+                            .stMarkdown {{
+                                margin-bottom: 1rem;
+                            }}
+                            
+                            /* Ensure no horizontal scrolling */
+                            .stApp {{
+                                max-width: 100% !important;
+                                width: 100% !important;
+                            }}
+                        </style>
+                        """, unsafe_allow_html=True)
                         
-                        /* Force full width for this page */
-                        .main .block-container {{
-                            max-width: 100% !important;
-                            padding-left: 1rem !important;
-                            padding-right: 1rem !important;
-                        }}
+                        # Call the original page function with error handling
+                        page_module.show_page()
                         
-                        /* Ensure all elements use full width */
-                        .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable {{
-                            width: 100% !important;
-                        }}
+                    except Exception as page_error:
+                        st.error(f"Error displaying page {page_name}: {page_error}")
+                        st.info("Showing fallback content...")
                         
-                        /* Better spacing */
-                        .stMarkdown {{
-                            margin-bottom: 1rem;
-                        }}
-                    </style>
-                    """, unsafe_allow_html=True)
-                    
-                    # Call the original page function
-                    page_module.show_page()
+                        # Show fallback content
+                        st.title(f"📄 {page_name.replace('_', ' ').title()}")
+                        st.markdown("---")
+                        st.warning("⚠️ There was an error loading this page. Please check the console for details.")
+                        
+                        # Try to show basic page info
+                        try:
+                            if hasattr(page_module, '__doc__') and page_module.__doc__:
+                                st.markdown(f"**Description:** {page_module.__doc__}")
+                        except:
+                            pass
+                        
+                        st.info("🔧 **Troubleshooting:** Check if all required dependencies are installed and the page file is accessible.")
                 
                 return styled_page
             else:
@@ -279,11 +450,13 @@ def import_page(page_name):
                     """, unsafe_allow_html=True)
                     st.title(f"{page_name.replace('_', ' ').title()}")
                     st.write(f"Content for {page_name}")
+                    st.warning("⚠️ This page doesn't have a show_page() function defined.")
                 return simple_page
         else:
             return None
     except Exception as e:
         st.error(f"Error importing {page_name}: {e}")
+        st.info("This usually means there's a syntax error or missing dependency in the page file.")
         return None
 
 # Main dashboard content
@@ -489,11 +662,19 @@ def main():
         show_main_dashboard()
     else:
         # Try to import and show the selected page
-        page_function = import_page(current_page)
-        if page_function:
-            page_function()
-        else:
-            st.error(f"Page {current_page} not found or has errors")
+        st.sidebar.info(f"🔄 Loading page: {current_page}")
+        
+        try:
+            page_function = import_page(current_page)
+            if page_function:
+                st.sidebar.success(f"✅ Page loaded: {current_page}")
+                page_function()
+            else:
+                st.error(f"❌ Page {current_page} not found or has errors")
+                st.info("Falling back to main dashboard")
+                show_main_dashboard()
+        except Exception as e:
+            st.error(f"❌ Error loading page {current_page}: {e}")
             st.info("Falling back to main dashboard")
             show_main_dashboard()
 
