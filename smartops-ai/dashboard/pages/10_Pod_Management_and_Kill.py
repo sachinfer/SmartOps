@@ -50,8 +50,12 @@ def show_page():
                             }
                 return pod_metrics
             else:
+                # If kubectl top fails, return empty dict but don't break the page
+                st.info("ℹ️ Resource usage not available (kubectl permissions required)")
                 return {}
-        except Exception:
+        except Exception as e:
+            # If any error occurs, return empty dict but don't break the page
+            st.info("ℹ️ Resource usage not available (kubectl not accessible)")
             return {}
     
     # Function to get all pods
@@ -224,7 +228,9 @@ def show_page():
                         return "✅ NORMAL"
                 except:
                     return "❓ UNKNOWN"
-            return "❓ UNKNOWN"
+            else:
+                # If no resource data available, show as normal
+                return "✅ NORMAL"
         
         pods_df["Stress_Level"] = pods_df.apply(get_stress_indicator, axis=1)
         
