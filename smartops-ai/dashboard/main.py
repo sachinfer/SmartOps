@@ -327,6 +327,40 @@ def create_sidebar():
         if st.button("📊 Status", use_container_width=True):
             st.sidebar.success("✅ All systems operational")
     
+    # Debug button for troubleshooting
+    if st.button("🔍 Debug Pages", use_container_width=True):
+        st.sidebar.info("🔍 Debug mode activated")
+        st.info("Check the main area for debug information")
+        
+        # Show debug info
+        st.subheader("🔍 Page Debug Information")
+        
+        # Check all page files
+        pages_dir = os.path.join(os.path.dirname(__file__), "pages")
+        if os.path.exists(pages_dir):
+            st.success(f"✅ Pages directory found: {pages_dir}")
+            
+            page_files = [f for f in os.listdir(pages_dir) if f.endswith('.py')]
+            st.info(f"📁 Found {len(page_files)} page files:")
+            
+            for page_file in sorted(page_files):
+                page_path = os.path.join(pages_dir, page_file)
+                try:
+                    # Try to import each page
+                    spec = importlib.util.spec_from_file_location(page_file[:-3], page_path)
+                    page_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(page_module)
+                    
+                    if hasattr(page_module, 'show_page'):
+                        st.success(f"✅ {page_file} - show_page() function found")
+                    else:
+                        st.warning(f"⚠️ {page_file} - No show_page() function")
+                        
+                except Exception as e:
+                    st.error(f"❌ {page_file} - Import error: {str(e)[:100]}...")
+        else:
+            st.error(f"❌ Pages directory not found: {pages_dir}")
+    
     # System status
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📈 **System Status**")
