@@ -4,121 +4,71 @@ import requests
 from datetime import datetime
 
 def show_page():
-    """Pod Management and Kill Page - Accessible from SmartOps Navigation Bar"""
-    
     st.title("🔴 Pod Management & Kill Operations")
-    st.markdown("**Monitor and manage pods in real-time. Kill stressed or problematic pods directly from this dashboard.**")
+    st.markdown("Monitor and manage pods in real-time. Kill stressed or problematic pods directly from this dashboard.")
     
-    # API URL
+    # Configuration
     API_URL = "http://localhost:8000"
-    
     
     
     # Function to get individual pod resource usage
     def get_pod_resource_usage():
         try:
-            # Use kubectl top pods to get real-time resource usage
-            import subprocess
-            result = subprocess.run(
-                ["kubectl", "top", "pods", "-n", "smartops", "--no-headers"],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            if result.returncode == 0:
-                pod_metrics = {}
-                for line in result.stdout.strip().split('\n'):
-                    if line.strip():
-                        parts = line.split()
-                        if len(parts) >= 3:
-                            pod_name = parts[0]
-                            cpu = parts[1]
-                            memory = parts[2]
-                            pod_metrics[pod_name] = {
-                                "cpu": cpu,
-                                "memory": memory
-                            }
-                return pod_metrics
+            response = requests.get(f"{API_URL}/pod_resources", timeout=10)
+            if response.status_code == 200:
+                return response.json()
             else:
-                # If kubectl top fails, return empty dict but don't break the page
                 st.info("ℹ️ Resource usage not available (kubectl permissions required)")
                 return {}
-        except Exception as e:
-            # If any error occurs, return empty dict but don't break the page
-            st.info("ℹ️ Resource usage not available (kubectl not accessible)")
+        except Exception:
+            st.info("ℹ️ Resource usage not available (kubectl permissions required)")
             return {}
     
     # Function to get all pods
     def get_all_pods():
         try:
-            response = requests.get(f"{API_URL}/pods", params={"namespace": "smartops"}, timeout=10)
+            response = requests.get(f"{API_URL}/pods", timeout=10)
             if response.status_code == 200:
-                return response.json().get("pods", [])
+                pods = response.json()
+                return pods
             else:
-                st.warning(f"⚠️ API returned status {response.status_code}")
+                st.error(f"API Error: {response.status_code}")
                 return []
         except Exception as e:
-            st.warning(f"⚠️ API connection failed: {str(e)}")
-            # Fallback: Try to get pods using kubectl
-            try:
-                import subprocess
-                result = subprocess.run(
-                    ["kubectl", "get", "pods", "-n", "smartops", "-o", "json"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
-                if result.returncode == 0:
-                    import json
-                    pods_json = json.loads(result.stdout)
-                    pods = []
-                    for pod in pods_json.get("items", []):
-                        pod_data = {
-                            "name": pod["metadata"]["name"],
-                            "ready": f"{pod['status']['readyReplicas']}/{pod['spec']['replicas']}" if 'readyReplicas' in pod['status'] else "1/1",
-                            "status": pod["status"]["phase"],
-                            "age": "unknown",  # Would need to calculate from creationTimestamp
-                            "namespace": pod["metadata"]["namespace"]
-                        }
-                        pods.append(pod_data)
-                    return pods
-                else:
-                    st.error(f"⚠️ kubectl fallback failed: {result.stderr}")
-                    return []
-            except Exception as kubectl_error:
-                st.error(f"⚠️ kubectl fallback error: {str(kubectl_error)}")
-                return []
+            st.error(f"Connection Error: {str(e)}")
+            # Fallback to kubectl command if API is not available
+            return get_pods_kubectl_fallback()
+    
+    # Fallback function using kubectl command
+    def get_pods_kubectl_fallback():
+        try:
+            # This would be a fallback if the API is not working
+            st.info("Trying kubectl fallback...")
+            
+            # For now, return empty list if API is not available
+            return []
+        except Exception as e:
+            st.error(f"Kubectl fallback failed: {str(e)}")
+            return []
     
     # Function to kill a pod
-    def kill_pod(pod_name, namespace="smartops"):
+    def kill_pod(pod_name):
         try:
-            # Use kubectl delete command
-            import subprocess
-            result = subprocess.run(
-                ["kubectl", "delete", "pod", pod_name, "-n", namespace],
-                capture_output=True,
-                text=True,
-                timeout=30
-            )
-            if result.returncode == 0:
-                return True, f"Pod {pod_name} killed successfully"
+            response = requests.delete(f"{API_URL}/pods/{pod_name}", timeout=10)
+            if response.status_code == 200:
+                return True, f"✅ Successfully killed pod: {pod_name}"
             else:
-                return False, f"Failed to kill pod: {result.stderr}"
+                return False, f"❌ Failed to kill pod: {response.text}"
         except Exception as e:
-            # Fallback: Try to use the API if kubectl is not available
-            try:
-                st.info(f"🔄 kubectl not available, trying API fallback...")
-                # This would be implemented in the API
-                return False, f"kubectl not available in container. Use: kubectl delete pod {pod_name} -n {namespace}"
-            except Exception as api_error:
-                return False, f"Error killing pod: {str(e)}. Manual command: kubectl delete pod {pod_name} -n {namespace}"
+            return False, f"❌ Error killing pod: {str(e)}"
     
-    # Real-time monitoring section
+    # Refresh button
     st.markdown("### 📊 Real-Time Pod Monitoring")
     
-    # Auto-refresh every 10 seconds
-    if st.button("🔄 Refresh Data", key="refresh_btn"):
-        st.rerun()
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        if st.button("🔄 Refresh Data", key="refresh_btn"):
+            st.rerun()
     
     # Get current pod data
     pods_data = get_all_pods()
@@ -217,26 +167,9 @@ def show_page():
         available_columns = pods_df.columns.tolist()
         
         # Define required columns with fallbacks
-        display_columns = []
-        column_names = []
+        display_columns = ["name", "Status_Display", "ready", "age"]
+        column_names = ["Pod Name", "Status", "Ready", "Age"]
         
-        if "name" in available_columns:
-            display_columns.append("name")
-            column_names.append("Pod Name")
-        
-        if "Status_Display" in available_columns:
-            display_columns.append("Status_Display")
-            column_names.append("Status")
-        
-        if "ready" in available_columns:
-            display_columns.append("ready")
-            column_names.append("Ready")
-        
-        if "age" in available_columns:
-            display_columns.append("age")
-            column_names.append("Age")
-        
-        # Add resource usage columns
         if "cpu_usage" in available_columns:
             display_columns.append("cpu_usage")
             column_names.append("CPU Usage")
@@ -258,10 +191,10 @@ def show_page():
         display_df = pods_df[display_columns].copy()
         display_df.columns = column_names
         
-         # Show stress-pod information
-         stress_pod_row = display_df[display_df['Pod Name'] == 'stress-pod']
-         if len(stress_pod_row) > 0:
-             st.warning("🚨 **STRESSED POD DETECTED**: `stress-pod` is currently consuming high CPU and should show as 🚨 HIGH stress level!")
+        # Show stress-pod information
+        stress_pod_row = display_df[display_df['Pod Name'] == 'stress-pod']
+        if len(stress_pod_row) > 0:
+            st.warning("🚨 **STRESSED POD DETECTED**: `stress-pod` is currently consuming high CPU and should show as 🚨 HIGH stress level!")
         
         # Display pods in clean format
         st.markdown("**📋 Pod List (All Pods in SmartOps Namespace):**")
@@ -316,9 +249,9 @@ def show_page():
                 else:
                     st.info("ℹ️ Container information not available")
                 
-                 # Resource usage display
-                 st.markdown("#### 📊 Resource Usage")
-                 st.info("ℹ️ Resource usage monitoring requires kubectl permissions")
+                # Resource usage display
+                st.markdown("#### 📊 Resource Usage")
+                st.info("ℹ️ Resource usage monitoring requires kubectl permissions")
                 
                 # Action buttons
                 st.markdown("#### 🎯 Available Actions")
