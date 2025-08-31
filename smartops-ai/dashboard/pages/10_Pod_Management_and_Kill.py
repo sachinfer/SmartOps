@@ -166,10 +166,10 @@ def show_page():
         # Convert to DataFrame for better display
         pods_df = pd.DataFrame(pods_data)
         
-        # Get real-time resource usage for each pod
+        # Get real-time resource usage for each pod (optional)
         pod_resources = get_pod_resource_usage()
         
-        # Add resource usage columns
+        # Add resource usage columns (with fallbacks)
         def get_pod_cpu(pod_name):
             if pod_name in pod_resources:
                 return pod_resources[pod_name].get("cpu", "N/A")
@@ -180,6 +180,7 @@ def show_page():
                 return pod_resources[pod_name].get("memory", "N/A")
             return "N/A"
         
+        # Always add these columns, even if empty
         pods_df["cpu_usage"] = pods_df["name"].apply(get_pod_cpu)
         pods_df["memory_usage"] = pods_df["name"].apply(get_pod_memory)
         
@@ -232,6 +233,7 @@ def show_page():
                 # If no resource data available, show as normal
                 return "✅ NORMAL"
         
+        # Always add stress level column
         pods_df["Stress_Level"] = pods_df.apply(get_stress_indicator, axis=1)
         
         # Handle missing columns gracefully
