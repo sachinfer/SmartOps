@@ -291,15 +291,31 @@ def show_page():
         if len(stress_pod_row) > 0:
             st.warning("🚨 **STRESSED POD DETECTED**: `stress-pod` is currently consuming high CPU (982m) and should show as 🚨 HIGH stress level!")
         
-        # Display the table
+        # Display the table - use text format as primary since dataframe isn't working
+        st.markdown("**📋 Pod List (All Pods in SmartOps Namespace):**")
+        
+        # Create a nice formatted display
+        for idx, row in display_df.iterrows():
+            pod_name = row['Pod Name']
+            status = row['Status']
+            ready = row['Ready']
+            age = row['Age']
+            stress_level = row['Stress Level']
+            
+            # Highlight stressed pods
+            if stress_level == "🚨 HIGH":
+                st.error(f"🚨 **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
+            elif stress_level == "⚠️ MODERATE":
+                st.warning(f"⚠️ **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
+            else:
+                st.success(f"✅ **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
+        
+        # Also try the dataframe as fallback
         try:
+            st.markdown("**📊 Pod Table (Alternative View):**")
             st.dataframe(display_df, width='stretch')
         except Exception as e:
-            st.error(f"❌ Error displaying pod table: {str(e)}")
-            # Fallback: Show as text
-            st.markdown("**Pod List (Text Format):**")
-            for idx, row in display_df.iterrows():
-                st.text(f"{row['Pod Name']} | {row['Status']} | {row['Ready']} | {row['Age']}")
+            st.info("ℹ️ Table view not available, using text format above")
         
         # Pod actions section
         st.markdown("### ⚡ Pod Actions")
@@ -422,44 +438,20 @@ def show_page():
     st.markdown("### 🚨 Stressed Pods Summary")
     
     if pods_data:
-        # Count stressed pods
+        # Count stressed pods using the DataFrame stress levels
         high_stress_count = 0
         moderate_stress_count = 0
         normal_count = 0
         
-        for pod in pods_data:
-            pod_name = pod.get("name", "")
-            if pod_name in pod_resources:
-                resources = pod_resources[pod_name]
-                cpu = resources.get("cpu", "N/A")
-                memory = resources.get("memory", "N/A")
-                
-                if cpu != "N/A" and memory != "N/A":
-                    try:
-                        # Check CPU stress
-                        if "m" in cpu:
-                            cpu_val = float(cpu.replace("m", "")) / 1000
-                        else:
-                            cpu_val = float(cpu)
-                        
-                        # Check memory stress
-                        if "Mi" in memory:
-                            mem_val = float(memory.replace("Mi", ""))
-                        elif "Gi" in memory:
-                            mem_val = float(memory.replace("Gi", "")) * 1024
-                        else:
-                            mem_val = 0
-                        
-                        if cpu_val > 0.5 or mem_val > 200:
-                            high_stress_count += 1
-                        elif cpu_val > 0.2 or mem_val > 100:
-                            moderate_stress_count += 1
-                        else:
-                            normal_count += 1
-                    except:
-                        normal_count += 1
-                else:
-                    normal_count += 1
+        # Count based on the stress levels we calculated
+        for idx, row in pods_df.iterrows():
+            stress_level = row.get("Stress_Level", "✅ NORMAL")
+            if stress_level == "🚨 HIGH":
+                high_stress_count += 1
+            elif stress_level == "⚠️ MODERATE":
+                moderate_stress_count += 1
+            else:
+                normal_count += 1
         
         # Display stress summary
         col1, col2, col3 = st.columns(3)
