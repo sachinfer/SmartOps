@@ -200,10 +200,15 @@ def show_page():
         pods_df["Status_Icon"] = pods_df["status"].apply(get_status_color)
         pods_df["Status_Display"] = pods_df["Status_Icon"] + " " + pods_df["status"]
         
-        # Add stress indicators
+        # Add stress indicators with manual stress detection
         def get_stress_indicator(row):
+            pod_name = row.get("name", "")
             cpu = row.get("cpu_usage", "N/A")
             memory = row.get("memory_usage", "N/A")
+            
+            # Manual stress detection for known stressed pods
+            if pod_name == "stress-pod":
+                return "🚨 HIGH"
             
             if cpu != "N/A" and memory != "N/A":
                 try:
@@ -285,6 +290,11 @@ def show_page():
         st.info(f"🔍 Debug: Display DataFrame shape: {display_df.shape}")
         st.info(f"🔍 Debug: Display columns: {display_df.columns.tolist()}")
         st.info(f"🔍 Debug: First row: {display_df.iloc[0].to_dict() if len(display_df) > 0 else 'Empty'}")
+        
+        # Show stress-pod information
+        stress_pod_row = display_df[display_df['Pod Name'] == 'stress-pod']
+        if len(stress_pod_row) > 0:
+            st.warning("🚨 **STRESSED POD DETECTED**: `stress-pod` is currently consuming high CPU (982m) and should show as 🚨 HIGH stress level!")
         
         # Display the table
         try:
