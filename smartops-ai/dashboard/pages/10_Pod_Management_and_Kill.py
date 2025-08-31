@@ -86,7 +86,19 @@ def show_page():
         st.markdown("#### 🚀 Current Pods in SmartOps Namespace")
         
         # Convert to DataFrame for better display
-        pods_df = pd.DataFrame(pods_data)
+        # Handle nested structure where pods might be inside a 'pods' key
+        if isinstance(pods_data, dict) and 'pods' in pods_data:
+            actual_pods = pods_data['pods']
+            st.info(f"🔍 Debug: Found nested structure with 'pods' key containing {len(actual_pods) if actual_pods else 0} pods")
+        else:
+            actual_pods = pods_data
+            st.info(f"🔍 Debug: Using direct pod data structure with {len(actual_pods) if actual_pods else 0} pods")
+        
+        if not actual_pods:
+            st.warning("⚠️ No pod data found in the response")
+            return
+        
+        pods_df = pd.DataFrame(actual_pods)
         
         # Debug: Show what columns we actually have
         st.info(f"🔍 Debug: DataFrame columns: {list(pods_df.columns)}")
@@ -274,12 +286,12 @@ def show_page():
         st.markdown("### ⚡ Pod Actions")
         
         # Select pod to manage
-        pod_names = [pod.get(pod_name_column, "unknown") for pod in pods_data]
+        pod_names = [pod.get(pod_name_column, "unknown") for pod in actual_pods]
         selected_pod = st.selectbox("Select Pod to Manage", pod_names, key="pod_selector")
         
         if selected_pod:
             # Get selected pod details
-            selected_pod_data = next((pod for pod in pods_data if pod.get(pod_name_column, "") == selected_pod), None)
+            selected_pod_data = next((pod for pod in actual_pods if pod.get(pod_name_column, "") == selected_pod), None)
             
             if selected_pod_data:
                 st.markdown(f"#### 📋 Pod Details: **{selected_pod}**")
