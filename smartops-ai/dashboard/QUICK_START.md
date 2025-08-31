@@ -42,7 +42,7 @@ python start_services.py
 python event_api.py
 
 # Terminal 2: Start dashboard (in new terminal)
-streamlit run pages/1_Overview.py
+streamlit run main.py
 ```
 
 ### 3. Access Dashboard
@@ -56,7 +56,7 @@ streamlit run pages/1_Overview.py
 ### Port Configuration
 
 - **API Port**: Default 8000
-- **Dashboard Port**: Use `streamlit run pages/1_Overview.py --server.port 8502`
+- **Dashboard Port**: Use `streamlit run main.py --server.port 8502`
 
 ### Environment Variables
 
@@ -78,7 +78,7 @@ cp config.env.example config.env
 ### Debug Mode
 
 ```bash
-streamlit run pages/1_Overview.py --logger.level debug
+streamlit run main.py --logger.level debug
 ```
 
 ## 📚 Next Steps
