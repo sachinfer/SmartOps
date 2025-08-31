@@ -273,7 +273,7 @@ def show_page():
         display_df = pods_df[display_columns].copy()
         display_df.columns = column_names
         
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(display_df, width='stretch')
         
         # Pod actions section
         st.markdown("### ⚡ Pod Actions")
