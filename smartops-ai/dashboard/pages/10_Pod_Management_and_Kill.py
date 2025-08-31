@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import requests
-import time
 from datetime import datetime
 
 def show_page():
@@ -13,16 +12,7 @@ def show_page():
     # API URL
     API_URL = "http://localhost:8000"
     
-    # Function to get pod metrics
-    def get_pod_metrics():
-        try:
-            response = requests.get(f"{API_URL}/cluster_metrics", timeout=10)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return None
-        except Exception:
-            return None
+    
     
     # Function to get individual pod resource usage
     def get_pod_resource_usage():
@@ -133,31 +123,13 @@ def show_page():
     # Get current pod data
     pods_data = get_all_pods()
     
-    # Show pod count info
-    if pods_data:
-        st.info(f"📊 API returned {len(pods_data)} pods")
-    
-    if not pods_data:
-        st.warning("⚠️ Unable to fetch pod data. Please check if the API service is running.")
-        # Show sample data for demonstration
-        st.info("Showing sample data for demonstration:")
-        sample_pods = [
-            {
-                "name": "stress-test-pod",
-                "ready": "1/1",
-                "status": "Running",
-                "age": "2m",
-                "namespace": "smartops"
-            },
-            {
-                "name": "smartops-app-7456b5c68-rw4j8",
-                "ready": "1/1",
-                "status": "Running",
-                "age": "10h",
-                "namespace": "smartops"
-            }
-        ]
-        pods_data = sample_pods
+         # Show pod count info
+     if pods_data:
+         st.info(f"📊 Found {len(pods_data)} pods in SmartOps namespace")
+     
+     if not pods_data:
+         st.warning("⚠️ Unable to fetch pod data. Please check if the API service is running.")
+         return
     
     # Display pods in a table
     if pods_data:
@@ -286,12 +258,12 @@ def show_page():
         display_df = pods_df[display_columns].copy()
         display_df.columns = column_names
         
-        # Show stress-pod information
-        stress_pod_row = display_df[display_df['Pod Name'] == 'stress-pod']
-        if len(stress_pod_row) > 0:
-            st.warning("🚨 **STRESSED POD DETECTED**: `stress-pod` is currently consuming high CPU (982m) and should show as 🚨 HIGH stress level!")
+         # Show stress-pod information
+         stress_pod_row = display_df[display_df['Pod Name'] == 'stress-pod']
+         if len(stress_pod_row) > 0:
+             st.warning("🚨 **STRESSED POD DETECTED**: `stress-pod` is currently consuming high CPU and should show as 🚨 HIGH stress level!")
         
-        # Display the table - use text format as primary since dataframe isn't working
+        # Display pods in clean format
         st.markdown("**📋 Pod List (All Pods in SmartOps Namespace):**")
         
         # Create a nice formatted display
@@ -309,13 +281,6 @@ def show_page():
                 st.warning(f"⚠️ **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
             else:
                 st.success(f"✅ **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
-        
-        # Also try the dataframe as fallback
-        try:
-            st.markdown("**📊 Pod Table (Alternative View):**")
-            st.dataframe(display_df, width='stretch')
-        except Exception as e:
-            st.info("ℹ️ Table view not available, using text format above")
         
         # Pod actions section
         st.markdown("### ⚡ Pod Actions")
@@ -351,56 +316,9 @@ def show_page():
                 else:
                     st.info("ℹ️ Container information not available")
                 
-                # Resource usage display
-                st.markdown("#### 📊 Resource Usage")
-                pod_resources = get_pod_resource_usage()
-                if selected_pod in pod_resources:
-                    resources = pod_resources[selected_pod]
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        cpu = resources.get("cpu", "N/A")
-                        st.metric("CPU Usage", cpu)
-                        # Add stress indicator
-                        if cpu != "N/A":
-                            try:
-                                if "m" in cpu:
-                                    cpu_val = float(cpu.replace("m", "")) / 1000
-                                else:
-                                    cpu_val = float(cpu)
-                                
-                                if cpu_val > 0.5:
-                                    st.error("🚨 High CPU consumption detected!")
-                                elif cpu_val > 0.2:
-                                    st.warning("⚠️ Moderate CPU usage")
-                                else:
-                                    st.success("✅ CPU usage normal")
-                            except:
-                                st.info("ℹ️ CPU usage unknown")
-                    
-                    with col2:
-                        memory = resources.get("memory", "N/A")
-                        st.metric("Memory Usage", memory)
-                        # Add stress indicator
-                        if memory != "N/A":
-                            try:
-                                if "Mi" in memory:
-                                    mem_val = float(memory.replace("Mi", ""))
-                                elif "Gi" in memory:
-                                    mem_val = float(memory.replace("Gi", "")) * 1024
-                                else:
-                                    mem_val = 0
-                                
-                                if mem_val > 200:
-                                    st.error("🚨 High memory consumption detected!")
-                                elif mem_val > 100:
-                                    st.warning("⚠️ Moderate memory usage")
-                                else:
-                                    st.success("✅ Memory usage normal")
-                            except:
-                                st.info("ℹ️ Memory usage unknown")
-                else:
-                    st.info("ℹ️ Resource usage not available for this pod")
+                 # Resource usage display
+                 st.markdown("#### 📊 Resource Usage")
+                 st.info("ℹ️ Resource usage monitoring requires kubectl permissions")
                 
                 # Action buttons
                 st.markdown("#### 🎯 Available Actions")
@@ -478,48 +396,7 @@ def show_page():
     
     # High Resource Usage Alert Section
     st.markdown("### 🚨 High Resource Usage Alerts")
-    
-    # Get cluster metrics
-    cluster_metrics = get_pod_metrics()
-    
-    if cluster_metrics:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            cpu_usage = cluster_metrics.get("cpu_usage", 0)
-            cpu_capacity = cluster_metrics.get("cpu_capacity", 1)
-            cpu_percent = (cpu_usage / cpu_capacity * 100) if cpu_capacity > 0 else 0
-            
-            st.metric(
-                "CPU Usage",
-                f"{cpu_percent:.1f}%",
-                delta=f"{cpu_usage:.2f} cores"
-            )
-            
-            if cpu_percent > 80:
-                st.error("🚨 High CPU usage detected!")
-            elif cpu_percent > 60:
-                st.warning("⚠️ Moderate CPU usage")
-            else:
-                st.success("✅ CPU usage normal")
-        
-        with col2:
-            memory_usage = cluster_metrics.get("memory_usage", 0)
-            memory_capacity = cluster_metrics.get("memory_capacity", 1)
-            memory_percent = (memory_usage / memory_capacity * 100) if memory_capacity > 0 else 0
-            
-            st.metric(
-                "Memory Usage",
-                f"{memory_percent:.1f}%",
-                delta=f"{memory_usage / (1024**3):.2f} GB"
-            )
-            
-            if memory_percent > 80:
-                st.error("🚨 High memory usage detected!")
-            elif memory_percent > 60:
-                st.warning("⚠️ Moderate memory usage")
-            else:
-                st.success("✅ Memory usage normal")
+    st.info("ℹ️ Cluster resource monitoring requires API access")
     
     # Quick Actions Section
     st.markdown("### ⚡ Quick Actions")
