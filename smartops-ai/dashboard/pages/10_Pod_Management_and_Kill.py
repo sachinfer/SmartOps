@@ -10,9 +10,6 @@ def show_page():
     st.title("🔴 Pod Management & Kill Operations")
     st.markdown("**Monitor and manage pods in real-time. Kill stressed or problematic pods directly from this dashboard.**")
     
-    # Current testing status
-    st.info("🧪 **Testing Mode**: A `stress-test-pod` is currently running for testing anomaly detection and pod killing functionality.")
-    
     # API URL
     API_URL = "http://localhost:8000"
     
@@ -132,11 +129,9 @@ def show_page():
     # Get current pod data
     pods_data = get_all_pods()
     
-    # Debug: Show what data structure we're getting
+    # Show pod count info
     if pods_data:
         st.info(f"📊 API returned {len(pods_data)} pods")
-        if len(pods_data) > 0:
-            st.json(pods_data[0])  # Show first pod structure for debugging
     
     if not pods_data:
         st.warning("⚠️ Unable to fetch pod data. Please check if the API service is running.")
