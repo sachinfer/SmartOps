@@ -123,13 +123,13 @@ def show_page():
     # Get current pod data
     pods_data = get_all_pods()
     
-         # Show pod count info
-     if pods_data:
-         st.info(f"📊 Found {len(pods_data)} pods in SmartOps namespace")
-     
-     if not pods_data:
-         st.warning("⚠️ Unable to fetch pod data. Please check if the API service is running.")
-         return
+    # Show pod count info
+    if pods_data:
+        st.info(f"📊 Found {len(pods_data)} pods in SmartOps namespace")
+    
+    if not pods_data:
+        st.warning("⚠️ Unable to fetch pod data. Please check if the API service is running.")
+        return
     
     # Display pods in a table
     if pods_data:
@@ -403,32 +403,32 @@ def show_page():
     
     col1, col2, col3, col4 = st.columns(4)
     
-     with col1:
-         if st.button("🚨 Kill All Stressed Pods", key="kill_all_stressed"):
-             # Find and kill all high-stress pods using the DataFrame stress levels
-             high_stress_pods = []
-             
-             # Use the stress levels we already calculated in the DataFrame
-             for idx, row in pods_df.iterrows():
-                 pod_name = row.get("name", "")
-                 stress_level = row.get("Stress_Level", "✅ NORMAL")
-                 
-                 if stress_level == "🚨 HIGH":
-                     high_stress_pods.append(pod_name)
-             
-             if high_stress_pods:
-                 st.warning(f"🚨 Found {len(high_stress_pods)} high-stress pods: {', '.join(high_stress_pods)}")
-                 if st.button("✅ Confirm Kill All Stressed", key="confirm_kill_all"):
-                     with st.spinner("Killing all stressed pods..."):
-                         killed_count = 0
-                         for pod_name in high_stress_pods:
-                             success, _ = kill_pod(pod_name)
-                             if success:
-                                 killed_count += 1
-                         st.success(f"✅ Successfully killed {killed_count}/{len(high_stress_pods)} stressed pods")
-                         st.rerun()
-             else:
-                 st.success("✅ No high-stress pods found")
+    with col1:
+        if st.button("🚨 Kill All Stressed Pods", key="kill_all_stressed"):
+            # Find and kill all high-stress pods using the DataFrame stress levels
+            high_stress_pods = []
+            
+            # Use the stress levels we already calculated in the DataFrame
+            for idx, row in pods_df.iterrows():
+                pod_name = row.get("name", "")
+                stress_level = row.get("Stress_Level", "✅ NORMAL")
+                
+                if stress_level == "🚨 HIGH":
+                    high_stress_pods.append(pod_name)
+            
+            if high_stress_pods:
+                st.warning(f"🚨 Found {len(high_stress_pods)} high-stress pods: {', '.join(high_stress_pods)}")
+                if st.button("✅ Confirm Kill All Stressed", key="confirm_kill_all"):
+                    with st.spinner("Killing all stressed pods..."):
+                        killed_count = 0
+                        for pod_name in high_stress_pods:
+                            success, _ = kill_pod(pod_name)
+                            if success:
+                                killed_count += 1
+                        st.success(f"✅ Successfully killed {killed_count}/{len(high_stress_pods)} stressed pods")
+                        st.rerun()
+            else:
+                st.success("✅ No high-stress pods found")
     
     with col2:
         if st.button("🔄 Restart All Pods", key="restart_all"):
