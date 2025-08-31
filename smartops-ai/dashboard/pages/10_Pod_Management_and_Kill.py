@@ -88,6 +88,10 @@ def show_page():
         # Convert to DataFrame for better display
         pods_df = pd.DataFrame(pods_data)
         
+        # Debug: Show what columns we actually have
+        st.info(f"🔍 Debug: DataFrame columns: {list(pods_df.columns)}")
+        st.info(f"🔍 Debug: First row: {pods_df.iloc[0].to_dict() if len(pods_df) > 0 else 'No data'}")
+        
         # Get real-time resource usage for each pod (optional)
         pod_resources = get_pod_resource_usage()
         
@@ -102,9 +106,27 @@ def show_page():
                 return pod_resources[pod_name].get("memory", "N/A")
             return "N/A"
         
+        # Check if 'name' column exists, if not try to find the pod name column
+        pod_name_column = None
+        if "name" in pods_df.columns:
+            pod_name_column = "name"
+        elif "pod_name" in pods_df.columns:
+            pod_name_column = "pod_name"
+        elif "metadata" in pods_df.columns:
+            # Try to extract name from metadata
+            try:
+                pods_df["name"] = pods_df["metadata"].apply(lambda x: x.get("name", "unknown") if isinstance(x, dict) else "unknown")
+                pod_name_column = "name"
+            except:
+                pass
+        
+        if pod_name_column is None:
+            st.error("❌ Could not find pod name column. Available columns: " + str(list(pods_df.columns)))
+            return
+        
         # Always add these columns, even if empty
-        pods_df["cpu_usage"] = pods_df["name"].apply(get_pod_cpu)
-        pods_df["memory_usage"] = pods_df["name"].apply(get_pod_memory)
+        pods_df["cpu_usage"] = pods_df[pod_name_column].apply(get_pod_cpu)
+        pods_df["memory_usage"] = pods_df[pod_name_column].apply(get_pod_memory)
         
         # Add status indicators
         def get_status_color(status):
@@ -119,12 +141,23 @@ def show_page():
             else:
                 return "⚪"
         
-        pods_df["Status_Icon"] = pods_df["status"].apply(get_status_color)
-        pods_df["Status_Display"] = pods_df["Status_Icon"] + " " + pods_df["status"]
+        # Check if status column exists, if not try to find it
+        status_column = None
+        if "status" in pods_df.columns:
+            status_column = "status"
+        elif "phase" in pods_df.columns:
+            status_column = "phase"
+        
+        if status_column is None:
+            st.error("❌ Could not find status column. Available columns: " + str(list(pods_df.columns)))
+            return
+        
+        pods_df["Status_Icon"] = pods_df[status_column].apply(get_status_color)
+        pods_df["Status_Display"] = pods_df["Status_Icon"] + " " + pods_df[status_column]
         
         # Add stress indicators with manual stress detection
         def get_stress_indicator(row):
-            pod_name = row.get("name", "")
+            pod_name = row.get(pod_name_column, "")
             cpu = row.get("cpu_usage", "N/A")
             memory = row.get("memory_usage", "N/A")
             
@@ -167,8 +200,30 @@ def show_page():
         available_columns = pods_df.columns.tolist()
         
         # Define required columns with fallbacks
-        display_columns = ["name", "Status_Display", "ready", "age"]
-        column_names = ["Pod Name", "Status", "Ready", "Age"]
+        display_columns = [pod_name_column, "Status_Display"]
+        column_names = ["Pod Name", "Status"]
+        
+        # Add ready column if it exists
+        ready_column = None
+        if "ready" in pods_df.columns:
+            ready_column = "ready"
+        elif "readyReplicas" in pods_df.columns:
+            ready_column = "readyReplicas"
+        
+        if ready_column:
+            display_columns.append(ready_column)
+            column_names.append("Ready")
+        
+        # Add age column if it exists
+        age_column = None
+        if "age" in pods_df.columns:
+            age_column = "age"
+        elif "creationTimestamp" in pods_df.columns:
+            age_column = "creationTimestamp"
+        
+        if age_column:
+            display_columns.append(age_column)
+            column_names.append("Age")
         
         if "cpu_usage" in available_columns:
             display_columns.append("cpu_usage")
@@ -219,12 +274,12 @@ def show_page():
         st.markdown("### ⚡ Pod Actions")
         
         # Select pod to manage
-        pod_names = [pod["name"] for pod in pods_data]
+        pod_names = [pod.get(pod_name_column, "unknown") for pod in pods_data]
         selected_pod = st.selectbox("Select Pod to Manage", pod_names, key="pod_selector")
         
         if selected_pod:
             # Get selected pod details
-            selected_pod_data = next((pod for pod in pods_data if pod["name"] == selected_pod), None)
+            selected_pod_data = next((pod for pod in pods_data if pod.get(pod_name_column, "") == selected_pod), None)
             
             if selected_pod_data:
                 st.markdown(f"#### 📋 Pod Details: **{selected_pod}**")
@@ -232,13 +287,16 @@ def show_page():
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.metric("Status", selected_pod_data["status"])
+                    status_value = selected_pod_data.get(status_column, "Unknown")
+                    st.metric("Status", status_value)
                 
                 with col2:
-                    st.metric("Ready", selected_pod_data["ready"])
+                    ready_value = selected_pod_data.get(ready_column, "Unknown") if ready_column else "N/A"
+                    st.metric("Ready", ready_value)
                 
                 with col3:
-                    st.metric("Age", selected_pod_data["age"])
+                    age_value = selected_pod_data.get(age_column, "Unknown") if age_column else "N/A"
+                    st.metric("Age", age_value)
                 
                 # Container information
                 containers = selected_pod_data.get("containers", [])
@@ -343,7 +401,7 @@ def show_page():
             
             # Use the stress levels we already calculated in the DataFrame
             for idx, row in pods_df.iterrows():
-                pod_name = row.get("name", "")
+                pod_name = row.get(pod_name_column, "")
                 stress_level = row.get("Stress_Level", "✅ NORMAL")
                 
                 if stress_level == "🚨 HIGH":
