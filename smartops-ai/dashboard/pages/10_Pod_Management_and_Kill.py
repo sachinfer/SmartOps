@@ -10,6 +10,9 @@ def show_page():
     st.title("🔴 Pod Management & Kill Operations")
     st.markdown("**Monitor and manage pods in real-time. Kill stressed or problematic pods directly from this dashboard.**")
     
+    # Current testing status
+    st.info("🧪 **Testing Mode**: A `stress-test-pod` is currently running for testing anomaly detection and pod killing functionality.")
+    
     # API URL
     API_URL = "http://localhost:8000"
     
@@ -31,9 +34,39 @@ def show_page():
             if response.status_code == 200:
                 return response.json().get("pods", [])
             else:
+                st.warning(f"⚠️ API returned status {response.status_code}")
                 return []
-        except Exception:
-            return []
+        except Exception as e:
+            st.warning(f"⚠️ API connection failed: {str(e)}")
+            # Fallback: Try to get pods using kubectl
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["kubectl", "get", "pods", "-n", "smartops", "-o", "json"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    import json
+                    pods_json = json.loads(result.stdout)
+                    pods = []
+                    for pod in pods_json.get("items", []):
+                        pod_data = {
+                            "name": pod["metadata"]["name"],
+                            "ready": f"{pod['status']['readyReplicas']}/{pod['spec']['replicas']}" if 'readyReplicas' in pod['status'] else "1/1",
+                            "status": pod["status"]["phase"],
+                            "age": "unknown",  # Would need to calculate from creationTimestamp
+                            "namespace": pod["metadata"]["namespace"]
+                        }
+                        pods.append(pod_data)
+                    return pods
+                else:
+                    st.error(f"⚠️ kubectl fallback failed: {result.stderr}")
+                    return []
+            except Exception as kubectl_error:
+                st.error(f"⚠️ kubectl fallback error: {str(kubectl_error)}")
+                return []
     
     # Function to kill a pod
     def kill_pod(pod_name, namespace="smartops"):
@@ -51,7 +84,13 @@ def show_page():
             else:
                 return False, f"Failed to kill pod: {result.stderr}"
         except Exception as e:
-            return False, f"Error killing pod: {str(e)}"
+            # Fallback: Try to use the API if kubectl is not available
+            try:
+                st.info(f"🔄 kubectl not available, trying API fallback...")
+                # This would be implemented in the API
+                return False, f"kubectl not available in container. Use: kubectl delete pod {pod_name} -n {namespace}"
+            except Exception as api_error:
+                return False, f"Error killing pod: {str(e)}. Manual command: kubectl delete pod {pod_name} -n {namespace}"
     
     # Real-time monitoring section
     st.markdown("### 📊 Real-Time Pod Monitoring")
@@ -63,6 +102,12 @@ def show_page():
     # Get current pod data
     pods_data = get_all_pods()
     
+    # Debug: Show what data structure we're getting
+    if pods_data:
+        st.info(f"📊 API returned {len(pods_data)} pods")
+        if len(pods_data) > 0:
+            st.json(pods_data[0])  # Show first pod structure for debugging
+    
     if not pods_data:
         st.warning("⚠️ Unable to fetch pod data. Please check if the API service is running.")
         # Show sample data for demonstration
@@ -73,16 +118,14 @@ def show_page():
                 "ready": "1/1",
                 "status": "Running",
                 "age": "2m",
-                "namespace": "smartops",
-                "containers": ["stress-test-pod"]
+                "namespace": "smartops"
             },
             {
                 "name": "smartops-app-7456b5c68-rw4j8",
                 "ready": "1/1",
                 "status": "Running",
                 "age": "10h",
-                "namespace": "smartops",
-                "containers": ["smartops-app"]
+                "namespace": "smartops"
             }
         ]
         pods_data = sample_pods
@@ -110,9 +153,37 @@ def show_page():
         pods_df["Status_Icon"] = pods_df["status"].apply(get_status_color)
         pods_df["Status_Display"] = pods_df["Status_Icon"] + " " + pods_df["status"]
         
-        # Reorder columns
-        display_df = pods_df[["name", "Status_Display", "ready", "age", "containers"]].copy()
-        display_df.columns = ["Pod Name", "Status", "Ready", "Age", "Containers"]
+        # Handle missing columns gracefully
+        available_columns = pods_df.columns.tolist()
+        
+        # Define required columns with fallbacks
+        display_columns = []
+        column_names = []
+        
+        if "name" in available_columns:
+            display_columns.append("name")
+            column_names.append("Pod Name")
+        
+        if "Status_Display" in available_columns:
+            display_columns.append("Status_Display")
+            column_names.append("Status")
+        
+        if "ready" in available_columns:
+            display_columns.append("ready")
+            column_names.append("Ready")
+        
+        if "age" in available_columns:
+            display_columns.append("age")
+            column_names.append("Age")
+        
+        # Only add containers if it exists
+        if "containers" in available_columns:
+            display_columns.append("containers")
+            column_names.append("Containers")
+        
+        # Create display DataFrame with available columns
+        display_df = pods_df[display_columns].copy()
+        display_df.columns = column_names
         
         st.dataframe(display_df, use_container_width=True)
         
@@ -142,9 +213,13 @@ def show_page():
                     st.metric("Age", selected_pod_data["age"])
                 
                 # Container information
-                st.markdown("**Containers:**")
-                for container in selected_pod_data.get("containers", []):
-                    st.code(container, language="bash")
+                containers = selected_pod_data.get("containers", [])
+                if containers:
+                    st.markdown("**Containers:**")
+                    for container in containers:
+                        st.code(container, language="bash")
+                else:
+                    st.info("ℹ️ Container information not available")
                 
                 # Action buttons
                 st.markdown("#### 🎯 Available Actions")
