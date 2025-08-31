@@ -286,11 +286,6 @@ def show_page():
         display_df = pods_df[display_columns].copy()
         display_df.columns = column_names
         
-        # Debug: Show what we're trying to display
-        st.info(f"🔍 Debug: Display DataFrame shape: {display_df.shape}")
-        st.info(f"🔍 Debug: Display columns: {display_df.columns.tolist()}")
-        st.info(f"🔍 Debug: First row: {display_df.iloc[0].to_dict() if len(display_df) > 0 else 'Empty'}")
-        
         # Show stress-pod information
         stress_pod_row = display_df[display_df['Pod Name'] == 'stress-pod']
         if len(stress_pod_row) > 0:
@@ -299,7 +294,6 @@ def show_page():
         # Display the table
         try:
             st.dataframe(display_df, width='stretch')
-            st.success("✅ Pod table displayed successfully!")
         except Exception as e:
             st.error(f"❌ Error displaying pod table: {str(e)}")
             # Fallback: Show as text
