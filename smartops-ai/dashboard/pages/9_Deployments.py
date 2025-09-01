@@ -60,9 +60,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-
-    st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
+st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
 # Page config is handled by the main app
 
