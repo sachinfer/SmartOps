@@ -54,7 +54,7 @@ html, body {
     min-width: calc(100vw - 300px) !important;
     margin-left: 300px !important;
     margin-right: 0 !important;
-    padding: 0 !important;
+    padding: 1rem !important;
 }
 
 /* Force all content to expand */
@@ -98,6 +98,44 @@ div[style*="max-width"], div[style*="width"] {
     max-width: 100vw !important;
     width: 100vw !important;
 }
+
+/* Page content styling */
+.page-content {
+    padding: 1rem !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Better spacing between elements */
+.stMarkdown {
+    margin-bottom: 1rem !important;
+}
+
+/* Force sidebar width */
+.sidebar .sidebar-content {
+    width: 300px !important;
+    max-width: 300px !important;
+}
+
+/* Ensure no horizontal scrolling */
+.main {
+    overflow-x: hidden !important;
+}
+
+/* Better table alignment */
+.stTable {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Force all containers to proper alignment */
+.block-container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -110,8 +148,8 @@ function forceFullWidth() {
     containers.forEach(container => {
         container.style.maxWidth = '100vw !important';
         container.style.width = '100vw !important';
-        container.style.paddingLeft = '0 !important';
-        container.style.paddingRight = '0 !important';
+        container.style.paddingLeft = '1rem !important';
+        container.style.paddingRight = '1rem !important';
         container.style.marginLeft = '0 !important';
         container.style.marginRight = '0 !important';
     });
@@ -122,6 +160,7 @@ function forceFullWidth() {
         mainContainer.style.marginLeft = '300px !important';
         mainContainer.style.width = 'calc(100vw - 300px) !important';
         mainContainer.style.maxWidth = 'calc(100vw - 300px) !important';
+        mainContainer.style.padding = '1rem !important';
     }
     
     // Force all divs to expand
@@ -133,6 +172,14 @@ function forceFullWidth() {
         if (div.style.width && div.style.width !== '100vw') {
             div.style.width = '100vw !important';
         }
+    });
+    
+    // Ensure proper page separation
+    const pageElements = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric');
+    pageElements.forEach(element => {
+        element.style.marginBottom = '1rem !important';
+        element.style.width = '100% !important';
+        element.style.maxWidth = '100% !important';
     });
 }
 
@@ -175,6 +222,9 @@ page = st.sidebar.selectbox(
 def load_page(page_name, file_path):
     """Load and execute a page"""
     try:
+        # Clear any previous content
+        st.markdown("---")
+        
         # Add current directory to path
         sys.path.append(os.path.dirname(__file__))
         
@@ -193,8 +243,11 @@ def load_page(page_name, file_path):
         st.error(f"Error loading {page_name}: {str(e)}")
         st.write("This page is under maintenance.")
 
-# Page routing
+# Page routing with proper separation
 if page == "Main Dashboard":
+    # Clear any previous content
+    st.markdown("---")
+    
     st.title("🚀 SmartOps Dashboard")
     st.write("Welcome to SmartOps - Intelligent Kubernetes Operations Platform")
     
