@@ -11,62 +11,84 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Clean, modern CSS with aggressive positioning fixes
+# Comprehensive CSS fix for all alignment and overlap issues
 st.markdown("""
 <style>
-/* Clean, modern styling */
+/* Reset everything */
+* {
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Force full viewport */
+html, body {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+/* Dark theme */
 .main {
-    background-color: #0e1117;
-    color: #fafafa;
+    background-color: #0e1117 !important;
+    color: #fafafa !important;
 }
 
 .stApp {
-    background-color: #0e1117;
-    color: #fafafa;
+    background-color: #0e1117 !important;
+    color: #fafafa !important;
 }
 
-/* Aggressive positioning fixes for horizontal overlap */
+/* NUCLEAR SIDEBAR FIX */
+.sidebar .sidebar-content {
+    background-color: #1e1e1e !important;
+    border-right: 1px solid #333 !important;
+    width: 300px !important;
+    max-width: 300px !important;
+    min-width: 300px !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    overflow-y: auto !important;
+}
+
+/* NUCLEAR MAIN CONTENT FIX */
+.main {
+    margin-left: 300px !important;
+    width: calc(100vw - 300px) !important;
+    max-width: calc(100vw - 300px) !important;
+    min-width: calc(100vw - 300px) !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+    overflow-x: hidden !important;
+}
+
 .main .block-container {
     max-width: 100% !important;
+    width: 100% !important;
     padding: 2rem !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin: 0 !important;
     position: relative !important;
     left: 0 !important;
     right: 0 !important;
     transform: none !important;
 }
 
-/* Force main content to start after sidebar */
-.main .block-container {
-    margin-left: 0 !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
-    width: calc(100vw - 300px) !important;
-    max-width: calc(100vw - 300px) !important;
-    min-width: calc(100vw - 300px) !important;
-}
-
-/* Ensure sidebar doesn't interfere with main content */
-.sidebar .sidebar-content {
-    background-color: #1e1e1e;
-    border-right: 1px solid #333;
-    width: 300px !important;
-    max-width: 300px !important;
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
-    height: 100vh !important;
-    z-index: 1000 !important;
-}
-
-/* Force main content to start after sidebar */
-.main {
-    margin-left: 300px !important;
-    width: calc(100vw - 300px) !important;
-    max-width: calc(100vw - 300px) !important;
+/* Force all content to start from left edge */
+.main .block-container *,
+.main .block-container > div,
+.main .block-container > div > div,
+.main .block-container > div > div > div {
     position: relative !important;
     left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
 }
 
 /* Modern cards */
@@ -78,6 +100,8 @@ st.markdown("""
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     color: white;
     text-align: center;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .metric-value {
@@ -91,35 +115,6 @@ st.markdown("""
     opacity: 0.9;
 }
 
-/* Clean navigation */
-.nav-button {
-    background: transparent;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    margin: 0.25rem 0;
-    color: #fafafa;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.nav-button:hover {
-    background: #333;
-    border-color: #667eea;
-}
-
-/* Hide Streamlit default elements */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-
-/* Better spacing */
-.stMarkdown {
-    margin-bottom: 1rem;
-}
-
 /* Status indicators */
 .status-online {
     background: #00d4aa;
@@ -131,47 +126,58 @@ header {visibility: hidden;}
     display: inline-block;
 }
 
-/* Additional fixes for small overlaps */
+/* Hide Streamlit default elements */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Force proper spacing */
+.stMarkdown {
+    margin-bottom: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 .stMarkdown > div {
     margin-bottom: 1rem !important;
     padding: 0 !important;
-    position: relative !important;
-    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .stDataFrame {
     margin: 1rem 0 !important;
     padding: 0 !important;
-    position: relative !important;
-    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .stMetric {
     margin: 0.5rem 0 !important;
     padding: 0 !important;
-    position: relative !important;
-    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .stColumns > div {
     margin: 0 !important;
     padding: 0.5rem !important;
-    position: relative !important;
-    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .stAlert {
     margin: 1rem 0 !important;
     padding: 1rem !important;
-    position: relative !important;
-    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .stButton > button {
     margin: 0.25rem 0 !important;
     padding: 0.5rem 1rem !important;
-    position: relative !important;
-    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 /* Force proper spacing between all elements */
@@ -180,6 +186,8 @@ header {visibility: hidden;}
     clear: both !important;
     position: relative !important;
     left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 /* Ensure no text overlaps */
@@ -189,6 +197,8 @@ p, h1, h2, h3, h4, h5, h6 {
     line-height: 1.4 !important;
     position: relative !important;
     left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 /* Fix any remaining container issues */
@@ -196,6 +206,8 @@ p, h1, h2, h3, h4, h5, h6 {
     margin-bottom: 1rem !important;
     position: relative !important;
     left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 /* Better table spacing */
@@ -204,6 +216,8 @@ p, h1, h2, h3, h4, h5, h6 {
     border-spacing: 0 !important;
     position: relative !important;
     left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .stTable th, .stTable td {
@@ -229,24 +243,56 @@ p, h1, h2, h3, h4, h5, h6 {
     margin: 0 !important;
     position: relative !important;
     left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
-/* Nuclear positioning override */
+/* NUCLEAR OVERRIDE - Force everything to proper position */
 .main .block-container * {
     position: relative !important;
     left: 0 !important;
     margin-left: 0 !important;
     padding-left: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
 }
 
-/* Force all content to start from left edge */
-.main .block-container > div,
-.main .block-container > div > div,
-.main .block-container > div > div > div {
-    position: relative !important;
-    left: 0 !important;
-    margin-left: 0 !important;
+/* Force all Streamlit elements to full width */
+[data-testid="stAppViewContainer"] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+}
+
+[data-testid="column"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+[data-testid="metric-container"] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Override any remaining width constraints */
+div[style*="max-width"], div[style*="width"] {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Force all containers to proper alignment */
+.reportview-container,
+.reportview-container .main,
+.reportview-container .main .block-container,
+.wide .block-container,
+.block-container {
+    max-width: 100% !important;
+    width: 100% !important;
     padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
