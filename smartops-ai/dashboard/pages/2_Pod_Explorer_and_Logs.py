@@ -21,9 +21,53 @@ except ImportError:
 
 # Page config is handled by the main app
 
-# Custom CSS for better styling - matching Deployment page
+# Ultra-aggressive full-width CSS + Custom styling
 st.markdown("""
 <style>
+/* Force full width on ALL elements */
+* {
+    max-width: 100vw !important;
+}
+
+/* Streamlit specific overrides */
+.main .block-container,
+.block-container,
+.stApp > div,
+[data-testid="stAppViewContainer"],
+.stApp > div > div,
+.stApp > div > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Force full width on all containers */
+.stApp > div > div > div > div,
+.stApp > div > div > div > div > div,
+.stApp > div > div > div > div > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+
+/* Override any remaining constraints */
+.main .block-container > div,
+.main .block-container > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+
+/* Force full width on page content */
+.main .block-container > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Custom styling for components */
 .section-header {
     background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
     color: white;

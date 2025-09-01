@@ -11,18 +11,84 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Full-width CSS
+# Ultra-aggressive full-width CSS
 st.markdown("""
 <style>
-.main .block-container {
-    max-width: 100% !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
+/* Force full width on ALL elements */
+* {
+    max-width: 100vw !important;
 }
-.stApp > div {
-    max-width: 100% !important;
+
+/* Streamlit specific overrides */
+.main .block-container,
+.block-container,
+.stApp > div,
+[data-testid="stAppViewContainer"],
+.stApp > div > div,
+.stApp > div > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Force full width on all containers */
+.stApp > div > div > div > div,
+.stApp > div > div > div > div > div,
+.stApp > div > div > div > div > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+
+/* Override any remaining constraints */
+.main .block-container > div,
+.main .block-container > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+
+/* Force full width on page content */
+.main .block-container > div > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 </style>
+""", unsafe_allow_html=True)
+
+# JavaScript to force full width
+st.markdown("""
+<script>
+function forceFullWidth() {
+    // Force all containers to full width
+    const containers = document.querySelectorAll('.main .block-container, .block-container, .stApp > div');
+    containers.forEach(container => {
+        container.style.maxWidth = '100vw !important';
+        container.style.width = '100vw !important';
+        container.style.paddingLeft = '0 !important';
+        container.style.paddingRight = '0 !important';
+    });
+    
+    // Override any remaining constraints
+    const allDivs = document.querySelectorAll('div');
+    allDivs.forEach(div => {
+        if (div.style.maxWidth && div.style.maxWidth !== '100vw') {
+            div.style.maxWidth = '100vw !important';
+        }
+    });
+}
+
+// Run immediately and on any changes
+forceFullWidth();
+setInterval(forceFullWidth, 1000);
+
+// Also run on DOM changes
+const observer = new MutationObserver(forceFullWidth);
+observer.observe(document.body, { childList: true, subtree: true });
+</script>
 """, unsafe_allow_html=True)
 
 # Sidebar
