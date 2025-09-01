@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartops-dashboard-final-fix
+  namespace: smartops
+  labels:
+    app: smartops-dashboard-final-fix
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartops-dashboard-final-fix
+  template:
+    metadata:
+      labels:
+        app: smartops-dashboard-final-fix
+        version: v1
+    spec:
+      serviceAccountName: dashboard-metrics-reader
+      containers:
+      - name: dashboard
+        image: us-docker.pkg.dev/icbt-465109/smartops-repo/smartops-dashboard:latest
+        ports:
+        - containerPort: 8501
+          name: streamlit
+        - containerPort: 8000
+          name: api
+        env:
+        - name: STREAMLIT_SERVER_HEADLESS
+          value: "true"
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+        - name: STREAMLIT_LAYOUT_WIDE_MODE
+          value: "true"
+        # NO RESOURCE CONSTRAINTS - BestEffort QoS
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        volumeMounts:
+        - name: dashboard-data
+          mountPath: /app/dashboard/data
+      volumes:
+      - name: dashboard-data
+        persistentVolumeClaim:
+          claimName: dashboard-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartops-dashboard-final-fix-service
+  namespace: smartops
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8501
+    protocol: TCP
+    name: streamlit
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: api
+  selector:
+    app: smartops-dashboard-final-fix
