@@ -27,3 +27,26 @@ wideMode = true
 
 [runner]
 fastReruns = true
+
+[ui]
+globalCustomCode = """
+<style>
+/* Global CSS override for maximum full-width */
+* {
+    max-width: 100vw !important;
+    width: auto !important;
+}
+
+.main .block-container {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.stApp > div {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+</style>
+"""
