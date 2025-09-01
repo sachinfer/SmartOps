@@ -136,6 +136,13 @@ div[style*="max-width"], div[style*="width"] {
     margin-left: 0 !important;
     margin-right: 0 !important;
 }
+
+/* Clear page content */
+.page-wrapper {
+    min-height: 100vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -201,7 +208,11 @@ st.sidebar.title("🚀 SmartOps Dashboard")
 st.sidebar.markdown("**by Misi 24x7**")
 st.sidebar.markdown("---")
 
-# Page navigation
+# Initialize session state for current page
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "Main Dashboard"
+
+# Page navigation with session state
 page = st.sidebar.selectbox(
     "Select Page",
     [
@@ -215,15 +226,21 @@ page = st.sidebar.selectbox(
         "Misi AI Assistant",
         "AI Actions",
         "Deployments"
-    ]
+    ],
+    key="page_selector"
 )
 
-# Simple page loader function
-def load_page(page_name, file_path):
-    """Load and execute a page"""
+# Update session state when page changes
+if page != st.session_state.current_page:
+    st.session_state.current_page = page
+    st.rerun()
+
+# Page loader function with proper error handling
+def load_page_safely(page_name, file_path):
+    """Load and execute a page with proper error handling"""
     try:
-        # Clear any previous content
-        st.markdown("---")
+        # Clear the page completely
+        st.empty()
         
         # Add current directory to path
         sys.path.append(os.path.dirname(__file__))
@@ -243,10 +260,10 @@ def load_page(page_name, file_path):
         st.error(f"Error loading {page_name}: {str(e)}")
         st.write("This page is under maintenance.")
 
-# Page routing with proper separation
+# Page routing with clean separation
 if page == "Main Dashboard":
     # Clear any previous content
-    st.markdown("---")
+    st.empty()
     
     st.title("🚀 SmartOps Dashboard")
     st.write("Welcome to SmartOps - Intelligent Kubernetes Operations Platform")
@@ -285,31 +302,31 @@ if page == "Main Dashboard":
     st.warning("⚠️ Memory usage high on smartops-app")
 
 elif page == "Overview":
-    load_page("overview", "pages/1_Overview.py")
+    load_page_safely("overview", "pages/1_Overview.py")
     
 elif page == "Pod Explorer and Logs":
-    load_page("pod_explorer", "pages/2_Pod_Explorer_and_Logs.py")
+    load_page_safely("pod_explorer", "pages/2_Pod_Explorer_and_Logs.py")
     
 elif page == "Kubernetes Shell":
-    load_page("k8s_shell", "pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
+    load_page_safely("k8s_shell", "pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
     
 elif page == "Anomaly Detection":
-    load_page("anomaly", "pages/4_Anomaly_Detection.py")
+    load_page_safely("anomaly", "pages/4_Anomaly_Detection.py")
     
 elif page == "Auto Scaling":
-    load_page("auto_scaling", "pages/5_Auto_Scaling_Recommendations_and_Control.py")
+    load_page_safely("auto_scaling", "pages/5_Auto_Scaling_Recommendations_and_Control.py")
     
 elif page == "Incident Timeline":
-    load_page("incident", "pages/6_Incident_Timeline_and_Postmortem_Report_Generator.py")
+    load_page_safely("incident", "pages/6_Incident_Timeline_and_Postmortem_Report_Generator.py")
     
 elif page == "Misi AI Assistant":
-    load_page("ai_assistant", "pages/7_Misi_AI_Assistant.py")
+    load_page_safely("ai_assistant", "pages/7_Misi_AI_Assistant.py")
     
 elif page == "AI Actions":
-    load_page("ai_actions", "pages/8_AI_Actions.py")
+    load_page_safely("ai_actions", "pages/8_AI_Actions.py")
     
 elif page == "Deployments":
-    load_page("deployments", "pages/9_Deployments.py")
+    load_page_safely("deployments", "pages/9_Deployments.py")
 
 else:
     st.title(f"📄 {page}")
