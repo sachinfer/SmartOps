@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Clean, modern CSS
+# Clean, modern CSS with additional fixes for small overlaps
 st.markdown("""
 <style>
 /* Clean, modern styling */
@@ -99,6 +99,84 @@ header {visibility: hidden;}
     font-weight: 600;
     text-align: center;
     display: inline-block;
+}
+
+/* Additional fixes for small overlaps */
+.stMarkdown > div {
+    margin-bottom: 1rem !important;
+    padding: 0 !important;
+}
+
+.stDataFrame {
+    margin: 1rem 0 !important;
+    padding: 0 !important;
+}
+
+.stMetric {
+    margin: 0.5rem 0 !important;
+    padding: 0 !important;
+}
+
+.stColumns > div {
+    margin: 0 !important;
+    padding: 0.5rem !important;
+}
+
+.stAlert {
+    margin: 1rem 0 !important;
+    padding: 1rem !important;
+}
+
+.stButton > button {
+    margin: 0.25rem 0 !important;
+    padding: 0.5rem 1rem !important;
+}
+
+/* Force proper spacing between all elements */
+.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stAlert, .stButton {
+    display: block !important;
+    clear: both !important;
+}
+
+/* Ensure no text overlaps */
+p, h1, h2, h3, h4, h5, h6 {
+    margin: 0.5rem 0 !important;
+    padding: 0 !important;
+    line-height: 1.4 !important;
+}
+
+/* Fix any remaining container issues */
+.block-container > div {
+    margin-bottom: 1rem !important;
+}
+
+/* Better table spacing */
+.stTable {
+    margin: 1rem 0 !important;
+    border-spacing: 0 !important;
+}
+
+.stTable th, .stTable td {
+    padding: 0.5rem !important;
+    border: 1px solid #333 !important;
+}
+
+/* Fix sidebar navigation spacing */
+.sidebar .sidebar-content > div {
+    margin-bottom: 0.5rem !important;
+}
+
+.sidebar .sidebar-content a {
+    display: block !important;
+    padding: 0.5rem 0 !important;
+    margin: 0 !important;
+}
+
+/* Ensure proper page separation */
+.page-content {
+    min-height: 100vh !important;
+    padding: 1rem !important;
+    margin: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
