@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Clean, modern CSS with additional fixes for small overlaps
+# Clean, modern CSS with aggressive positioning fixes
 st.markdown("""
 <style>
 /* Clean, modern styling */
@@ -25,18 +25,48 @@ st.markdown("""
     color: #fafafa;
 }
 
-/* Full width layout */
+/* Aggressive positioning fixes for horizontal overlap */
 .main .block-container {
     max-width: 100% !important;
     padding: 2rem !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
 }
 
-/* Clean sidebar */
+/* Force main content to start after sidebar */
+.main .block-container {
+    margin-left: 0 !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    width: calc(100vw - 300px) !important;
+    max-width: calc(100vw - 300px) !important;
+    min-width: calc(100vw - 300px) !important;
+}
+
+/* Ensure sidebar doesn't interfere with main content */
 .sidebar .sidebar-content {
     background-color: #1e1e1e;
     border-right: 1px solid #333;
+    width: 300px !important;
+    max-width: 300px !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+}
+
+/* Force main content to start after sidebar */
+.main {
+    margin-left: 300px !important;
+    width: calc(100vw - 300px) !important;
+    max-width: calc(100vw - 300px) !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 /* Modern cards */
@@ -105,37 +135,51 @@ header {visibility: hidden;}
 .stMarkdown > div {
     margin-bottom: 1rem !important;
     padding: 0 !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stDataFrame {
     margin: 1rem 0 !important;
     padding: 0 !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stMetric {
     margin: 0.5rem 0 !important;
     padding: 0 !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stColumns > div {
     margin: 0 !important;
     padding: 0.5rem !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stAlert {
     margin: 1rem 0 !important;
     padding: 1rem !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stButton > button {
     margin: 0.25rem 0 !important;
     padding: 0.5rem 1rem !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 /* Force proper spacing between all elements */
 .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stAlert, .stButton {
     display: block !important;
     clear: both !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 /* Ensure no text overlaps */
@@ -143,17 +187,23 @@ p, h1, h2, h3, h4, h5, h6 {
     margin: 0.5rem 0 !important;
     padding: 0 !important;
     line-height: 1.4 !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 /* Fix any remaining container issues */
 .block-container > div {
     margin-bottom: 1rem !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 /* Better table spacing */
 .stTable {
     margin: 1rem 0 !important;
     border-spacing: 0 !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stTable th, .stTable td {
@@ -177,6 +227,26 @@ p, h1, h2, h3, h4, h5, h6 {
     min-height: 100vh !important;
     padding: 1rem !important;
     margin: 0 !important;
+    position: relative !important;
+    left: 0 !important;
+}
+
+/* Nuclear positioning override */
+.main .block-container * {
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* Force all content to start from left edge */
+.main .block-container > div,
+.main .block-container > div > div,
+.main .block-container > div > div > div {
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
