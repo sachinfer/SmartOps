@@ -17,6 +17,17 @@ def show_page():
     """Main page function - called by the router"""
     # Note: Page config is handled by the main app, not here
     
+    # Force full width for this page
+    st.markdown("""
+    <style>
+    .main .block-container {
+        max-width: 100% !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.title("🕒 Incident Timeline and Postmortem Report Generator")
     st.write("""
     This page auto-generates a timeline of incidents (anomalies, pod crashes, alerts) and lets you export postmortem PDF reports with root cause, impact, and remediation. You can also view the audit trail by namespace or app.
