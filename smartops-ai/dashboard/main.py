@@ -18,19 +18,167 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Nuclear HTML injection to force full width immediately
+# NUCLEAR HTML INJECTION - OVERRIDE EVERYTHING IMMEDIATELY
 st.markdown("""
-<div style="
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
-    pointer-events: none;
-"></div>
+<!-- FORCE VIEWPORT -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Nuclear CSS that overrides everything -->
+<!-- NUCLEAR CSS INJECTION -->
+<style>
+/* RESET EVERYTHING */
+* {
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+html, body {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+/* NUCLEAR STREAMLIT OVERRIDES */
+.stApp, .stApp > div, .stApp > div > div {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+}
+
+.main .block-container {
+    width: calc(100vw - 300px) !important;
+    max-width: calc(100vw - 300px) !important;
+    min-width: calc(100vw - 300px) !important;
+    margin-left: 300px !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+}
+
+.main .block-container > div,
+.main .block-container > div > div,
+.main .block-container > div > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+[data-testid="column"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+[data-testid="metric-container"] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.stButton > button,
+.element-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+}
+
+div[style*="max-width"], div[style*="width"] {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+
+/* FORCE ALL ELEMENTS */
+.reportview-container,
+.reportview-container .main,
+.reportview-container .main .block-container,
+.wide .block-container,
+.block-container {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* OVERRIDE ANY REMAINING CONSTRAINTS */
+div[style*="max-width"], div[style*="width"] {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+
+/* FORCE SIDEBAR */
+.sidebar .sidebar-content {
+    width: 300px !important;
+    max-width: 300px !important;
+}
+</style>
+
+<!-- NUCLEAR JAVASCRIPT -->
+<script>
+function nuclearForceFullWidth() {
+    // NUCLEAR OPTION - OVERRIDE EVERYTHING
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(element => {
+        if (element.style.maxWidth && element.style.maxWidth !== '100vw') {
+            element.style.maxWidth = '100vw !important';
+        }
+        if (element.style.width && element.style.width !== '100vw') {
+            element.style.width = '100vw !important';
+        }
+    });
+    
+    // FORCE ALL CONTAINERS
+    const containers = document.querySelectorAll('.main .block-container, .stApp > div, [data-testid="stAppViewContainer"], .reportview-container, .block-container');
+    containers.forEach(container => {
+        container.style.maxWidth = '100vw !important';
+        container.style.width = '100vw !important';
+        container.style.paddingLeft = '0 !important';
+        container.style.paddingRight = '0 !important';
+        container.style.marginLeft = '0 !important';
+        container.style.marginRight = '0 !important';
+    });
+    
+    // FORCE MAIN CONTENT AREA
+    const mainContainer = document.querySelector('.main .block-container');
+    if (mainContainer) {
+        mainContainer.style.marginLeft = '300px !important';
+        mainContainer.style.width = 'calc(100vw - 300px) !important';
+        mainContainer.style.maxWidth = 'calc(100vw - 300px) !important';
+    }
+    
+    // FORCE ALL DIVS
+    const allDivs = document.querySelectorAll('div');
+    allDivs.forEach(div => {
+        if (div.style.maxWidth && div.style.maxWidth !== '100vw') {
+            div.style.maxWidth = '100vw !important';
+        }
+        if (div.style.width && div.style.width !== '100vw') {
+            div.style.width = '100vw !important';
+        }
+    });
+}
+
+// RUN IMMEDIATELY AND CONTINUOUSLY
+nuclearForceFullWidth();
+setInterval(nuclearForceFullWidth, 25); // Ultra-frequent
+
+// OBSERVE ALL CHANGES
+const observer = new MutationObserver(nuclearForceFullWidth);
+observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+// FORCE ON ALL EVENTS
+window.addEventListener('resize', nuclearForceFullWidth);
+window.addEventListener('load', nuclearForceFullWidth);
+document.addEventListener('DOMContentLoaded', nuclearForceFullWidth);
+document.addEventListener('scroll', nuclearForceFullWidth);
+document.addEventListener('click', nuclearForceFullWidth);
+</script>
+""", unsafe_allow_html=True)
 <style>
 /* Reset everything */
 * {
@@ -108,53 +256,7 @@ div[style*="max-width"], div[style*="width"] {
 </style>
 """, unsafe_allow_html=True)
 
-# Nuclear JavaScript to force full width
-st.markdown("""
-<script>
-function forceFullWidth() {
-    // Force all containers to full width
-    const containers = document.querySelectorAll('.main .block-container, .stApp > div, [data-testid="stAppViewContainer"]');
-    containers.forEach(container => {
-        container.style.maxWidth = '100vw !important';
-        container.style.width = '100vw !important';
-        container.style.paddingLeft = '0 !important';
-        container.style.paddingRight = '0 !important';
-        container.style.marginLeft = '0 !important';
-        container.style.marginRight = '0 !important';
-    });
-    
-    // Force main content area
-    const mainContainer = document.querySelector('.main .block-container');
-    if (mainContainer) {
-        mainContainer.style.marginLeft = '300px !important';
-        mainContainer.style.width = 'calc(100vw - 300px) !important';
-        mainContainer.style.maxWidth = 'calc(100vw - 300px) !important';
-    }
-    
-    // Force all divs to expand
-    const allDivs = document.querySelectorAll('div');
-    allDivs.forEach(div => {
-        if (div.style.maxWidth && div.style.maxWidth !== '100vw') {
-            div.style.maxWidth = '100vw !important';
-        }
-        if (div.style.width && div.style.width !== '100vw') {
-            div.style.width = '100vw !important';
-        }
-    });
-}
 
-// Run immediately and continuously
-forceFullWidth();
-setInterval(forceFullWidth, 100);
-
-// Also run on DOM changes
-const observer = new MutationObserver(forceFullWidth);
-observer.observe(document.body, { childList: true, subtree: true });
-
-// Force on window resize
-window.addEventListener('resize', forceFullWidth);
-</script>
-""", unsafe_allow_html=True)
 
 # Custom CSS for dark theme and full-width
 st.markdown("""
