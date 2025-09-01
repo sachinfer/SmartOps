@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartops-dashboard-minimal
+  namespace: smartops
+  labels:
+    app: smartops-dashboard-minimal
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartops-dashboard-minimal
+  template:
+    metadata:
+      labels:
+        app: smartops-dashboard-minimal
+        version: v1
+    spec:
+      serviceAccountName: dashboard-metrics-reader
+      containers:
+      - name: dashboard
+        image: us-docker.pkg.dev/PROJECT_ID/smartops-repo/smartops-dashboard:latest
+        ports:
+        - containerPort: 8501
+          name: streamlit
+        - containerPort: 8000
+          name: api
+        env:
+        - name: STREAMLIT_SERVER_HEADLESS
+          value: "true"
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+        - name: STREAMLIT_LAYOUT_WIDE_MODE
+          value: "true"
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "100m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        volumeMounts:
+        - name: dashboard-data
+          mountPath: /app/dashboard/data
+      volumes:
+      - name: dashboard-data
+        persistentVolumeClaim:
+          claimName: dashboard-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartops-dashboard-minimal-service
+  namespace: smartops
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8501
+    protocol: TCP
+    name: streamlit
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: api
+  selector:
+    app: smartops-dashboard-minimal
