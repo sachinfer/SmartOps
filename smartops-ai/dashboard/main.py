@@ -5,6 +5,7 @@ Multi-page dashboard with full-width layout and dark theme
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import sys
 import os
 import importlib.util
@@ -18,22 +19,126 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inject custom CSS at the HTML level
-st.markdown("""
-<link rel="stylesheet" type="text/css" href="custom.css">
+# CRITICAL: Remove Streamlit's default styling immediately
+hide_streamlit_style = """
 <style>
-    /* DIRECT HTML INJECTION - Force full width */
-    html, body { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
-    .stApp { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
-    .main { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
-    .block-container { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0.5rem !important; }
-    [data-testid="stAppViewContainer"] { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
-    .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable { width: 100% !important; max-width: 100% !important; }
-    .stColumns > div { width: 100% !important; max-width: 100% !important; flex: 1 !important; }
-    .stTable table { width: 100% !important; max-width: 100% !important; }
-    :root { --main-width: 100vw !important; --max-width: 100vw !important; --content-width: 100vw !important; }
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+.main .block-container {
+    max-width: 100% !important;
+    padding-top: 0rem !important;
+    padding-bottom: 0rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# Force full width using HTML component injection
+components.html("""
+<style>
+    /* FORCE FULL WIDTH - HIGHEST PRIORITY */
+    * { max-width: none !important; box-sizing: border-box !important; }
+    html, body { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; overflow-x: hidden !important; }
+    .stApp { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
+    .main { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; flex: 1 !important; }
+    .block-container, .main .block-container, [data-testid="stAppViewContainer"], .stApp > div[data-testid="stAppViewContainer"] { 
+        width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0.5rem !important; box-sizing: border-box !important; 
+    }
+    .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable, .stSelectbox, .stButton, .stTextInput, .stTextArea, .stNumberInput, .stSlider, .stCheckbox, .stRadio, .stMultiselect, .stDateInput, .stTimeInput, .stFileUploader, .stColorPicker, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stPyplot, .stBokehChart, .stGraphvizChart, .stMap, .stImage, .stVideo, .stAudio, .stDownloadButton, .stProgress, .stSpinner, .stBalloons, .stSnow, .stError, .stWarning, .stInfo, .stSuccess, .stException, .stHelp, .stCode, .stJson, .stSidebar { 
+        width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; 
+    }
+    .stColumns > div { width: 100% !important; max-width: 100% !important; flex: 1 !important; box-sizing: border-box !important; }
+    .stTable table { width: 100% !important; max-width: 100% !important; }
+    :root { --main-width: 100vw !important; --max-width: 100vw !important; --content-width: 100vw !important; --sidebar-width: 20rem !important; }
+    .stApp > * { width: 100vw !important; max-width: 100vw !important; }
+    .stApp > div > div { width: 100vw !important; max-width: 100vw !important; }
+    .stApp { overflow-x: hidden !important; }
+    .reportview-container .main .block-container { width: 100vw !important; max-width: 100vw !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+    .wide .block-container { width: 100vw !important; max-width: 100vw !important; }
+    .stMarkdown > div, .stDataFrame > div, .stTable > div { width: 100% !important; max-width: 100% !important; }
+</style>
+
+<script>
+    function forceFullWidthNow() {
+        // Get all possible containers
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(element => {
+            if (element.style) {
+                element.style.maxWidth = 'none';
+                element.style.width = '100%';
+                element.style.boxSizing = 'border-box';
+            }
+        });
+        
+        // Target specific Streamlit containers
+        const containers = document.querySelectorAll('.stApp, .main, .block-container, [data-testid="stAppViewContainer"]');
+        containers.forEach(container => {
+            container.style.maxWidth = '100vw';
+            container.style.width = '100vw';
+            container.style.margin = '0';
+            container.style.padding = container.classList.contains('block-container') ? '0.5rem' : '0';
+            container.style.boxSizing = 'border-box';
+        });
+        
+        // Target all content elements
+        const content = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable');
+        content.forEach(element => {
+            element.style.width = '100%';
+            element.style.maxWidth = '100%';
+            element.style.boxSizing = 'border-box';
+        });
+        
+        // Target columns
+        const columns = document.querySelectorAll('.stColumns > div');
+        columns.forEach(column => {
+            column.style.width = '100%';
+            column.style.maxWidth = '100%';
+            column.style.flex = '1';
+            column.style.boxSizing = 'border-box';
+        });
+        
+        // Override CSS variables
+        document.documentElement.style.setProperty('--main-width', '100vw');
+        document.documentElement.style.setProperty('--max-width', '100vw');
+        document.documentElement.style.setProperty('--content-width', '100vw');
+        
+        // Force body and html
+        document.body.style.maxWidth = '100vw';
+        document.body.style.width = '100vw';
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+        document.body.style.overflowX = 'hidden';
+        
+        document.documentElement.style.maxWidth = '100vw';
+        document.documentElement.style.width = '100vw';
+        document.documentElement.style.margin = '0';
+        document.documentElement.style.padding = '0';
+    }
+    
+    // Run immediately
+    forceFullWidthNow();
+    
+    // Run on DOM changes
+    const observer = new MutationObserver(forceFullWidthNow);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    
+    // Run on events
+    window.addEventListener('load', forceFullWidthNow);
+    window.addEventListener('resize', forceFullWidthNow);
+    window.addEventListener('scroll', forceFullWidthNow);
+    
+    // Run continuously
+    setInterval(forceFullWidthNow, 50);
+    
+    // Send message to parent frame
+    if (window.parent) {
+        window.parent.postMessage('FORCE_FULL_WIDTH', '*');
+    }
+</script>
+""", height=0)
 
 # ULTRA-AGGRESSIVE full-width CSS and JavaScript
 st.markdown("""
@@ -798,8 +903,32 @@ def import_page(page_name):
                         </script>
                         """, unsafe_allow_html=True)
                         
-                        # Call the original page function with error handling
-                        page_module.show_page()
+                        # Call the original page function with comprehensive error handling
+                        try:
+                            page_module.show_page()
+                        except Exception as runtime_error:
+                            st.error(f"🚨 **Runtime Error in {page_name}:**")
+                            st.code(f"{type(runtime_error).__name__}: {runtime_error}")
+                            
+                            # Show detailed error information
+                            with st.expander("🔍 **Detailed Error Information**", expanded=True):
+                                import traceback
+                                st.code(traceback.format_exc())
+                            
+                            # Provide fallback content
+                            st.info("🔧 **Fallback Content:** Showing basic page structure...")
+                            st.title(f"📄 {page_name.replace('_', ' ').title()}")
+                            st.markdown("---")
+                            st.warning("⚠️ This page encountered a runtime error. Please check the error details above.")
+                            st.markdown("**Common causes:**")
+                            st.markdown("- Missing dependencies")
+                            st.markdown("- API connection issues")
+                            st.markdown("- Configuration problems")
+                            st.markdown("- Import conflicts")
+                            
+                            # Add refresh button
+                            if st.button("🔄 Try Refreshing This Page"):
+                                st.rerun()
                         
                     except Exception as page_error:
                         st.error(f"Error displaying page {page_name}: {page_error}")
@@ -858,7 +987,7 @@ def show_main_dashboard():
     """, unsafe_allow_html=True)
     
     # Metrics row
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4, gap="medium")
     
     with col1:
         st.markdown("""
@@ -901,7 +1030,7 @@ def show_main_dashboard():
     # Quick Access Section
     st.subheader("🚀 Quick Access to Features")
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2, gap="large")
     
     with col1:
         st.markdown("""
@@ -928,7 +1057,7 @@ def show_main_dashboard():
     # System Status
     st.subheader("🔍 System Status")
     
-    status_col1, status_col2 = st.columns(2)
+    status_col1, status_col2 = st.columns(2, gap="large")
     
     with status_col1:
         st.markdown("""
@@ -1054,13 +1183,37 @@ def main():
             page_function = import_page(current_page)
             if page_function:
                 st.sidebar.success(f"✅ Page loaded: {current_page}")
-                page_function()
+                # Add debugging info in sidebar
+                st.sidebar.info(f"🔄 Executing: {current_page}")
+                
+                # Execute the page function with detailed error catching
+                try:
+                    page_function()
+                    st.sidebar.success(f"✅ Page executed: {current_page}")
+                except Exception as execution_error:
+                    st.sidebar.error(f"❌ Execution failed: {current_page}")
+                    st.error(f"🚨 **Page Execution Error: {current_page}**")
+                    st.code(f"{type(execution_error).__name__}: {execution_error}")
+                    
+                    with st.expander("🔍 **Full Error Traceback**", expanded=False):
+                        import traceback
+                        st.code(traceback.format_exc())
+                    
+                    st.info("🔧 **Trying fallback to main dashboard...**")
+                    show_main_dashboard()
             else:
-                st.error(f"❌ Page {current_page} not found or has errors")
+                st.sidebar.error(f"❌ Import failed: {current_page}")
+                st.error(f"❌ Page {current_page} not found or has import errors")
                 st.info("Falling back to main dashboard")
                 show_main_dashboard()
         except Exception as e:
-            st.error(f"❌ Error loading page {current_page}: {e}")
+            st.sidebar.error(f"❌ Router error: {current_page}")
+            st.error(f"❌ Error in page router for {current_page}: {e}")
+            
+            with st.expander("🔍 **Router Error Details**", expanded=False):
+                import traceback
+                st.code(traceback.format_exc())
+            
             st.info("Falling back to main dashboard")
             show_main_dashboard()
 
