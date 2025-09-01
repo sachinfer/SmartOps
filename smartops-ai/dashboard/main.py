@@ -18,51 +18,141 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Force wide layout with additional CSS and JavaScript
+# Nuclear HTML injection to force full width immediately
 st.markdown("""
-<style>
-    /* Force wide layout override */
-    .reportview-container .main .block-container {
-        max-width: 100% !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-        width: 100% !important;
-    }
-    
-    /* Override Streamlit's default wide layout */
-    .wide .block-container {
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-</style>
+<div style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+"></div>
 
+<!-- Nuclear CSS that overrides everything -->
+<style>
+/* Reset everything */
+* {
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Force full viewport */
+html, body {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+/* Nuclear Streamlit overrides */
+.stApp, .stApp > div, .stApp > div > div {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+}
+
+/* Force main container to use full available width */
+.main .block-container {
+    width: calc(100vw - 300px) !important;
+    max-width: calc(100vw - 300px) !important;
+    min-width: calc(100vw - 300px) !important;
+    margin-left: 300px !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+}
+
+/* Force all content to expand */
+.main .block-container > div,
+.main .block-container > div > div,
+.main .block-container > div > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+/* Force columns to expand */
+[data-testid="column"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+/* Force metrics to expand */
+[data-testid="metric-container"] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Force buttons and cards to expand */
+.stButton > button,
+.element-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Force all Streamlit elements */
+[data-testid="stAppViewContainer"] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+}
+
+/* Override any remaining width constraints */
+div[style*="max-width"], div[style*="width"] {
+    max-width: 100vw !important;
+    width: 100vw !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Nuclear JavaScript to force full width
+st.markdown("""
 <script>
-    // JavaScript to force full width
-    function forceFullWidth() {
-        // Override any remaining width constraints
-        const containers = document.querySelectorAll('.block-container, .main, [data-testid="stAppViewContainer"]');
-        containers.forEach(container => {
-            container.style.maxWidth = '100%';
-            container.style.width = '100%';
-            container.style.margin = '0';
-            container.style.paddingLeft = '0.5rem';
-            container.style.paddingRight = '0.5rem';
-        });
-        
-        // Force all content to full width
-        const content = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric, .stColumns');
-        content.forEach(element => {
-            element.style.width = '100%';
-            element.style.maxWidth = '100%';
-        });
+function forceFullWidth() {
+    // Force all containers to full width
+    const containers = document.querySelectorAll('.main .block-container, .stApp > div, [data-testid="stAppViewContainer"]');
+    containers.forEach(container => {
+        container.style.maxWidth = '100vw !important';
+        container.style.width = '100vw !important';
+        container.style.paddingLeft = '0 !important';
+        container.style.paddingRight = '0 !important';
+        container.style.marginLeft = '0 !important';
+        container.style.marginRight = '0 !important';
+    });
+    
+    // Force main content area
+    const mainContainer = document.querySelector('.main .block-container');
+    if (mainContainer) {
+        mainContainer.style.marginLeft = '300px !important';
+        mainContainer.style.width = 'calc(100vw - 300px) !important';
+        mainContainer.style.maxWidth = 'calc(100vw - 300px) !important';
     }
     
-    // Run on page load and after any dynamic content
-    document.addEventListener('DOMContentLoaded', forceFullWidth);
-    window.addEventListener('load', forceFullWidth);
-    
-    // Run periodically to catch any dynamic content
-    setInterval(forceFullWidth, 1000);
+    // Force all divs to expand
+    const allDivs = document.querySelectorAll('div');
+    allDivs.forEach(div => {
+        if (div.style.maxWidth && div.style.maxWidth !== '100vw') {
+            div.style.maxWidth = '100vw !important';
+        }
+        if (div.style.width && div.style.width !== '100vw') {
+            div.style.width = '100vw !important';
+        }
+    });
+}
+
+// Run immediately and continuously
+forceFullWidth();
+setInterval(forceFullWidth, 100);
+
+// Also run on DOM changes
+const observer = new MutationObserver(forceFullWidth);
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Force on window resize
+window.addEventListener('resize', forceFullWidth);
 </script>
 """, unsafe_allow_html=True)
 
