@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: smartops-dashboard
   namespace: smartops
+  labels:
+    app: smartops-dashboard
+    version: v1
 spec:
   replicas: 1
   selector:
@@ -12,13 +15,69 @@ spec:
     metadata:
       labels:
         app: smartops-dashboard
+        version: v1
     spec:
       serviceAccountName: dashboard-metrics-reader
       containers:
       - name: dashboard
-        image: smartops-dashboard:latest
+        image: us-docker.pkg.dev/PROJECT_ID/smartops-repo/smartops-dashboard:latest  # This will be updated by CI/CD pipeline
         ports:
         - containerPort: 8501
+          name: streamlit
+        - containerPort: 8000
+          name: api
+        env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: "kubernetes.default.svc.cluster.local"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "PROJECT_ID"  # Replace with your GCP project ID
+        - name: GOOGLE_CLOUD_ZONE
+          value: "us-central1-a"  # Replace with your GCP zone
+        - name: STREAMLIT_SERVER_HEADLESS
+          value: "true"
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+        - name: STREAMLIT_SERVER_ENABLE_CORS
+          value: "false"
+        - name: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
+          value: "false"
+        - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+          value: "false"
+        - name: STREAMLIT_THEME_PRIMARY_COLOR
+          value: "#667eea"
+        - name: STREAMLIT_THEME_BACKGROUND_COLOR
+          value: "#0e1117"
+        - name: STREAMLIT_THEME_SECONDARY_BACKGROUND_COLOR
+          value: "#1e2127"
+        - name: STREAMLIT_THEME_TEXT_COLOR
+          value: "#fafafa"
+        - name: STREAMLIT_THEME_FONT
+          value: "sans serif"
+        - name: STREAMLIT_CLIENT_SHOW_ERROR_DETAILS
+          value: "true"
+        - name: STREAMLIT_LAYOUT_WIDE_MODE
+          value: "true"
+        - name: STREAMLIT_RUNNER_FAST_RERUNS
+          value: "true"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 15
         volumeMounts:
         - name: dashboard-data
           mountPath: /app/dashboard/data

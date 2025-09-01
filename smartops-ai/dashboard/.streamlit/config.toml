@@ -7,6 +7,7 @@ port = 8501
 enableCORS = false
 enableXsrfProtection = false
 maxUploadSize = 200
+runOnSave = true
 
 [browser]
 gatherUsageStats = false
@@ -23,3 +24,6 @@ showErrorDetails = true
 
 [layout]
 wideMode = true
+
+[runner]
+fastReruns = true

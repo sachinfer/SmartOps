@@ -1,0 +1,197 @@
+/* ULTRA-AGGRESSIVE FULL-WIDTH CSS FOR STREAMLIT */
+
+/* Reset everything to full width */
+* {
+    max-width: none !important;
+    box-sizing: border-box !important;
+}
+
+/* Force the entire application to full width */
+html, body {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+}
+
+/* Force Streamlit app container */
+.stApp {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Force main content area */
+.main {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 1 !important;
+}
+
+/* Force all block containers */
+.block-container,
+.main .block-container,
+[data-testid="stAppViewContainer"],
+.stApp > div[data-testid="stAppViewContainer"] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0.5rem !important;
+    box-sizing: border-box !important;
+}
+
+/* Force ALL Streamlit components to full width */
+.stMarkdown,
+.stDataFrame,
+.stMetric,
+.stColumns,
+.stTable,
+.stSelectbox,
+.stButton,
+.stTextInput,
+.stTextArea,
+.stNumberInput,
+.stSlider,
+.stCheckbox,
+.stRadio,
+.stMultiselect,
+.stDateInput,
+.stTimeInput,
+.stFileUploader,
+.stColorPicker,
+.stPlotlyChart,
+.stAltairChart,
+.stVegaLiteChart,
+.stPyplot,
+.stBokehChart,
+.stGraphvizChart,
+.stMap,
+.stImage,
+.stVideo,
+.stAudio,
+.stDownloadButton,
+.stProgress,
+.stSpinner,
+.stBalloons,
+.stSnow,
+.stError,
+.stWarning,
+.stInfo,
+.stSuccess,
+.stException,
+.stHelp,
+.stCode,
+.stJson,
+.stSidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Force columns to use full width */
+.stColumns > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+    box-sizing: border-box !important;
+}
+
+/* Force tables to full width */
+.stTable table {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Override Streamlit's internal CSS variables */
+:root {
+    --main-width: 100vw !important;
+    --max-width: 100vw !important;
+    --content-width: 100vw !important;
+    --sidebar-width: 20rem !important;
+}
+
+/* Force all direct children to full width */
+.stApp > * {
+    width: 100vw !important;
+    max-width: 100vw !important;
+}
+
+/* Override any remaining container constraints */
+.stApp > div > div {
+    width: 100vw !important;
+    max-width: 100vw !important;
+}
+
+/* Ensure no horizontal scrolling */
+.stApp {
+    overflow-x: hidden !important;
+}
+
+/* Force the viewport to full width */
+html {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Additional aggressive overrides */
+.reportview-container .main .block-container {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+}
+
+.wide .block-container {
+    width: 100vw !important;
+    max-width: 100vw !important;
+}
+
+/* Force all content elements */
+.stMarkdown > div,
+.stDataFrame > div,
+.stTable > div {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Ensure metric cards use full width */
+.metric-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Force navigation cards to full width */
+.nav-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Better spacing for wide layout */
+.stMarkdown {
+    margin-bottom: 1rem;
+}
+
+/* Consistent card styling */
+.stAlert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Better table styling */
+.stTable {
+    width: 100% !important;
+}
+
+/* Ensure charts use full width */
+.stPlotlyChart, .stAltairChart, .stVegaLiteChart {
+    width: 100% !important;
+}

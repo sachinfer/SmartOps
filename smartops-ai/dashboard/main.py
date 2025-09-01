@@ -18,6 +18,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Inject custom CSS at the HTML level
+st.markdown("""
+<link rel="stylesheet" type="text/css" href="custom.css">
+<style>
+    /* DIRECT HTML INJECTION - Force full width */
+    html, body { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
+    .stApp { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
+    .main { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
+    .block-container { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0.5rem !important; }
+    [data-testid="stAppViewContainer"] { width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; }
+    .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable { width: 100% !important; max-width: 100% !important; }
+    .stColumns > div { width: 100% !important; max-width: 100% !important; flex: 1 !important; }
+    .stTable table { width: 100% !important; max-width: 100% !important; }
+    :root { --main-width: 100vw !important; --max-width: 100vw !important; --content-width: 100vw !important; }
+</style>
+""", unsafe_allow_html=True)
+
 # ULTRA-AGGRESSIVE full-width CSS and JavaScript
 st.markdown("""
 <style>

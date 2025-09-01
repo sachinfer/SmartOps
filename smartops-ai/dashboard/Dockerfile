@@ -33,6 +33,13 @@ COPY supervisord.conf ./
 # Set working directory to dashboard
 WORKDIR /app/dashboard
 
+# Ensure all custom files are in place for full-width functionality
+RUN ls -la /app/dashboard/ && \
+    echo "✅ Checking for full-width files:" && \
+    ls -la /app/dashboard/main.py && \
+    ls -la /app/dashboard/custom.css && \
+    ls -la /app/dashboard/.streamlit/config.toml
+
 # Expose ports
 EXPOSE 8501
 EXPOSE 8000
