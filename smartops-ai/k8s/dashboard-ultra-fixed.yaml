@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: smartops-dashboard-ultra
+  name: smartops-dashboard-ultra-fixed
   namespace: smartops
   labels:
-    app: smartops-dashboard-ultra
+    app: smartops-dashboard-ultra-fixed
     version: v1
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: smartops-dashboard-ultra
+      app: smartops-dashboard-ultra-fixed
   template:
     metadata:
       labels:
-        app: smartops-dashboard-ultra
+        app: smartops-dashboard-ultra-fixed
         version: v1
     spec:
       serviceAccountName: dashboard-metrics-reader
@@ -57,7 +57,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: smartops-dashboard-ultra-service
+  name: smartops-dashboard-ultra-fixed-service
   namespace: smartops
 spec:
   type: LoadBalancer
@@ -71,4 +71,4 @@ spec:
     protocol: TCP
     name: api
   selector:
-    app: smartops-dashboard-ultra
+    app: smartops-dashboard-ultra-fixed
