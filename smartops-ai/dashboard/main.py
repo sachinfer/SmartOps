@@ -18,51 +18,279 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Force wide layout with additional CSS and JavaScript
+# ULTRA-AGGRESSIVE full-width CSS and JavaScript
 st.markdown("""
 <style>
-    /* Force wide layout override */
-    .reportview-container .main .block-container {
-        max-width: 100% !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-        width: 100% !important;
+    /* ULTRA-AGGRESSIVE: Override ALL possible width constraints */
+    * {
+        max-width: none !important;
     }
     
-    /* Override Streamlit's default wide layout */
-    .wide .block-container {
-        max-width: 100% !important;
+    /* Force the entire app to full width */
+    .stApp {
+        max-width: 100vw !important;
+        width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Override Streamlit's main container */
+    .stApp > div {
+        max-width: 100vw !important;
+        width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Force the main content area */
+    .main {
+        max-width: 100vw !important;
+        width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex: 1 !important;
+    }
+    
+    /* Override ALL block containers */
+    .block-container,
+    .main .block-container,
+    [data-testid="stAppViewContainer"],
+    .stApp > div[data-testid="stAppViewContainer"] {
+        max-width: 100vw !important;
+        width: 100vw !important;
+        margin: 0 !important;
+        padding: 0.5rem !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Force all content elements to full width */
+    .stMarkdown,
+    .stDataFrame,
+    .stMetric,
+    .stColumns,
+    .stTable,
+    .stSelectbox,
+    .stButton,
+    .stTextInput,
+    .stTextArea,
+    .stNumberInput,
+    .stSlider,
+    .stCheckbox,
+    .stRadio,
+    .stMultiselect,
+    .stDateInput,
+    .stTimeInput,
+    .stFileUploader,
+    .stColorPicker,
+    .stPlotlyChart,
+    .stAltairChart,
+    .stVegaLiteChart,
+    .stPyplot,
+    .stBokehChart,
+    .stGraphvizChart,
+    .stMap,
+    .stImage,
+    .stVideo,
+    .stAudio,
+    .stDownloadButton,
+    .stProgress,
+    .stSpinner,
+    .stBalloons,
+    .stSnow,
+    .stError,
+    .stWarning,
+    .stInfo,
+    .stSuccess,
+    .stException,
+    .stHelp,
+    .stCode,
+    .stJson,
+    .stSidebar {
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Force columns to use full width */
+    .stColumns > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 !important;
+    }
+    
+    /* Override any remaining container constraints */
+    .stMarkdown > div,
+    .stDataFrame > div,
+    .stTable > div {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Force tables to full width */
+    .stTable table {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Override Streamlit's internal CSS variables */
+    :root {
+        --main-width: 100vw !important;
+        --max-width: 100vw !important;
+        --content-width: 100vw !important;
+        --sidebar-width: 20rem !important;
+    }
+    
+    /* Hide any scrollbars that might appear */
+    .stApp {
+        overflow-x: hidden !important;
+    }
+    
+    /* Ensure no horizontal scrolling */
+    body {
+        overflow-x: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Force the viewport to full width */
+    html {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 </style>
 
 <script>
-    // JavaScript to force full width
-    function forceFullWidth() {
-        // Override any remaining width constraints
-        const containers = document.querySelectorAll('.block-container, .main, [data-testid="stAppViewContainer"]');
-        containers.forEach(container => {
-            container.style.maxWidth = '100%';
-            container.style.width = '100%';
-            container.style.margin = '0';
-            container.style.paddingLeft = '0.5rem';
-            container.style.paddingRight = '0.5rem';
+    // ULTRA-AGGRESSIVE JavaScript to force full width
+    function forceUltraFullWidth() {
+        // Override ALL possible containers
+        const allContainers = document.querySelectorAll('*');
+        allContainers.forEach(element => {
+            if (element.style) {
+                // Force full width on all elements
+                element.style.maxWidth = 'none';
+                element.style.width = '100%';
+                element.style.boxSizing = 'border-box';
+            }
         });
         
-        // Force all content to full width
-        const content = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric, .stColumns');
-        content.forEach(element => {
+        // Specifically target Streamlit containers
+        const streamlitContainers = document.querySelectorAll(
+            '.stApp, .main, .block-container, [data-testid="stAppViewContainer"], ' +
+            '.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable, ' +
+            '.stSelectbox, .stButton, .stTextInput, .stTextArea, .stNumberInput, ' +
+            '.stSlider, .stCheckbox, .stRadio, .stMultiselect, .stDateInput, ' +
+            '.stTimeInput, .stFileUploader, .stColorPicker, .stPlotlyChart, ' +
+            '.stAltairChart, .stVegaLiteChart, .stPyplot, .stBokehChart, ' +
+            '.stGraphvizChart, .stMap, .stImage, .stVideo, .stAudio, ' +
+            '.stDownloadButton, .stProgress, .stSpinner, .stBalloons, ' +
+            '.stSnow, .stError, .stWarning, .stInfo, .stSuccess, ' +
+            '.stException, .stHelp, .stCode, .stJson'
+        );
+        
+        streamlitContainers.forEach(container => {
+            container.style.maxWidth = '100vw';
+            container.style.width = '100vw';
+            container.style.margin = '0';
+            container.style.padding = '0.5rem';
+            container.style.boxSizing = 'border-box';
+        });
+        
+        // Force the main app container
+        const mainApp = document.querySelector('.stApp');
+        if (mainApp) {
+            mainApp.style.maxWidth = '100vw';
+            mainApp.style.width = '100vw';
+            mainApp.style.margin = '0';
+            mainApp.style.padding = '0';
+        }
+        
+        // Force the main content area
+        const mainContent = document.querySelector('.main');
+        if (mainContent) {
+            mainContent.style.maxWidth = '100vw';
+            mainContent.style.width = '100vw';
+            mainContent.style.margin = '0';
+            mainContent.style.padding = '0';
+            mainContent.style.flex = '1';
+        }
+        
+        // Force all block containers
+        const blockContainers = document.querySelectorAll('.block-container');
+        blockContainers.forEach(container => {
+            container.style.maxWidth = '100vw';
+            container.style.width = '100vw';
+            container.style.margin = '0';
+            container.style.padding = '0.5rem';
+            container.style.boxSizing = 'border-box';
+        });
+        
+        // Force all content elements
+        const contentElements = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable');
+        contentElements.forEach(element => {
             element.style.width = '100%';
             element.style.maxWidth = '100%';
+            element.style.boxSizing = 'border-box';
         });
+        
+        // Force columns to use full width
+        const columns = document.querySelectorAll('.stColumns > div');
+        columns.forEach(column => {
+            column.style.width = '100%';
+            column.style.maxWidth = '100%';
+            column.style.flex = '1';
+        });
+        
+        // Force tables to full width
+        const tables = document.querySelectorAll('.stTable table');
+        tables.forEach(table => {
+            table.style.width = '100%';
+            table.style.maxWidth = '100%';
+        });
+        
+        // Override any CSS variables
+        document.documentElement.style.setProperty('--main-width', '100vw');
+        document.documentElement.style.setProperty('--max-width', '100vw');
+        document.documentElement.style.setProperty('--content-width', '100vw');
+        
+        // Force body and html to full width
+        document.body.style.maxWidth = '100vw';
+        document.body.style.width = '100vw';
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+        document.body.style.overflowX = 'hidden';
+        
+        document.documentElement.style.maxWidth = '100vw';
+        document.documentElement.style.width = '100vw';
+        document.documentElement.style.margin = '0';
+        document.documentElement.style.padding = '0';
     }
     
-    // Run on page load and after any dynamic content
-    document.addEventListener('DOMContentLoaded', forceFullWidth);
-    window.addEventListener('load', forceFullWidth);
+    // Run immediately
+    forceUltraFullWidth();
     
-    // Run periodically to catch any dynamic content
-    setInterval(forceFullWidth, 1000);
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', forceUltraFullWidth);
+    window.addEventListener('load', forceUltraFullWidth);
+    
+    // Run continuously to catch any dynamic content
+    setInterval(forceUltraFullWidth, 100);
+    
+    // Run on any DOM changes
+    const observer = new MutationObserver(forceUltraFullWidth);
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class']
+    });
+    
+    // Run on window resize
+    window.addEventListener('resize', forceUltraFullWidth);
+    
+    // Run on any scroll events
+    window.addEventListener('scroll', forceUltraFullWidth);
 </script>
 """, unsafe_allow_html=True)
 
@@ -395,42 +623,95 @@ def import_page(page_name):
                 # Create a wrapper that applies consistent styling and error handling
                 def styled_page():
                     try:
-                        # Apply page-specific styling
+                        # Apply ULTRA-AGGRESSIVE page-specific styling
                         st.markdown(f"""
                         <style>
-                            /* Page-specific full-width styling */
+                            /* ULTRA-AGGRESSIVE Page-specific full-width styling */
                             .stPage {{
                                 background-color: #0e1117 !important;
                                 color: #fafafa !important;
+                                max-width: 100vw !important;
+                                width: 100vw !important;
                             }}
                             
-                            /* Force full width for this page - More aggressive */
+                            /* Force full width for this page - ULTRA-AGGRESSIVE */
                             .main .block-container {{
-                                max-width: 100% !important;
+                                max-width: 100vw !important;
                                 padding-left: 0.5rem !important;
                                 padding-right: 0.5rem !important;
-                                width: 100% !important;
+                                width: 100vw !important;
                                 margin: 0 !important;
+                                box-sizing: border-box !important;
                             }}
                             
-                            /* Override all container constraints */
+                            /* Override ALL container constraints */
                             .block-container {{
-                                max-width: 100% !important;
-                                width: 100% !important;
+                                max-width: 100vw !important;
+                                width: 100vw !important;
                                 padding: 0.5rem !important;
                                 margin: 0 !important;
+                                box-sizing: border-box !important;
                             }}
                             
-                            /* Force all elements to full width */
-                            .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable {{
+                            /* Force ALL elements to full width */
+                            .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable,
+                            .stSelectbox, .stButton, .stTextInput, .stTextArea, .stNumberInput,
+                            .stSlider, .stCheckbox, .stRadio, .stMultiselect, .stDateInput,
+                            .stTimeInput, .stFileUploader, .stColorPicker, .stPlotlyChart,
+                            .stAltairChart, .stVegaLiteChart, .stPyplot, .stBokehChart,
+                            .stGraphvizChart, .stMap, .stImage, .stVideo, .stAudio,
+                            .stDownloadButton, .stProgress, .stSpinner, .stBalloons,
+                            .stSnow, .stError, .stWarning, .stInfo, .stSuccess,
+                            .stException, .stHelp, .stCode, .stJson {{
                                 width: 100% !important;
                                 max-width: 100% !important;
+                                box-sizing: border-box !important;
                             }}
                             
-                            /* Override Streamlit's default layout */
+                            /* Override Streamlit's default layout - ULTRA-AGGRESSIVE */
                             [data-testid="stAppViewContainer"] {{
-                                max-width: 100% !important;
+                                max-width: 100vw !important;
+                                width: 100vw !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
+                            }}
+                            
+                            /* Force the main app container */
+                            .stApp {{
+                                max-width: 100vw !important;
+                                width: 100vw !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
+                            }}
+                            
+                            /* Force the main content area */
+                            .main {{
+                                max-width: 100vw !important;
+                                width: 100vw !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
+                                flex: 1 !important;
+                            }}
+                            
+                            /* Force columns to use full width */
+                            .stColumns > div {{
                                 width: 100% !important;
+                                max-width: 100% !important;
+                                flex: 1 !important;
+                                box-sizing: border-box !important;
+                            }}
+                            
+                            /* Force tables to full width */
+                            .stTable table {{
+                                width: 100% !important;
+                                max-width: 100% !important;
+                            }}
+                            
+                            /* Override CSS variables */
+                            :root {{
+                                --main-width: 100vw !important;
+                                --max-width: 100vw !important;
+                                --content-width: 100vw !important;
                             }}
                             
                             /* Better spacing */
@@ -439,11 +720,65 @@ def import_page(page_name):
                             }}
                             
                             /* Ensure no horizontal scrolling */
-                            .stApp {{
-                                max-width: 100% !important;
-                                width: 100% !important;
+                            body {{
+                                overflow-x: hidden !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
+                            }}
+                            
+                            html {{
+                                width: 100vw !important;
+                                max-width: 100vw !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
                             }}
                         </style>
+                        
+                        <script>
+                            // ULTRA-AGGRESSIVE JavaScript for this specific page
+                            function forcePageFullWidth() {{
+                                // Override ALL possible containers on this page
+                                const allElements = document.querySelectorAll('*');
+                                allElements.forEach(element => {{
+                                    if (element.style) {{
+                                        element.style.maxWidth = 'none';
+                                        element.style.width = '100%';
+                                        element.style.boxSizing = 'border-box';
+                                    }}
+                                }});
+                                
+                                // Force Streamlit containers
+                                const streamlitElements = document.querySelectorAll(
+                                    '.stApp, .main, .block-container, [data-testid="stAppViewContainer"], ' +
+                                    '.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stTable, ' +
+                                    '.stSelectbox, .stButton, .stTextInput, .stTextArea, .stNumberInput, ' +
+                                    '.stSlider, .stCheckbox, .stRadio, .stMultiselect, .stDateInput, ' +
+                                    '.stTimeInput, .stFileUploader, .stColorPicker, .stPlotlyChart, ' +
+                                    '.stAltairChart, .stVegaLiteChart, .stPyplot, .stBokehChart, ' +
+                                    '.stGraphvizChart, .stMap, .stImage, .stVideo, .stAudio, ' +
+                                    '.stDownloadButton, .stProgress, .stSpinner, .stBalloons, ' +
+                                    '.stSnow, .stError, .stWarning, .stInfo, .stSuccess, ' +
+                                    '.stException, .stHelp, .stCode, .stJson'
+                                );
+                                
+                                streamlitElements.forEach(element => {{
+                                    element.style.maxWidth = '100vw';
+                                    element.style.width = '100vw';
+                                    element.style.margin = '0';
+                                    element.style.padding = '0.5rem';
+                                    element.style.boxSizing = 'border-box';
+                                }});
+                                
+                                // Force CSS variables
+                                document.documentElement.style.setProperty('--main-width', '100vw');
+                                document.documentElement.style.setProperty('--max-width', '100vw');
+                                document.documentElement.style.setProperty('--content-width', '100vw');
+                            }}
+                            
+                            // Run immediately and continuously
+                            forcePageFullWidth();
+                            setInterval(forcePageFullWidth, 50);
+                        </script>
                         """, unsafe_allow_html=True)
                         
                         # Call the original page function with error handling

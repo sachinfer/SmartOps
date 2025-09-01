@@ -6,6 +6,7 @@ headless = true
 port = 8501
 enableCORS = false
 enableXsrfProtection = false
+maxUploadSize = 200
 
 [browser]
 gatherUsageStats = false
@@ -19,3 +20,6 @@ font = "sans serif"
 
 [client]
 showErrorDetails = true
+
+[layout]
+wideMode = true
