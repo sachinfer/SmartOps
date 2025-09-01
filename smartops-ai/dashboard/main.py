@@ -732,82 +732,58 @@ def main():
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🧭 **Page Navigation**")
     
-    # Get current page from query params or default to main
-    try:
-        query_params = st.experimental_get_query_params()
-        current_page = query_params.get("page", ["main"])[0]
-    except:
-        current_page = "main"
+    # Initialize session state for current page
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "main"
+    
+    # Show current page
+    current_page = st.session_state.current_page
+    st.sidebar.info(f"📍 **Current Page:** {current_page.replace('_', ' ').title()}")
     
     # Page selection buttons
     if st.sidebar.button("🏠 Main Dashboard", use_container_width=True):
-        current_page = "main"
-        st.experimental_set_query_params(page="main")
+        st.session_state.current_page = "main"
+        st.rerun()
     
     if st.sidebar.button("📊 Overview", use_container_width=True):
-        current_page = "1_Overview"
-        try:
-            st.experimental_set_query_params(page="1_Overview")
-        except:
-            pass
+        st.session_state.current_page = "1_Overview"
+        st.rerun()
     
     if st.sidebar.button("🧭 Pod Explorer", use_container_width=True):
-        current_page = "2_Pod_Explorer_and_Logs"
-        try:
-            st.experimental_set_query_params(page="2_Pod_Explorer_and_Logs")
-        except:
-            pass
+        st.session_state.current_page = "2_Pod_Explorer_and_Logs"
+        st.rerun()
     
     if st.sidebar.button("🔍 K8s Shell", use_container_width=True):
-        current_page = "3_Kubernetes_Shell_and_Cluster_Explorer"
-        try:
-            st.experimental_set_query_params(page="3_Kubernetes_Shell_and_Cluster_Explorer")
-        except:
-            pass
+        st.session_state.current_page = "3_Kubernetes_Shell_and_Cluster_Explorer"
+        st.rerun()
     
     if st.sidebar.button("🔥 Anomaly Detection", use_container_width=True):
-        current_page = "4_Anomaly_Detection"
-        try:
-            st.experimental_set_query_params(page="4_Anomaly_Detection")
-        except:
-            pass
+        st.session_state.current_page = "4_Anomaly_Detection"
+        st.rerun()
     
     if st.sidebar.button("⚡ Auto Scaling", use_container_width=True):
-        current_page = "5_Auto_Scaling_Recommendations_and_Control"
-        try:
-            st.experimental_set_query_params(page="5_Auto_Scaling_Recommendations_and_Control")
-        except:
-            pass
+        st.session_state.current_page = "5_Auto_Scaling_Recommendations_and_Control"
+        st.rerun()
     
     if st.sidebar.button("📝 Incident Timeline", use_container_width=True):
-        current_page = "6_Incident_Timeline_and_Postmortem_Report_Generator"
-        try:
-            st.experimental_set_query_params(page="6_Incident_Timeline_and_Postmortem_Report_Generator")
-        except:
-            pass
+        st.session_state.current_page = "6_Incident_Timeline_and_Postmortem_Report_Generator"
+        st.rerun()
     
     if st.sidebar.button("💬 AI Assistant", use_container_width=True):
-        current_page = "7_Misi_AI_Assistant"
-        try:
-            st.experimental_set_query_params(page="7_Misi_AI_Assistant")
-        except:
-            pass
+        st.session_state.current_page = "7_Misi_AI_Assistant"
+        st.rerun()
     
     if st.sidebar.button("🤖 AI Actions", use_container_width=True):
-        current_page = "8_AI_Actions"
-        try:
-            st.experimental_set_query_params(page="8_AI_Actions")
-        except:
-            pass
+        st.session_state.current_page = "8_AI_Actions"
+        st.rerun()
     
     if st.sidebar.button("🚀 Deployments", use_container_width=True):
-        current_page = "9_Deployments"
-        try:
-            st.experimental_set_query_params(page="9_Deployments")
-        except:
-            pass
+        st.session_state.current_page = "9_Deployments"
+        st.rerun()
     
     # Display current page
+    current_page = st.session_state.current_page
+    
     if current_page == "main":
         show_main_dashboard()
     else:
