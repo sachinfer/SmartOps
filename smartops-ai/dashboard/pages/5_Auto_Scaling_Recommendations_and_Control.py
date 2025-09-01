@@ -113,7 +113,7 @@ def show_page():
     observer.observe(document.body, { childList: true, subtree: true });
     </script>
     """, unsafe_allow_html=True)
-    
+
     st.title("⚖️ Auto-Scaling Recommendations and Control")
     st.write("AI-powered auto-scaling recommendations for your Kubernetes workloads")
     

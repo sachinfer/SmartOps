@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Direct HTML injection to force full width immediately
+# Nuclear HTML injection to force full width immediately
 st.markdown("""
 <div style="
     position: fixed;
@@ -23,111 +23,71 @@ st.markdown("""
     pointer-events: none;
 "></div>
 
-<!-- Force viewport width -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Nuclear CSS that overrides everything -->
 <style>
-html, body {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Ultra-aggressive full-width CSS
-st.markdown("""
-<style>
-/* CSS Reset and Nuclear option - override EVERYTHING */
-html, body {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
+/* Reset everything */
 * {
-    max-width: 100vw !important;
-    width: auto !important;
     box-sizing: border-box !important;
-}
-
-/* Reset all margins and padding */
-* {
     margin: 0 !important;
     padding: 0 !important;
 }
 
-/* Streamlit specific overrides - maximum aggression */
-.main .block-container,
-.block-container,
-.stApp > div,
-[data-testid="stAppViewContainer"],
-.stApp > div > div,
-.stApp > div > div > div,
-.stApp > div > div > div > div,
-.stApp > div > div > div > div > div,
-.stApp > div > div > div > div > div > div {
-    max-width: 100vw !important;
+/* Force full viewport */
+html, body {
     width: 100vw !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+/* Nuclear Streamlit overrides */
+.stApp, .stApp > div, .stApp > div > div {
+    width: 100vw !important;
+    max-width: 100vw !important;
     min-width: 100vw !important;
 }
 
-/* Force full width on ALL possible containers */
+/* Force main container to use full available width */
+.main .block-container {
+    width: calc(100vw - 300px) !important;
+    max-width: calc(100vw - 300px) !important;
+    min-width: calc(100vw - 300px) !important;
+    margin-left: 300px !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+}
+
+/* Force all content to expand */
 .main .block-container > div,
 .main .block-container > div > div,
-.main .block-container > div > div > div,
-.main .block-container > div > div > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    padding: 0 !important;
-    margin: 0 !important;
+.main .block-container > div > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
 }
 
-/* Override any remaining constraints with extreme prejudice */
-div[data-testid="stAppViewContainer"] > div,
-div[data-testid="stAppViewContainer"] > div > div,
-div[data-testid="stAppViewContainer"] > div > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    padding: 0 !important;
-    margin: 0 !important;
+/* Force columns to expand */
+[data-testid="column"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
 }
 
-/* Force sidebar to not interfere */
-.sidebar .sidebar-content {
-    width: 250px !important;
-    max-width: 250px !important;
+/* Force metrics to expand */
+[data-testid="metric-container"] {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
-/* Force main content to use remaining space */
-.main .block-container {
-    margin-left: 250px !important;
-    margin-right: 0 !important;
-    padding: 0 !important;
-    width: calc(100vw - 250px) !important;
-    max-width: calc(100vw - 250px) !important;
-}
-
-/* Additional aggressive overrides */
-[data-testid="stAppViewContainer"] {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
-}
-
-[data-testid="stAppViewContainer"] > div {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
+/* Force buttons and cards to expand */
+.stButton > button,
+.element-container {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 /* Force all Streamlit elements */
-.stApp, .stApp > div, .stApp > div > div {
+[data-testid="stAppViewContainer"] {
     width: 100vw !important;
     max-width: 100vw !important;
     min-width: 100vw !important;
@@ -138,18 +98,6 @@ div[style*="max-width"], div[style*="width"] {
     max-width: 100vw !important;
     width: 100vw !important;
 }
-
-/* Continuous animation to force full width */
-@keyframes forceFullWidth {
-    0%, 100% { max-width: 100vw !important; width: 100vw !important; }
-    50% { max-width: 100vw !important; width: 100vw !important; }
-}
-
-.main .block-container,
-.stApp > div,
-[data-testid="stAppViewContainer"] {
-    animation: forceFullWidth 0.1s infinite !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -157,19 +105,8 @@ div[style*="max-width"], div[style*="width"] {
 st.markdown("""
 <script>
 function forceFullWidth() {
-    // Nuclear option - override EVERYTHING
-    const allElements = document.querySelectorAll('*');
-    allElements.forEach(element => {
-        if (element.style.maxWidth && element.style.maxWidth !== '100vw') {
-            element.style.maxWidth = '100vw !important';
-        }
-        if (element.style.width && element.style.width !== '100vw') {
-            element.style.width = '100vw !important';
-        }
-    });
-    
     // Force all containers to full width
-    const containers = document.querySelectorAll('.main .block-container, .block-container, .stApp > div, [data-testid="stAppViewContainer"]');
+    const containers = document.querySelectorAll('.main .block-container, .stApp > div, [data-testid="stAppViewContainer"]');
     containers.forEach(container => {
         container.style.maxWidth = '100vw !important';
         container.style.width = '100vw !important';
@@ -177,19 +114,17 @@ function forceFullWidth() {
         container.style.paddingRight = '0 !important';
         container.style.marginLeft = '0 !important';
         container.style.marginRight = '0 !important';
-        container.style.minWidth = '100vw !important';
     });
     
     // Force main content area
     const mainContainer = document.querySelector('.main .block-container');
     if (mainContainer) {
-        mainContainer.style.marginLeft = '250px !important';
-        mainContainer.style.marginRight = '0 !important';
-        mainContainer.style.width = 'calc(100vw - 250px) !important';
-        mainContainer.style.maxWidth = 'calc(100vw - 250px) !important';
+        mainContainer.style.marginLeft = '300px !important';
+        mainContainer.style.width = 'calc(100vw - 300px) !important';
+        mainContainer.style.maxWidth = 'calc(100vw - 300px) !important';
     }
     
-    // Override any remaining constraints with extreme prejudice
+    // Force all divs to expand
     const allDivs = document.querySelectorAll('div');
     allDivs.forEach(div => {
         if (div.style.maxWidth && div.style.maxWidth !== '100vw') {
@@ -198,28 +133,12 @@ function forceFullWidth() {
         if (div.style.width && div.style.width !== '100vw') {
             div.style.width = '100vw !important';
         }
-        // Force remove any inline width constraints
-        if (div.style.maxWidth) div.style.removeProperty('max-width');
-        if (div.style.width) div.style.removeProperty('width');
-        div.style.maxWidth = '100vw !important';
-        div.style.width = '100vw !important';
-    });
-    
-    // Force all elements with any width-related styles
-    const allElements = document.querySelectorAll('*');
-    allElements.forEach(element => {
-        const computedStyle = window.getComputedStyle(element);
-        if (computedStyle.maxWidth !== 'none' || computedStyle.width !== 'auto') {
-            element.style.maxWidth = '100vw !important';
-            element.style.width = '100vw !important';
-        }
     });
 }
 
 // Run immediately and continuously
 forceFullWidth();
-setInterval(forceFullWidth, 100); // Ultra-frequent updates
-setInterval(forceFullWidth, 500); // Backup frequency
+setInterval(forceFullWidth, 100);
 
 // Also run on DOM changes
 const observer = new MutationObserver(forceFullWidth);
@@ -227,25 +146,6 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Force on window resize
 window.addEventListener('resize', forceFullWidth);
-
-// Force on page load
-window.addEventListener('load', forceFullWidth);
-document.addEventListener('DOMContentLoaded', forceFullWidth);
-
-// Force on any scroll or interaction
-document.addEventListener('scroll', forceFullWidth);
-document.addEventListener('click', forceFullWidth);
-document.addEventListener('keydown', forceFullWidth);
-
-// Force on any CSS changes
-const styleObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-            forceFullWidth();
-        }
-    });
-});
-styleObserver.observe(document.body, { attributes: true, subtree: true });
 </script>
 """, unsafe_allow_html=True)
 

@@ -114,7 +114,7 @@ def show_page():
     observer.observe(document.body, { childList: true, subtree: true });
     </script>
     """, unsafe_allow_html=True)
-    
+
     st.title("🕒 Incident Timeline and Postmortem Report Generator")
     st.write("Track incidents, generate timeline reports, and create postmortem documentation")
     
@@ -125,8 +125,8 @@ def show_page():
     incidents_data = [
         {
             "timestamp": current_time - timedelta(hours=2),
-            "type": "Pod Crash",
-            "app": "smartops-app",
+                        "type": "Pod Crash",
+                        "app": "smartops-app",
             "namespace": "default",
             "description": "Pod crashed due to memory limit exceeded",
             "severity": "High",
@@ -146,7 +146,7 @@ def show_page():
         {
             "timestamp": current_time - timedelta(days=1),
             "type": "Network Issue",
-            "app": "smartops-monitor",
+                        "app": "smartops-monitor",
             "namespace": "monitoring",
             "description": "Service unreachable from external network",
             "severity": "High",
@@ -242,7 +242,7 @@ def show_page():
                      color=severity_counts.index,
                      color_discrete_map={"High": "red", "Medium": "orange", "Low": "green"})
         st.plotly_chart(fig2, use_container_width=True)
-    
+
     # Postmortem Report Generator
     st.subheader("📝 Generate Postmortem Report")
     
