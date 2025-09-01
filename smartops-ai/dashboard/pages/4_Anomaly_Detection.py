@@ -61,9 +61,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-
-    st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
+st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
 # Check if API service is running
 def check_api_health():
