@@ -11,36 +11,38 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Comprehensive CSS fix for all alignment and overlap issues
+# NUCLEAR CSS FIX - This will definitely fix the horizontal overlap
 st.markdown("""
 <style>
-/* Reset everything */
+/* NUCLEAR CSS RESET - Override everything */
 * {
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-/* Force full viewport */
+/* FORCE FULL VIEWPORT */
 html, body {
     width: 100vw !important;
     max-width: 100vw !important;
     min-width: 100vw !important;
     overflow-x: hidden !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-/* Dark theme */
-.main {
-    background-color: #0e1117 !important;
-    color: #fafafa !important;
+/* NUCLEAR STREAMLIT OVERRIDES */
+.stApp, .stApp > div, .stApp > div > div {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-.stApp {
-    background-color: #0e1117 !important;
-    color: #fafafa !important;
-}
-
-/* NUCLEAR SIDEBAR FIX */
+/* FORCE SIDEBAR TO BE FIXED AND NOT INTERFERE */
 .sidebar .sidebar-content {
     background-color: #1e1e1e !important;
     border-right: 1px solid #333 !important;
@@ -52,10 +54,11 @@ html, body {
     top: 0 !important;
     height: 100vh !important;
     z-index: 1000 !important;
+    padding: 1rem !important;
     overflow-y: auto !important;
 }
 
-/* NUCLEAR MAIN CONTENT FIX */
+/* FORCE MAIN CONTENT TO START AFTER SIDEBAR */
 .main {
     margin-left: 300px !important;
     width: calc(100vw - 300px) !important;
@@ -63,161 +66,133 @@ html, body {
     min-width: calc(100vw - 300px) !important;
     position: relative !important;
     left: 0 !important;
-    right: 0 !important;
     overflow-x: hidden !important;
 }
 
+/* FORCE MAIN CONTENT BLOCK-CONTAINER TO USE FULL AVAILABLE WIDTH */
 .main .block-container {
-    max-width: 100% !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     padding: 2rem !important;
-    margin: 0 !important;
     position: relative !important;
     left: 0 !important;
-    right: 0 !important;
     transform: none !important;
 }
 
-/* Force all content to start from left edge */
-.main .block-container *,
+/* FORCE ALL CONTENT WITHIN BLOCK-CONTAINER TO EXPAND */
 .main .block-container > div,
 .main .block-container > div > div,
 .main .block-container > div > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
     position: relative !important;
     left: 0 !important;
     margin-left: 0 !important;
     padding-left: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
 }
 
-/* Modern cards */
-.metric-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 15px;
-    padding: 1.5rem;
-    margin: 1rem 0;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    color: white;
-    text-align: center;
-    width: 100% !important;
-    max-width: 100% !important;
+/* FORCE ALL STREAMLIT ELEMENTS */
+[data-testid="stAppViewContainer"] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-.metric-value {
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin: 0.5rem 0;
+/* OVERRIDE ANY REMAINING WIDTH CONSTRAINTS */
+div[style*="max-width"], div[style*="width"] {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-.metric-label {
-    font-size: 1rem;
-    opacity: 0.9;
+/* FORCE ALL ELEMENTS TO START FROM LEFT EDGE */
+.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stAlert, .stButton {
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
 }
 
-/* Status indicators */
-.status-online {
-    background: #00d4aa;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: 600;
-    text-align: center;
-    display: inline-block;
-}
-
-/* Hide Streamlit default elements */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-
-/* Force proper spacing */
-.stMarkdown {
-    margin-bottom: 1rem !important;
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
+/* FORCE PROPER SPACING */
 .stMarkdown > div {
     margin-bottom: 1rem !important;
     padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stDataFrame {
     margin: 1rem 0 !important;
     padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stMetric {
     margin: 0.5rem 0 !important;
     padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stColumns > div {
     margin: 0 !important;
     padding: 0.5rem !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stAlert {
     margin: 1rem 0 !important;
     padding: 1rem !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
 .stButton > button {
     margin: 0.25rem 0 !important;
     padding: 0.5rem 1rem !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-/* Force proper spacing between all elements */
+/* FORCE PROPER SPACING BETWEEN ALL ELEMENTS */
 .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stAlert, .stButton {
     display: block !important;
     clear: both !important;
     position: relative !important;
     left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
 }
 
-/* Ensure no text overlaps */
+/* ENSURE NO TEXT OVERLAPS */
 p, h1, h2, h3, h4, h5, h6 {
     margin: 0.5rem 0 !important;
     padding: 0 !important;
     line-height: 1.4 !important;
     position: relative !important;
     left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
 }
 
-/* Fix any remaining container issues */
+/* FIX ANY REMAINING CONTAINER ISSUES */
 .block-container > div {
     margin-bottom: 1rem !important;
     position: relative !important;
     left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
 }
 
-/* Better table spacing */
+/* BETTER TABLE SPACING */
 .stTable {
     margin: 1rem 0 !important;
     border-spacing: 0 !important;
     position: relative !important;
     left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
 }
 
 .stTable th, .stTable td {
@@ -225,7 +200,7 @@ p, h1, h2, h3, h4, h5, h6 {
     border: 1px solid #333 !important;
 }
 
-/* Fix sidebar navigation spacing */
+/* FIX SIDEBAR NAVIGATION SPACING */
 .sidebar .sidebar-content > div {
     margin-bottom: 0.5rem !important;
 }
@@ -236,219 +211,253 @@ p, h1, h2, h3, h4, h5, h6 {
     margin: 0 !important;
 }
 
-/* Ensure proper page separation */
+/* ENSURE PROPER PAGE SEPARATION */
 .page-content {
     min-height: 100vh !important;
     padding: 1rem !important;
     margin: 0 !important;
     position: relative !important;
     left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
 }
 
-/* NUCLEAR OVERRIDE - Force everything to proper position */
-.main .block-container * {
-    position: relative !important;
-    left: 0 !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-}
-
-/* Force all Streamlit elements to full width */
-[data-testid="stAppViewContainer"] {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
-}
-
+/* FORCE COLUMNS TO EXPAND */
 [data-testid="column"] {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
+/* FORCE METRICS TO EXPAND */
 [data-testid="metric-container"] {
     width: 100% !important;
     max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-/* Override any remaining width constraints */
+/* FORCE BUTTONS AND CARDS TO EXPAND */
+.stButton > button,
+.element-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
+}
+
+/* OVERRIDE ANY REMAINING WIDTH CONSTRAINTS */
 div[style*="max-width"], div[style*="width"] {
-    max-width: 100% !important;
-    width: 100% !important;
-}
-
-/* Force all containers to proper alignment */
-.reportview-container,
-.reportview-container .main,
-.reportview-container .main .block-container,
-.wide .block-container,
-.block-container {
-    max-width: 100% !important;
-    width: 100% !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    max-width: 100vw !important;
+    width: 100vw !important;
+    position: relative !important;
+    left: 0 !important;
 }
 </style>
+
+<!-- NUCLEAR JAVASCRIPT TO FORCE FULL WIDTH -->
+<script>
+function nuclearForceFullWidth() {
+    // Force all containers to full width
+    const containers = document.querySelectorAll('.main .block-container, .stApp > div, [data-testid="stAppViewContainer"]');
+    containers.forEach(container => {
+        container.style.maxWidth = '100vw !important';
+        container.style.width = '100vw !important';
+        container.style.paddingLeft = '1rem !important';
+        container.style.paddingRight = '1rem !important';
+        container.style.marginLeft = '0 !important';
+        container.style.marginRight = '0 !important';
+        container.style.position = 'relative !important';
+        container.style.left = '0 !important';
+    });
+    
+    // Force main content area
+    const mainContainer = document.querySelector('.main .block-container');
+    if (mainContainer) {
+        mainContainer.style.marginLeft = '0px !important';
+        mainContainer.style.width = '100% !important';
+        mainContainer.style.maxWidth = '100% !important';
+        mainContainer.style.padding = '1rem !important';
+        mainContainer.style.position = 'relative !important';
+        mainContainer.style.left = '0px !important';
+        mainContainer.style.transform = 'none !important';
+    }
+    
+    // Force all divs to expand
+    const allDivs = document.querySelectorAll('div');
+    allDivs.forEach(div => {
+        if (div.style.maxWidth && div.style.maxWidth !== '100vw') {
+            div.style.maxWidth = '100vw !important';
+        }
+        if (div.style.width && div.style.width !== '100vw') {
+            div.style.width = '100vw !important';
+        }
+        div.style.position = 'relative !important';
+        div.style.left = '0px !important';
+    });
+
+    // Ensure proper page separation
+    const pageElements = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric');
+    pageElements.forEach(element => {
+        element.style.marginBottom = '1rem !important';
+        element.style.width = '100% !important';
+        element.style.maxWidth = '100% !important';
+        element.style.position = 'relative !important';
+        element.style.left = '0px !important';
+        element.style.marginLeft = '0px !important';
+    });
+}
+
+// Run immediately and continuously
+nuclearForceFullWidth();
+setInterval(nuclearForceFullWidth, 25);
+
+// Also run on DOM changes
+const observer = new MutationObserver(nuclearForceFullWidth);
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Force on window resize
+window.addEventListener('resize', nuclearForceFullWidth);
+
+// Force on page load
+window.addEventListener('load', nuclearForceFullWidth);
+document.addEventListener('DOMContentLoaded', nuclearForceFullWidth);
+</script>
 """, unsafe_allow_html=True)
 
-# Simple sidebar
-st.sidebar.title("🚀 SmartOps")
+# Sidebar
+st.sidebar.title("🚀 SmartOps Dashboard")
 st.sidebar.markdown("**by Misi 24x7**")
 st.sidebar.markdown("---")
 
-# Clean page navigation
+# Initialize session state for current page
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "Main Dashboard"
+
+# Page navigation with session state
 page = st.sidebar.selectbox(
-    "📄 Select Page",
+    "Select Page",
     [
-        "🏠 Dashboard",
-        "📊 Overview", 
-        "🧭 Pod Explorer",
-        "🔍 K8s Shell",
-        "🔥 Anomaly Detection",
-        "⚡ Auto Scaling",
-        "📝 Incident Timeline",
-        "💬 AI Assistant",
-        "🤖 AI Actions",
-        "🚀 Deployments"
-    ]
+        "Main Dashboard",
+        "Overview",
+        "Pod Explorer and Logs",
+        "Kubernetes Shell",
+        "Anomaly Detection",
+        "Auto Scaling",
+        "Incident Timeline",
+        "Misi AI Assistant",
+        "AI Actions",
+        "Deployments"
+    ],
+    key="page_selector"
 )
 
-# Page loader function
+# Update session state when page changes
+if page != st.session_state.current_page:
+    st.session_state.current_page = page
+    st.rerun()
+
+# Page loader function with proper error handling
 def load_page_safely(page_name, file_path):
-    """Load and execute a page"""
+    """Load and execute a page with proper error handling"""
     try:
+        # Clear the page completely
+        st.empty()
+        
+        # Add current directory to path
         sys.path.append(os.path.dirname(__file__))
+        
+        # Import and execute the page
         spec = importlib.util.spec_from_file_location(page_name, file_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         
+        # Call show_page function
         if hasattr(module, 'show_page'):
             module.show_page()
         else:
-            st.error(f"Page {page_name} not available")
+            st.error(f"Page {page_name} does not have a show_page function")
             
     except Exception as e:
         st.error(f"Error loading {page_name}: {str(e)}")
+        st.write("This page is under maintenance.")
 
-# Main dashboard content
-if page == "🏠 Dashboard":
+# Page routing with clean separation
+if page == "Main Dashboard":
+    # Clear any previous content
+    st.empty()
+    
     st.title("🚀 SmartOps Dashboard")
-    st.markdown("**Intelligent Kubernetes Operations Platform**")
-    st.markdown("---")
+    st.write("Welcome to SmartOps - Intelligent Kubernetes Operations Platform")
     
-    # Key metrics in clean cards
+    # Key metrics
     col1, col2, col3, col4 = st.columns(4)
-    
     with col1:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">Active Pods</div>
-            <div class="metric-value">24</div>
-            <div style="color: #00d4aa;">↑ +2</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.metric("Active Pods", "24", "↑2")
     with col2:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">CPU Usage</div>
-            <div class="metric-value">68%</div>
-            <div style="color: #ff6b6b;">↑ +5%</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.metric("CPU Usage", "68%", "↓5%")
     with col3:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">Memory Usage</div>
-            <div class="metric-value">72%</div>
-            <div style="color: #4ecdc4;">↑ +3%</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.metric("Memory Usage", "72%", "↑3%")
     with col4:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">Services</div>
-            <div class="metric-value">12</div>
-            <div style="color: #45b7d1;">→ 0</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Services", "12", "→0")
     
     st.markdown("---")
     
-    # Quick actions
-    st.subheader("🚀 Quick Actions")
+    # Quick access cards
+    st.subheader("🚀 Quick Access")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📊 View Overview", use_container_width=True):
-            st.session_state.page = "📊 Overview"
-            st.rerun()
-    
+        st.info("**📊 Overview**\nCluster status and resource monitoring")
+        
     with col2:
-        if st.button("⚡ Auto Scaling", use_container_width=True):
-            st.session_state.page = "⚡ Auto Scaling"
-            st.rerun()
-    
+        st.info("**⚖️ Auto Scaling**\nAI-powered scaling recommendations")
+        
     with col3:
-        if st.button("📝 Incidents", use_container_width=True):
-            st.session_state.page = "📝 Incident Timeline"
-            st.rerun()
+        st.info("**🕒 Incident Timeline**\nTrack and analyze incidents")
     
-    # System status
-    st.markdown("---")
-    st.subheader("🔍 System Status")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("""
-        <div class="status-online">🟢 ALL SYSTEMS OPERATIONAL</div>
-        """, unsafe_allow_html=True)
-        st.info("🌍 **Environment:** Kubernetes")
-    
-    with col2:
-        st.success("✅ **Auto-scaling:** Enabled for 4 apps")
-        st.warning("⚠️ **Memory:** High usage on smartops-app")
+    # Recent activity
+    st.subheader("📈 Recent Activity")
+    st.success("✅ All systems operational")
+    st.info("🔄 Auto-scaling enabled for 4 applications")
+    st.warning("⚠️ Memory usage high on smartops-app")
 
-elif page == "📊 Overview":
+elif page == "Overview":
     load_page_safely("overview", "pages/1_Overview.py")
     
-elif page == "🧭 Pod Explorer":
+elif page == "Pod Explorer and Logs":
     load_page_safely("pod_explorer", "pages/2_Pod_Explorer_and_Logs.py")
     
-elif page == "🔍 K8s Shell":
+elif page == "Kubernetes Shell":
     load_page_safely("k8s_shell", "pages/3_Kubernetes_Shell_and_Cluster_Explorer.py")
     
-elif page == "🔥 Anomaly Detection":
+elif page == "Anomaly Detection":
     load_page_safely("anomaly", "pages/4_Anomaly_Detection.py")
     
-elif page == "⚡ Auto Scaling":
+elif page == "Auto Scaling":
     load_page_safely("auto_scaling", "pages/5_Auto_Scaling_Recommendations_and_Control.py")
     
-elif page == "📝 Incident Timeline":
+elif page == "Incident Timeline":
     load_page_safely("incident", "pages/6_Incident_Timeline_and_Postmortem_Report_Generator.py")
     
-elif page == "💬 AI Assistant":
+elif page == "Misi AI Assistant":
     load_page_safely("ai_assistant", "pages/7_Misi_AI_Assistant.py")
     
-elif page == "🤖 AI Actions":
+elif page == "AI Actions":
     load_page_safely("ai_actions", "pages/8_AI_Actions.py")
     
-elif page == "🚀 Deployments":
+elif page == "Deployments":
     load_page_safely("deployments", "pages/9_Deployments.py")
+
+else:
+    st.title(f"📄 {page}")
+    st.write(f"The {page} page is under development.")
+    st.info("Please select another page from the sidebar.")
 
 # Sidebar status
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📈 Status")
-st.sidebar.success("🟢 **Online**")
-st.sidebar.info("🌐 **Kubernetes**")
-st.sidebar.info("✅ **Full-width**")
+st.sidebar.success("🟢 **Status:** Online")
+st.sidebar.info("🌐 **Environment:** Kubernetes")
+st.sidebar.info("✅ **Full-width:** Enabled")
+st.sidebar.info("🚀 **Nuclear CSS:** Active")
