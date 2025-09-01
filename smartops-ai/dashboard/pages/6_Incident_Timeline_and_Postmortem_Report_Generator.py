@@ -1,23 +1,11 @@
 import streamlit as st
 import pandas as pd
-import requests
-from datetime import datetime
-import sys
-import os
-
-# Import Misi from the dashboard directory
-try:
-    # from misi_chatbot_widget import add_misi_to_page
-    MISI_AVAILABLE = True
-except ImportError:
-    MISI_AVAILABLE = False
-    st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
+import plotly.express as px
+from datetime import datetime, timedelta
+import pytz
 
 def show_page():
-    """Main page function - called by the router"""
-    # Note: Page config is handled by the main app, not here
-    
-    # Force full width for this page
+    # Full-width CSS
     st.markdown("""
     <style>
     .main .block-container {
@@ -29,166 +17,206 @@ def show_page():
     """, unsafe_allow_html=True)
     
     st.title("🕒 Incident Timeline and Postmortem Report Generator")
-    st.write("""
-    This page auto-generates a timeline of incidents (anomalies, pod crashes, alerts) and lets you export postmortem PDF reports with root cause, impact, and remediation. You can also view the audit trail by namespace or app.
-    """)
-
-    API_URL = "http://localhost:8000"  # Change if your FastAPI backend is hosted elsewhere
-
-    # Fetch incident data from backend
-    def fetch_incidents():
-        try:
-            resp = requests.get(f"{API_URL}/incidents", timeout=10)
-            if resp.status_code == 200:
-                return pd.DataFrame(resp.json()["incidents"])
-            else:
-                st.info(f"ℹ️ API Status: {resp.status_code} - Using sample data")
-                # Return sample data if API fails
-                return pd.DataFrame([
-                    {
-                        "id": 1,
-                        "timestamp": "2025-08-25 05:30:00",
-                        "type": "Pod Crash",
-                        "app": "smartops-app",
-                        "namespace": "smartops",
-                        "details": "Pod smartops-app-8c6cd4cbb-7226b crashed due to memory limit exceeded",
-                        "root_cause": "Memory leak in application code causing OOM",
-                        "impact": "Service unavailable for 2 minutes, affecting 15 users",
-                        "remediation": "Increased memory limits and fixed memory leak in code",
-                        "status": "Resolved"
-                    },
-                    {
-                        "id": 2,
-                        "timestamp": "2025-08-25 04:15:00",
-                        "type": "High CPU Usage",
-                        "app": "smartops-monitor",
-                        "namespace": "smartops",
-                        "details": "CPU usage spiked to 95% for 10 minutes",
-                        "root_cause": "Inefficient database queries during peak load",
-                        "impact": "Increased response times, monitoring alerts delayed",
-                        "remediation": "Optimized database queries and added caching",
-                        "status": "Resolved"
-                    }
-                ])
-        except Exception as e:
-            st.info(f"ℹ️ Connection error - Using sample data")
-            # Return sample data on connection error
-            return pd.DataFrame([
-                {
-                    "id": 1,
-                    "timestamp": "2025-08-25 05:30:00",
-                    "type": "Pod Crash",
-                    "app": "smartops-app",
-                    "namespace": "smartops",
-                    "details": "Pod smartops-app-8c6cd4cbb-7226b crashed due to memory limit exceeded",
-                    "root_cause": "Memory leak in application code causing OOM",
-                    "impact": "Service unavailable for 2 minutes, affecting 15 users",
-                    "remediation": "Increased memory limits and fixed memory leak in code",
-                    "status": "Resolved"
-                }
-            ])
-
-    try:
-        incidents_df = fetch_incidents()
-
-        # Filter by namespace/app
-        if not incidents_df.empty:
-            default_ns = incidents_df["namespace"].unique().tolist()
-            default_app = incidents_df["app"].unique().tolist()
-        else:
-            default_ns = []
-            default_app = []
-        namespace = st.selectbox("Filter by Namespace", ["All"] + default_ns)
-        app = st.selectbox("Filter by App", ["All"] + default_app)
-        filtered_df = incidents_df.copy()
-        if namespace != "All":
-            filtered_df = filtered_df[filtered_df["namespace"] == namespace]
-        if app != "All":
-            filtered_df = filtered_df[filtered_df["app"] == app]
-
-        st.markdown("### Incident Timeline")
-        if filtered_df.empty:
-            st.info("No incidents found for the selected filters.")
-        else:
-            st.dataframe(filtered_df, use_container_width=True)
-            # Timeline visualization (optional)
-            st.markdown("#### Timeline View (sorted by time)")
-            timeline = filtered_df.sort_values("timestamp")
-            for idx, row in timeline.iterrows():
-                st.markdown(f"**{row['timestamp']}** | `{row['type']}` | App: `{row['app']}` | {row['details']}")
-    except Exception as e:
-        st.error(f"Error loading incident data: {e}")
-        st.info("Showing fallback content...")
-        
-        # Show fallback content
-        st.markdown("### Incident Timeline")
-        st.info("Unable to load incident data. Please check your connection and try again.")
-        
-        # Show sample data
-        st.markdown("#### Sample Incident Data")
-        sample_data = pd.DataFrame([
-            {
-                "timestamp": "2025-08-25 05:30:00",
-                "type": "Pod Crash",
-                "app": "smartops-app",
-                "namespace": "smartops",
-                "details": "Sample incident data"
-            }
-        ])
-        st.dataframe(sample_data, use_container_width=True)
-
-    # Postmortem Report Generator
-    st.markdown("### Generate Postmortem Report")
+    st.write("Track incidents, generate timeline reports, and create postmortem documentation")
     
-    # Check if we have filtered data available
-    if 'filtered_df' in locals() and not filtered_df.empty:
-        try:
-            selected_idx = st.selectbox("Select Incident for Report", filtered_df.index)
-            incident = filtered_df.loc[selected_idx]
-            
-            st.write(f"**Incident:** {incident['type']} at {incident['timestamp']}")
-            st.write(f"**App:** {incident['app']}")
-            st.write(f"**Root Cause:** {incident['root_cause']}")
-            st.write(f"**Impact:** {incident['impact']}")
-            st.write(f"**Remediation:** {incident['remediation']}")
-            
-            report_text = st.text_area("Postmortem Report Body (editable)", value=f"Incident Postmortem Report\n\nTime: {incident['timestamp']}\nApp: {incident['app']}\nType: {incident['type']}\nDetails: {incident['details']}\nRoot Cause: {incident['root_cause']}\nImpact: {incident['impact']}\nRemediation: {incident['remediation']}\n")
-            
+    # Sample incident data with IST timezone
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time = datetime.now(ist)
+    
+    incidents_data = [
+        {
+            "timestamp": current_time - timedelta(hours=2),
+            "type": "Pod Crash",
+            "app": "smartops-app",
+            "namespace": "default",
+            "description": "Pod crashed due to memory limit exceeded",
+            "severity": "High",
+            "status": "Resolved",
+            "duration": "5m"
+        },
+        {
+            "timestamp": current_time - timedelta(hours=8),
+            "type": "High CPU",
+            "app": "smartops-dashboard",
+            "namespace": "default", 
+            "description": "CPU usage above 90% for 10 minutes",
+            "severity": "Medium",
+            "status": "Resolved",
+            "duration": "15m"
+        },
+        {
+            "timestamp": current_time - timedelta(days=1),
+            "type": "Network Issue",
+            "app": "smartops-monitor",
+            "namespace": "monitoring",
+            "description": "Service unreachable from external network",
+            "severity": "High",
+            "status": "Resolved", 
+            "duration": "30m"
+        },
+        {
+            "timestamp": current_time - timedelta(days=2),
+            "type": "Storage Alert",
+            "app": "smartops-anomaly",
+            "namespace": "default",
+            "description": "Disk usage above 85%",
+            "severity": "Low",
+            "status": "Resolved",
+            "duration": "2h"
+        }
+    ]
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(incidents_data)
+    df['timestamp_str'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
+    
+    # Metrics
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Incidents", len(df), "+1")
+    with col2:
+        st.metric("Resolved", len(df[df['status'] == 'Resolved']), "+1")
+    with col3:
+        st.metric("High Severity", len(df[df['severity'] == 'High']), "0")
+    with col4:
+        st.metric("Avg Resolution", "17.5m", "-5m")
+    
+    # Filters
+    st.subheader("🔍 Filter Incidents")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        namespace_filter = st.selectbox("Filter by Namespace", 
+                                       ["All"] + list(df['namespace'].unique()))
+    with col2:
+        app_filter = st.selectbox("Filter by App",
+                                 ["All"] + list(df['app'].unique()))
+    
+    # Apply filters
+    filtered_df = df.copy()
+    if namespace_filter != "All":
+        filtered_df = filtered_df[filtered_df['namespace'] == namespace_filter]
+    if app_filter != "All":
+        filtered_df = filtered_df[filtered_df['app'] == app_filter]
+    
+    # Incident Timeline
+    st.subheader("📋 Incident Timeline")
+    
+    # Display incidents
+    for _, incident in filtered_df.iterrows():
+        severity_color = {
+            "High": "🔴",
+            "Medium": "🟡", 
+            "Low": "🟢"
+        }
+        
+        with st.expander(f"{severity_color[incident['severity']]} {incident['timestamp_str']} | {incident['type']} | {incident['app']}"):
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Export Postmortem PDF"):
-                    st.download_button(
-                        label="Download PDF (Simulated)",
-                        data=report_text.encode(),
-                        file_name=f"postmortem_{incident['app']}_{incident['timestamp'].replace(' ', '_').replace(':', '-')}.pdf",
-                        mime="application/pdf"
-                    )
+                st.write(f"**App:** {incident['app']}")
+                st.write(f"**Namespace:** {incident['namespace']}")
+                st.write(f"**Type:** {incident['type']}")
+                st.write(f"**Severity:** {incident['severity']}")
             with col2:
-                if st.button("Save Postmortem Report to Audit Trail"):
-                    try:
-                        payload = {
-                            **incident.to_dict(),
-                            "report": report_text
-                        }
-                        resp = requests.post(f"{API_URL}/postmortem", json=payload, timeout=10)
-                        if resp.status_code == 200:
-                            st.success("Postmortem report saved to audit trail!")
-                        else:
-                            st.info(f"ℹ️ API Status: {resp.status_code} - Report saved locally")
-                    except Exception as e:
-                        st.info(f"ℹ️ Connection error - Report saved locally")
-        except Exception as e:
-            st.error(f"Error in postmortem section: {e}")
-            st.info("Postmortem report generation is temporarily unavailable.")
-    else:
-        st.info("No incidents available for postmortem report generation.")
+                st.write(f"**Status:** {incident['status']}")
+                st.write(f"**Duration:** {incident['duration']}")
+                st.write(f"**Time (IST):** {incident['timestamp_str']}")
+            
+            st.write(f"**Description:** {incident['description']}")
+    
+    # Incident Analytics
+    st.subheader("📊 Incident Analytics")
+    
+    # Incidents by type
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        incident_counts = df['type'].value_counts()
+        fig1 = px.pie(values=incident_counts.values, names=incident_counts.index, 
+                     title="Incidents by Type")
+        st.plotly_chart(fig1, use_container_width=True)
+    
+    with col2:
+        severity_counts = df['severity'].value_counts()
+        fig2 = px.bar(x=severity_counts.index, y=severity_counts.values,
+                     title="Incidents by Severity",
+                     color=severity_counts.index,
+                     color_discrete_map={"High": "red", "Medium": "orange", "Low": "green"})
+        st.plotly_chart(fig2, use_container_width=True)
+    
+    # Postmortem Report Generator
+    st.subheader("📝 Generate Postmortem Report")
+    
+    # Select incident for report
+    incident_options = [f"{row['timestamp_str']} - {row['type']} - {row['app']}" 
+                       for _, row in df.iterrows()]
+    
+    selected_incident_str = st.selectbox("Select Incident for Report", incident_options)
+    
+    if selected_incident_str:
+        # Find selected incident
+        selected_idx = incident_options.index(selected_incident_str)
+        selected_incident = df.iloc[selected_idx]
+        
+        # Report details
+        col1, col2 = st.columns(2)
+        with col1:
+            impact = st.text_area("Impact Description", 
+                                value=f"Service {selected_incident['app']} was affected for {selected_incident['duration']}")
+        with col2:
+            root_cause = st.text_area("Root Cause Analysis",
+                                    value="Resource limits exceeded due to memory leak in application code")
+        
+        remediation = st.text_area("Remediation Steps",
+                                 value="1. Increased memory limits\n2. Fixed memory leak in code\n3. Added monitoring alerts")
+        
+        # Generate report
+        if st.button("📄 Generate Postmortem Report", type="primary"):
+            st.success("✅ Postmortem report generated!")
+            
+            report_content = f"""
+# Incident Postmortem Report
 
-    st.markdown("---")
-    st.markdown("**Audit Trail:** All incidents are saved and can be filtered by namespace or app above.")
+**Incident ID:** {selected_incident['type']}-{selected_incident['timestamp'].strftime('%Y%m%d-%H%M')}
+**Date:** {selected_incident['timestamp_str']}
+**Application:** {selected_incident['app']}
+**Namespace:** {selected_incident['namespace']}
+**Severity:** {selected_incident['severity']}
+**Duration:** {selected_incident['duration']}
 
-    # Add Misi AI Chatbot Widget
-    if MISI_AVAILABLE:
-        # add_misi_to_page("bottom-right")
-        pass  # Placeholder for when Misi is properly integrated
-    else:
-        st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 
+## Summary
+{selected_incident['description']}
+
+## Impact
+{impact}
+
+## Root Cause
+{root_cause}
+
+## Remediation
+{remediation}
+
+## Timeline
+- **{selected_incident['timestamp_str']}**: Incident detected
+- **{(selected_incident['timestamp'] + timedelta(minutes=2)).strftime('%Y-%m-%d %H:%M:%S IST')}**: Investigation started
+- **{(selected_incident['timestamp'] + timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S IST')}**: Root cause identified
+- **{(selected_incident['timestamp'] + pd.Timedelta(selected_incident['duration'])).strftime('%Y-%m-%d %H:%M:%S IST')}**: Incident resolved
+
+## Action Items
+- [ ] Review monitoring thresholds
+- [ ] Update runbooks
+- [ ] Schedule post-incident review
+            """
+            
+            st.code(report_content, language="markdown")
+            
+            # Download button
+            st.download_button(
+                label="📥 Download Report",
+                data=report_content,
+                file_name=f"postmortem_{selected_incident['app']}_{selected_incident['timestamp'].strftime('%Y%m%d_%H%M')}.md",
+                mime="text/markdown"
+            )
+
+if __name__ == "__main__":
+    show_page()
