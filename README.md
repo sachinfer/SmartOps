@@ -76,7 +76,7 @@ cd SmartOps/smartops-ai/dashboard
 pip install -r requirements.txt
 ```
 
-### 2. Start the Backend API
+### 2. Start the Backend API-
 ```bash
 python event_api.py
 ```
