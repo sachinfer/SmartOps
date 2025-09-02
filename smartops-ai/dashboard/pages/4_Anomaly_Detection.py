@@ -119,13 +119,29 @@ if not filtered_df.empty:
         chart_df['memory_mb'] = 0
     
     # Create display dataframe with available columns
-    display_cols = ['timestamp', 'pod_name', 'prediction']
+    display_cols = ['timestamp', 'pod_name']
     if 'cpu_percent' in chart_df.columns:
         display_cols.append('cpu_percent')
     if 'memory_mb' in chart_df.columns:
         display_cols.append('memory_mb')
+    if 'prediction' in chart_df.columns:
+        display_cols.append('prediction')
     
-    top_anomalies_df = chart_df.nlargest(5, 'cpu_percent' if 'cpu_percent' in chart_df.columns else 'prediction')[display_cols]
+    # Determine the sort column - use the first available metric column
+    sort_column = None
+    if 'cpu_percent' in chart_df.columns:
+        sort_column = 'cpu_percent'
+    elif 'memory_mb' in chart_df.columns:
+        sort_column = 'memory_mb'
+    elif 'prediction' in chart_df.columns:
+        sort_column = 'prediction'
+    else:
+        # If no metric columns available, just take the first 5 rows
+        top_anomalies_df = chart_df.head(5)[display_cols]
+        sort_column = None
+    
+    if sort_column:
+        top_anomalies_df = chart_df.nlargest(5, sort_column)[display_cols]
     
     # Format the display
     if 'cpu_percent' in top_anomalies_df.columns:
