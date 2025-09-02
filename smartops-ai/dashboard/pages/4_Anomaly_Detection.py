@@ -101,18 +101,40 @@ else:
     filtered_df = df.copy()
 
 # Top Anomalies Section
-st.markdown('<div class="section-header">🔥 Top Anomalies by CPU Usage</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">🔥 Top Anomalies</div>', unsafe_allow_html=True)
 if not filtered_df.empty:
     chart_df = filtered_df.copy()
-    chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
-    chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
-    chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
-    chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
-    top_cpu_df = chart_df.nlargest(5, 'cpu_percent')[['timestamp', 'pod_name', 'cpu_percent', 'memory_mb', 'prediction']]
-    top_cpu_df['cpu_percent'] = top_cpu_df['cpu_percent'].round(1).astype(str) + '%'
-    top_cpu_df['memory_mb'] = top_cpu_df['memory_mb'].round(1).astype(str) + 'MB'
-    top_cpu_df = top_cpu_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
-    st.dataframe(top_cpu_df, use_container_width=True)
+    
+    # Check what columns are available and create safe numeric conversions
+    if 'cpu' in chart_df.columns:
+        chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
+        chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+    else:
+        chart_df['cpu_percent'] = 0
+    
+    if 'memory' in chart_df.columns:
+        chart_df['memory_numeric'] = pd.to_numeric(chart_df['memory'], errors='coerce').fillna(0)
+        chart_df['memory_mb'] = chart_df['memory_numeric'] / (1024 * 1024)
+    else:
+        chart_df['memory_mb'] = 0
+    
+    # Create display dataframe with available columns
+    display_cols = ['timestamp', 'pod_name', 'prediction']
+    if 'cpu_percent' in chart_df.columns:
+        display_cols.append('cpu_percent')
+    if 'memory_mb' in chart_df.columns:
+        display_cols.append('memory_mb')
+    
+    top_anomalies_df = chart_df.nlargest(5, 'cpu_percent' if 'cpu_percent' in chart_df.columns else 'prediction')[display_cols]
+    
+    # Format the display
+    if 'cpu_percent' in top_anomalies_df.columns:
+        top_anomalies_df['cpu_percent'] = top_anomalies_df['cpu_percent'].round(1).astype(str) + '%'
+    if 'memory_mb' in top_anomalies_df.columns:
+        top_anomalies_df['memory_mb'] = top_anomalies_df['memory_mb'].round(1).astype(str) + 'MB'
+    
+    top_anomalies_df = top_anomalies_df.rename(columns={'timestamp': 'Timestamp', 'pod_name': 'Pod Name'})
+    st.dataframe(top_anomalies_df, use_container_width=True)
 else:
     st.info("No anomaly data available for the selected namespace.")
 

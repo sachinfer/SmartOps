@@ -1,3 +1,4 @@
+import streamlit as st
 import requests
 
 # Check if API service is running
