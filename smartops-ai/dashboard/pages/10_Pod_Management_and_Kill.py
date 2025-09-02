@@ -189,10 +189,8 @@ def show_page():
                                 st.error(message)
         else:
             st.success("✅ No pods with high resource consumption detected")
-            st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
     else:
         st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
-        st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
     
     # Only show high resource consuming pods - no need for regular pod listing
     
