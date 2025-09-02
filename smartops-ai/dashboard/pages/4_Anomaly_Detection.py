@@ -49,43 +49,43 @@ def fetch_namespaces():
 
 @st.cache_data(ttl=30)
 def load_anomalies_df():
+    print("DEBUG: Starting to load anomaly data...")
     try:
         # Try to load from the real anomaly database first
+        print("DEBUG: Trying to load from /app/dashboard/data/data.db")
         conn = sqlite3.connect('/app/dashboard/data/data.db')
         df = pd.read_sql_query("SELECT * FROM anomalies ORDER BY timestamp DESC LIMIT 100", conn)
         conn.close()
         
+        print(f"DEBUG: Loaded {len(df)} records from data.db")
         if not df.empty:
             # Convert timestamp to datetime if it's a string
             if 'timestamp' in df.columns:
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
+            print("DEBUG: Successfully loaded real data from data.db")
             return df
     except Exception as e:
-        print(f"Error loading from database: {e}")
+        print(f"DEBUG: Error loading from database: {e}")
     
     try:
         # Try to load from the old anomalies database
+        print("DEBUG: Trying to load from /app/dashboard/data/anomalies.db")
         conn = sqlite3.connect('/app/dashboard/data/anomalies.db')
         df = pd.read_sql_query("SELECT * FROM anomalies ORDER BY timestamp DESC LIMIT 100", conn)
         conn.close()
         
+        print(f"DEBUG: Loaded {len(df)} records from anomalies.db")
         if not df.empty:
             if 'timestamp' in df.columns:
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
+            print("DEBUG: Successfully loaded data from anomalies.db")
             return df
     except Exception as e:
-        print(f"Error loading from old database: {e}")
+        print(f"DEBUG: Error loading from old database: {e}")
     
-    # Fallback to sample data with more realistic values
-    return pd.DataFrame({
-        'timestamp': [datetime.now() - timedelta(hours=i) for i in range(10)],
-        'namespace': ['smartops', 'smartops', 'smartops'] * 3 + ['smartops'],
-        'pod_name': [f'stress-pod-{i}' for i in range(10)],
-        'cpu': [0.8, 0.9, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05],
-        'memory': [800000000, 900000000, 700000000, 600000000, 500000000, 400000000, 300000000, 200000000, 100000000, 50000000],
-        'prediction': ['Anomaly detected', 'Anomaly detected', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal'],
-        'labels': ['{"app": "stress-test"}'] * 10
-    })
+    # If we get here, there's a problem - log it and return empty DataFrame
+    print("WARNING: No anomaly data could be loaded from any source")
+    return pd.DataFrame()
 
 def has_namespace_column(df):
     return 'namespace' in df.columns
