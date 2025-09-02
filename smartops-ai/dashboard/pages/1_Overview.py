@@ -78,6 +78,11 @@ def get_pod_status_counts(pods):
     
     return status_counts
 
+# Get live or fallback data for metrics with enhanced fallback
+node_count = len(fetch_node_data()) if fetch_node_data() else 1
+pod_count = len(fetch_pod_data()) if fetch_pod_data() else 18
+service_count = get_service_count()
+namespace_count = get_namespace_count()
 
 # Main content
 st.markdown("""
