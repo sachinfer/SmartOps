@@ -4,73 +4,7 @@ import plotly.express as px
 from datetime import datetime
 
 def show_page():
-    # Nuclear full-width CSS for maximum aggression
-    st.markdown("""
-    <style>
-    /* Nuclear option - override EVERYTHING */
-    * {
-        max-width: 100% !important;
-        width: auto !important;
-    }
-    
-    /* Streamlit specific overrides - maximum aggression */
-    .main .block-container,
-    .block-container,
-    .stApp > div,
-    [data-testid="stAppViewContainer"],
-    .stApp > div > div,
-    .stApp > div > div > div,
-    .stApp > div > div > div > div,
-    .stApp > div > div > div > div > div,
-    .stApp > div > div > div > div > div > div {
-        max-width: 100% !important;
-        width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        min-width: 100% !important;
-    }
-    
-    /* Force full width on ALL possible containers */
-    .main .block-container > div,
-    .main .block-container > div > div,
-    .main .block-container > div > div > div,
-    .main .block-container > div > div > div > div {
-        max-width: 100% !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    /* Override any remaining constraints with extreme prejudice */
-    div[data-testid="stAppViewContainer"] > div,
-    div[data-testid="stAppViewContainer"] > div > div,
-    div[data-testid="stAppViewContainer"] > div > div > div {
-        max-width: 100% !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    /* Force sidebar to not interfere */
-    .sidebar .sidebar-content {
-        width: 250px !important;
-        max-width: 250px !important;
-    }
-    
-    /* Force main content to use remaining space */
-    .main .block-container {
-        margin-left: 250px !important;
-        margin-right: 0 !important;
-        padding: 0 !important;
-        width: calc(100vw - 250px) !important;
-        max-width: calc(100vw - 250px) !important;
-    }
-    </style>
-    
-    
-    """, unsafe_allow_html=True)
+    # Page uses main layout - no custom CSS needed
 
     st.title("⚖️ Auto-Scaling Recommendations and Control")
     st.write("AI-powered auto-scaling recommendations for your Kubernetes workloads")
