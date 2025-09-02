@@ -7,7 +7,7 @@ on:
       - completed
   push:
     branches:
-      - main
+      # - main
       - docker
   workflow_dispatch:
 
