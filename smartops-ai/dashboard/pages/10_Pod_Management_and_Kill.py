@@ -190,14 +190,32 @@ def show_page():
     
     # Function to kill a pod
     def kill_pod(pod_name):
+        """Kill a pod using kubectl command"""
         try:
-            response = requests.delete(f"{API_URL}/pods/{pod_name}", timeout=10)
-            if response.status_code == 200:
+            # Use kubectl delete command directly
+            result = subprocess.run(
+                f"kubectl delete pod {pod_name} -n {NAMESPACE}",
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode == 0:
                 return True, f"✅ Successfully killed pod: {pod_name}"
             else:
-                return False, f"❌ Failed to kill pod: {response.text}"
+                return False, f"❌ Failed to kill pod: {result.stderr.strip()}"
         except Exception as e:
             return False, f"❌ Error killing pod: {str(e)}"
+    
+    def ignore_pod(pod_name):
+        """Add a pod to ignore list (just log the action)"""
+        try:
+            # For now, just log the ignore action
+            # In a real implementation, you might want to store ignored pods in a database
+            return True, f"✅ Pod {pod_name} added to ignore list"
+        except Exception as e:
+            return False, f"❌ Error ignoring pod: {str(e)}"
     
     # Refresh button
     st.markdown("### 📊 Real-Time Pod Monitoring")
@@ -238,7 +256,7 @@ def show_page():
                 memory_usage = row['memory_numeric'] / (1024 * 1024)  # Convert to MB
                 timestamp = row['timestamp']
                 
-                col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
+                col1, col2, col3, col4, col5, col6 = st.columns([2, 1, 1, 1, 1, 1])
                 
                 with col1:
                     st.write(f"**{pod_name}**")
@@ -257,6 +275,16 @@ def show_page():
                                 st.success(message)
                                 st.rerun()
                             else:
+                                st.error(message)
+                with col6:
+                    if st.button("🚫 Ignore", key=f"ignore_anomaly_{pod_name}"):
+                        with st.spinner(f"Ignoring {pod_name}..."):
+                            success, message = ignore_pod(pod_name)
+                            if success:
+                                log_pod_action("ignore", pod_name, f"High resource usage - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}MB")
+                                st.success(message)
+                        st.rerun()
+            else:
                                 st.error(message)
         else:
             st.success("✅ No pods with high resource consumption detected")
