@@ -9,7 +9,7 @@ def show_page():
     <style>
     /* Nuclear option - override EVERYTHING */
     * {
-        max-width: 100vw !important;
+        max-width: 100% !important;
         width: auto !important;
     }
     
@@ -23,13 +23,13 @@ def show_page():
     .stApp > div > div > div > div,
     .stApp > div > div > div > div > div,
     .stApp > div > div > div > div > div > div {
-        max-width: 100vw !important;
-        width: 100vw !important;
+        max-width: 100% !important;
+        width: 100% !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
-        min-width: 100vw !important;
+        min-width: 100% !important;
     }
     
     /* Force full width on ALL possible containers */
@@ -37,8 +37,8 @@ def show_page():
     .main .block-container > div > div,
     .main .block-container > div > div > div,
     .main .block-container > div > div > div > div {
-        max-width: 100vw !important;
-        width: 100vw !important;
+        max-width: 100% !important;
+        width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
     }
@@ -47,8 +47,8 @@ def show_page():
     div[data-testid="stAppViewContainer"] > div,
     div[data-testid="stAppViewContainer"] > div > div,
     div[data-testid="stAppViewContainer"] > div > div > div {
-        max-width: 100vw !important;
-        width: 100vw !important;
+        max-width: 100% !important;
+        width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
     }
@@ -69,49 +69,7 @@ def show_page():
     }
     </style>
     
-    <!-- Nuclear JavaScript to force full width -->
-    <script>
-    function forceFullWidth() {
-        // Nuclear option - override EVERYTHING
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach(element => {
-            if (element.style.maxWidth && element.style.maxWidth !== '100vw') {
-                element.style.maxWidth = '100vw !important';
-            }
-            if (element.style.width && element.style.width !== '100vw') {
-                element.style.width = '100vw !important';
-            }
-        });
-        
-        // Force all containers to full width
-        const containers = document.querySelectorAll('.main .block-container, .block-container, .stApp > div, [data-testid="stAppViewContainer"]');
-        containers.forEach(container => {
-            container.style.maxWidth = '100vw !important';
-            container.style.width = '100vw !important';
-            container.style.paddingLeft = '0 !important';
-            container.style.paddingRight = '0 !important';
-            container.style.marginLeft = '0 !important';
-            container.style.marginRight = '0 !important';
-            container.style.minWidth = '100vw !important';
-        });
-        
-        // Force main content area
-        const mainContainer = document.querySelector('.main .block-container');
-        if (mainContainer) {
-            mainContainer.style.marginLeft = '250px !important';
-            mainContainer.style.width = 'calc(100vw - 250px) !important';
-            mainContainer.style.maxWidth = 'calc(100vw - 250px) !important';
-        }
-    }
     
-    // Run immediately and continuously
-    forceFullWidth();
-    setInterval(forceFullWidth, 500);
-    
-    // Also run on DOM changes
-    const observer = new MutationObserver(forceFullWidth);
-    observer.observe(document.body, { childList: true, subtree: true });
-    </script>
     """, unsafe_allow_html=True)
 
     st.title("⚖️ Auto-Scaling Recommendations and Control")

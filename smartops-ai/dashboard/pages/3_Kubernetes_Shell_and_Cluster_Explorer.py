@@ -6,49 +6,7 @@ import time
 from datetime import datetime, timedelta
 import pytz
 
-# Import Misi from the dashboard directory
-try:
-    # from misi_chatbot_widget import add_misi_to_page
-    MISI_AVAILABLE = True
-except ImportError:
-    MISI_AVAILABLE = False
-# Fixed layout CSS - Respects sidebar
-st.markdown("""
-<style>
-/* Ensure page content respects the main layout */
-.main .block-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    margin: 0 !important;
-    padding: 2rem !important;
-    position: relative !important;
-    left: 0 !important;
-}
-
-/* Page content elements */
-.main .block-container > div,
-.main .block-container > div > div {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    position: relative !important;
-    left: 0 !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-}
-
-/* Streamlit elements */
-.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stAlert, .stButton {
-    position: relative !important;
-    left: 0 !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-}
-</style>
-""", unsafe_allow_html=True)
+", unsafe_allow_html=True)
 
 st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 

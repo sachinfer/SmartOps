@@ -7,53 +7,7 @@ import streamlit as st
 import time
 from datetime import datetime
 
-# Ultra-aggressive full-width CSS
-st.markdown("""
-<style>
-/* Force full width on ALL elements */
-* {
-    max-width: 100vw !important;
-}
-
-/* Streamlit specific overrides */
-.main .block-container,
-.block-container,
-.stApp > div,
-[data-testid="stAppViewContainer"],
-.stApp > div > div,
-.stApp > div > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-/* Force full width on all containers */
-.stApp > div > div > div > div,
-.stApp > div > div > div > div > div,
-.stApp > div > div > div > div > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-}
-
-/* Override any remaining constraints */
-.main .block-container > div,
-.main .block-container > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-}
-
-/* Force full width on page content */
-.main .block-container > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-</style>
-""", unsafe_allow_html=True)
+", unsafe_allow_html=True)
 
 
 
