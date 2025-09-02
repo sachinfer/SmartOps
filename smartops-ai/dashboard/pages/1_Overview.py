@@ -10,6 +10,46 @@ def check_api_health():
     except Exception:
         return False
 
+# Fetch node data
+def fetch_node_data():
+    try:
+        response = requests.get("http://localhost:8000/nodes", timeout=5)
+        if response.status_code == 200:
+            return response.json().get('nodes', [])
+        return []
+    except Exception:
+        return []
+
+# Fetch pod data
+def fetch_pod_data():
+    try:
+        response = requests.get("http://localhost:8000/pods", timeout=5)
+        if response.status_code == 200:
+            return response.json().get('pods', [])
+        return []
+    except Exception:
+        return []
+
+# Get service count
+def get_service_count():
+    try:
+        response = requests.get("http://localhost:8000/services", timeout=5)
+        if response.status_code == 200:
+            return len(response.json().get('services', []))
+        return 0
+    except Exception:
+        return 0
+
+# Get namespace count
+def get_namespace_count():
+    try:
+        response = requests.get("http://localhost:8000/namespaces", timeout=5)
+        if response.status_code == 200:
+            return len(response.json().get('namespaces', []))
+        return 0
+    except Exception:
+        return 0
+
 # Main content
 st.markdown("""
 <div class="dashboard-header">
