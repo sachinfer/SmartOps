@@ -157,22 +157,63 @@ else:
 # Recent Anomalies Section
 st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
 if not filtered_df.empty:
-    display_cols = ['timestamp', 'cpu', 'memory', 'prediction']
+    # Build display columns dynamically based on what's available
+    display_cols = ['timestamp']
+    
+    # Add metric columns if they exist
+    if 'cpu' in filtered_df.columns:
+        display_cols.append('cpu')
+    if 'memory' in filtered_df.columns:
+        display_cols.append('memory')
+    if 'prediction' in filtered_df.columns:
+        display_cols.append('prediction')
+    if 'cpu_percent' in filtered_df.columns:
+        display_cols.append('cpu_percent')
+    if 'memory_mb' in filtered_df.columns:
+        display_cols.append('memory_mb')
+    
+    # Add metadata columns if they exist
     if 'pod_name' in filtered_df.columns:
         display_cols.append('pod_name')
     if 'labels' in filtered_df.columns:
         display_cols.append('labels')
-    show_df = filtered_df[display_cols].copy()
+    
+    # Only select columns that actually exist
+    available_cols = [col for col in display_cols if col in filtered_df.columns]
+    show_df = filtered_df[available_cols].copy()
     show_df = show_df.sort_values('timestamp', ascending=False).head(20)
-    show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
-    show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
-    show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
-    show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
-    display_df = show_df[['timestamp', 'cpu_display', 'memory_display', 'prediction']].copy()
+    
+    # Format CPU column if it exists
+    if 'cpu' in show_df.columns:
+        show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
+        show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
+    elif 'cpu_percent' in show_df.columns:
+        show_df['cpu_display'] = show_df['cpu_percent'].astype(str) + '%'
+    
+    # Format Memory column if it exists
+    if 'memory' in show_df.columns:
+        show_df['memory_numeric'] = pd.to_numeric(show_df['memory'], errors='coerce').fillna(0)
+        show_df['memory_display'] = (show_df['memory_numeric'] / (1024 * 1024)).round(1).astype(str) + 'MB'
+    elif 'memory_mb' in show_df.columns:
+        show_df['memory_display'] = show_df['memory_mb'].astype(str) + 'MB'
+    
+    # Create final display dataframe with available formatted columns
+    final_display_cols = ['timestamp']
+    
+    if 'cpu_display' in show_df.columns:
+        final_display_cols.append('cpu_display')
+    if 'memory_display' in show_df.columns:
+        final_display_cols.append('memory_display')
+    if 'prediction' in show_df.columns:
+        final_display_cols.append('prediction')
     if 'pod_name' in show_df.columns:
-        display_df['pod_name'] = show_df['pod_name']
+        final_display_cols.append('pod_name')
     if 'labels' in show_df.columns:
-        display_df['labels'] = show_df['labels']
+        final_display_cols.append('labels')
+    
+    # Only select columns that actually exist
+    available_final_cols = [col for col in final_display_cols if col in show_df.columns]
+    display_df = show_df[available_final_cols].copy()
     display_df = display_df.rename(columns={
         'timestamp': 'Timestamp',
         'cpu_display': 'CPU',
