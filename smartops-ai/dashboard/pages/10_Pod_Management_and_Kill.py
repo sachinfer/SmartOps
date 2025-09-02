@@ -297,7 +297,7 @@ def show_page():
                                 # Force immediate refresh to update the display
                                 time.sleep(1)  # Brief pause to ensure pod is deleted
                                 st.rerun()
-                else:
+                            else:
                                 st.error(message)
                 with col6:
                     if st.button("🚫 Ignore", key=f"ignore_anomaly_{pod_name}"):
