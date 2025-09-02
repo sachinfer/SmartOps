@@ -6,8 +6,6 @@ import time
 from datetime import datetime, timedelta
 import pytz
 
-st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
-
 # Check if API service is running
 def check_api_health():
     try:
@@ -465,6 +463,4 @@ with tab2:
             except Exception:
                 st.info(f"ℹ️ Error fetching {resource}")
 
-# Misi AI Chatbot Widget removed - not using MISI AI page-wise
-else:
-    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 
+# Misi AI Chatbot Widget removed - not using MISI AI page-wise 

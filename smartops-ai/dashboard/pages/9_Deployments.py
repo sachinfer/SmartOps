@@ -560,6 +560,4 @@ except Exception:
     st.info("ℹ️ An unexpected error occurred while loading the page")
     st.info("🔄 Please refresh the page or contact support if the issue persists")
 
-# Misi AI Chatbot Widget removed - not using MISI AI page-wise
-else:
-    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 
+# Misi AI Chatbot Widget removed - not using MISI AI page-wise 

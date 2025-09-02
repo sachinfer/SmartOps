@@ -393,8 +393,6 @@ except Exception as e:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # Misi AI Chatbot Widget removed - not using MISI AI page-wise
-else:
-    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!")
 
 # Beautiful Footer with gradient
 st.markdown("---")

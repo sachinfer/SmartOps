@@ -547,8 +547,6 @@ try:
                 st.warning("⚠️ **API Status**: Backend service is not running. Start it with `python event_api.py` to enable real-time logs.")
 
     # Misi AI Chatbot Widget removed - not using MISI AI page-wise
-    else:
-        st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!")
 
     # Footer
     st.markdown("---")

@@ -146,6 +146,4 @@ if not filtered_df.empty:
 else:
     st.info("No recent anomalies found.")
 
-# Misi AI Chatbot Widget removed - not using MISI AI page-wise
-else:
-    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 
+# Misi AI Chatbot Widget removed - not using MISI AI page-wise 

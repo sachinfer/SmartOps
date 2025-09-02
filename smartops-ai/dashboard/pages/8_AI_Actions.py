@@ -151,6 +151,4 @@ if st.button("🔄 Retrain Model", key="retrain_model_btn"):
         except Exception:
             st.info("ℹ️ Retrain error occurred")
 
-# Misi AI Chatbot Widget removed - not using MISI AI page-wise
-else:
-    st.info("🤖 Misi AI Chatbot integration is being set up. You'll see the floating 🤖 icon soon!") 
+# Misi AI Chatbot Widget removed - not using MISI AI page-wise 
