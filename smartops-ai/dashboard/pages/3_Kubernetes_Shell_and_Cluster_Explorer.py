@@ -12,50 +12,40 @@ try:
     MISI_AVAILABLE = True
 except ImportError:
     MISI_AVAILABLE = False
-# Ultra-aggressive full-width CSS
+# Fixed layout CSS - Respects sidebar
 st.markdown("""
 <style>
-/* Force full width on ALL elements */
-* {
-    max-width: 100vw !important;
+/* Ensure page content respects the main layout */
+.main .block-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    margin: 0 !important;
+    padding: 2rem !important;
+    position: relative !important;
+    left: 0 !important;
 }
 
-/* Streamlit specific overrides */
-.main .block-container,
-.block-container,
-.stApp > div,
-[data-testid="stAppViewContainer"],
-.stApp > div > div,
-.stApp > div > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-/* Force full width on all containers */
-.stApp > div > div > div > div,
-.stApp > div > div > div > div > div,
-.stApp > div > div > div > div > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-}
-
-/* Override any remaining constraints */
+/* Page content elements */
 .main .block-container > div,
 .main .block-container > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
 }
 
-/* Force full width on page content */
-.main .block-container > div > div {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    padding: 0 !important;
-    margin: 0 !important;
+/* Streamlit elements */
+.stMarkdown, .stDataFrame, .stMetric, .stColumns, .stAlert, .stButton {
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 </style>
 """, unsafe_allow_html=True)
