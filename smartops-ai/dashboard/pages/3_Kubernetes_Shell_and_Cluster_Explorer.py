@@ -6,8 +6,6 @@ import time
 from datetime import datetime, timedelta
 import pytz
 
-", unsafe_allow_html=True)
-
 st.warning("Misi AI Chatbot not available. Please ensure the chatbot is properly installed.")
 
 # Check if API service is running

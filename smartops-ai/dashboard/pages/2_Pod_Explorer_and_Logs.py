@@ -1,5 +1,3 @@
-", unsafe_allow_html=True)
-
 # Check if API service is running
 def check_api_health():
     try:

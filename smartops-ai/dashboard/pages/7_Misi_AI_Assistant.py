@@ -7,10 +7,6 @@ import streamlit as st
 import time
 from datetime import datetime
 
-", unsafe_allow_html=True)
-
-
-
 def generate_ai_response(user_input):
     """Generate AI response based on user input"""
     input_lower = user_input.lower()

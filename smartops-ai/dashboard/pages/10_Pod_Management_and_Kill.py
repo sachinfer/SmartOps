@@ -3,10 +3,6 @@ import pandas as pd
 import requests
 from datetime import datetime
 
-", unsafe_allow_html=True)
-
-
-
 def show_page():
     st.title("🔴 Pod Management & Kill Operations")
     st.markdown("Monitor and manage pods in real-time. Kill stressed or problematic pods directly from this dashboard.")

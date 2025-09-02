@@ -6,8 +6,6 @@ import pytz
 import sys
 import os
 
-", unsafe_allow_html=True)
-
 # Helper functions
 def format_timestamp(timestamp_str):
     """Format timestamp to IST with AM/PM"""

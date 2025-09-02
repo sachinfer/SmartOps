@@ -4,8 +4,6 @@ import requests
 import sys
 import os
 
-", unsafe_allow_html=True)
-
 # Main content
 st.markdown("""
 <div class="dashboard-header">
