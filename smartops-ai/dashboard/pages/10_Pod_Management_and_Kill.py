@@ -164,13 +164,35 @@ def show_page():
                 # Convert timestamp to IST
                 try:
                     if isinstance(row['timestamp'], str):
-                        timestamp_dt = pd.to_datetime(row['timestamp'])
+                        # Handle ISO format timestamps
+                        if 'T' in row['timestamp']:
+                            timestamp_dt = pd.to_datetime(row['timestamp'])
+                        else:
+                            timestamp_dt = pd.to_datetime(row['timestamp'])
                     else:
                         timestamp_dt = row['timestamp']
+                    
+                    # If timestamp is naive (no timezone), assume UTC
+                    if timestamp_dt.tz is None:
+                        timestamp_dt = timestamp_dt.tz_localize('UTC')
+                    
                     # Convert to IST timezone
-                    timestamp_ist = timestamp_dt.tz_localize('UTC').tz_convert(IST).strftime('%Y-%m-%d %H:%M:%S IST')
-                except:
-                    timestamp_ist = str(row['timestamp'])[:19] + " IST"
+                    timestamp_ist = timestamp_dt.tz_convert(IST).strftime('%Y-%m-%d %H:%M:%S IST')
+                except Exception as e:
+                    # Fallback: try to parse and convert manually
+                    try:
+                        raw_timestamp = str(row['timestamp'])
+                        if 'T' in raw_timestamp:
+                            # Parse ISO format: 2025-09-02T14:06:07
+                            dt_str = raw_timestamp.replace('T', ' ')[:19]
+                            dt = pd.to_datetime(dt_str)
+                            # Add 5:30 hours for IST
+                            ist_dt = dt + pd.Timedelta(hours=5, minutes=30)
+                            timestamp_ist = ist_dt.strftime('%Y-%m-%d %H:%M:%S IST')
+                        else:
+                            timestamp_ist = raw_timestamp[:19] + " IST"
+                    except:
+                        timestamp_ist = str(row['timestamp'])[:19] + " IST"
                 
                 col1, col2, col3, col4, col5, col6 = st.columns([2, 1, 1, 1, 1, 1])
                 
