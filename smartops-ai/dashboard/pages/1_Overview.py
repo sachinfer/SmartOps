@@ -4,6 +4,14 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import pytz
+
+# Get IST timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def get_ist_time():
+    """Get current time in IST timezone"""
+    return datetime.now(IST)
 
 # Check if API service is running
 def check_api_health():
@@ -99,11 +107,11 @@ with col1:
     time_range = st.selectbox("", ["Live (Now)", "Last Hour", "Last 6 Hours", "Last 24 Hours"], index=0)
 with col2:
     if time_range == "Live (Now)":
-        st.markdown(f"**📅 Viewing:** Real-time data | {datetime.now().strftime('%B %d, %Y at %I:%M %p')}")
+        st.markdown(f"**📅 Viewing:** Real-time data | {get_ist_time().strftime('%B %d, %Y at %I:%M %p IST')}")
     else:
         relative_value = time_range.split()[1]
         relative_unit = time_range.split()[2]
-        st.markdown(f"**📅 Viewing:** Data from {relative_value} {relative_unit.lower()} | {datetime.now().strftime('%B %d, %Y')}")
+        st.markdown(f"**📅 Viewing:** Data from {relative_value} {relative_unit.lower()} | {get_ist_time().strftime('%B %d, %Y IST')}")
 
 # Cluster Status & Health with enhanced styling
 st.markdown("### 🏥 Cluster Status & Health")
@@ -171,7 +179,7 @@ with col2:
 
 # Enhanced Pod Status with better visualization
 st.markdown("### 📋 Pod Status")
-st.markdown(f"**Last updated:** {datetime.now().strftime('%H:%M:%S')}")
+st.markdown(f"**Last updated:** {get_ist_time().strftime('%H:%M:%S IST')}")
 
 # Fetch real-time pod data with enhanced fallback
 pods = get_enhanced_pod_data()
@@ -276,7 +284,7 @@ with col2:
     st.info(f"""
     - **CPU Usage:** {cpu_usage}% ({cpu_cores_used}/{cpu_cores_total} cores)
     - **Memory Usage:** {memory_usage}% ({memory_used}/{memory_total} GB)
-    - **Last Updated:** {datetime.now().strftime('%H:%M:%S')}
+    - **Last Updated:** {get_ist_time().strftime('%H:%M:%S IST')}
     """)
 
 # Enhanced Footer
@@ -284,6 +292,6 @@ st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
     <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Cluster Overview</p>
-    <p style="opacity: 0.8; margin: 0;">Last updated: """ + datetime.now().strftime('%Y-%m-%d %H:%M:%S IST') + """</p>
+    <p style="opacity: 0.8; margin: 0;">Last updated: """ + get_ist_time().strftime('%Y-%m-%d %H:%M:%S IST') + """</p>
 </div>
 """, unsafe_allow_html=True)

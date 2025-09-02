@@ -6,6 +6,13 @@ import time
 from datetime import datetime, timedelta
 import pytz
 
+# Get IST timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def get_ist_time():
+    """Get current time in IST timezone"""
+    return datetime.now(IST)
+
 # Check if API service is running
 def check_api_health():
     try:
@@ -87,12 +94,12 @@ def generate_fallback_logs(pod_name, namespace):
     
     # Generate sample log entries in structured format
     log_entries = []
-    current_time = datetime.now()
+    current_time = get_ist_time()
     
     # Sample log patterns with structured data
     log_patterns = [
         {
-            "timestamp": current_time.strftime('%Y-%m-%d %H:%M:%S'),
+            "timestamp": current_time.strftime('%Y-%m-%d %H:%M:%S IST'),
             "level": "INFO",
             "message": f"Pod {pod_name} started successfully",
             "component": "pod-lifecycle",
@@ -100,7 +107,7 @@ def generate_fallback_logs(pod_name, namespace):
             "pod": pod_name
         },
         {
-            "timestamp": (current_time - timedelta(seconds=30)).strftime('%Y-%m-%d %H:%M:%S'),
+            "timestamp": (current_time - timedelta(seconds=30)).strftime('%Y-%m-%d %H:%M:%S IST'),
             "level": "INFO", 
             "message": "Container ready and accepting traffic",
             "component": "container-health",
@@ -108,7 +115,7 @@ def generate_fallback_logs(pod_name, namespace):
             "pod": pod_name
         },
         {
-            "timestamp": (current_time - timedelta(seconds=60)).strftime('%Y-%m-%d %H:%M:%S'),
+            "timestamp": (current_time - timedelta(seconds=60)).strftime('%Y-%m-%d %H:%M:%S IST'),
             "level": "INFO",
             "message": "Health check passed - all systems operational",
             "component": "health-check",
@@ -116,7 +123,7 @@ def generate_fallback_logs(pod_name, namespace):
             "pod": pod_name
         },
         {
-            "timestamp": (current_time - timedelta(seconds=90)).strftime('%Y-%m-%d %H:%M:%S'),
+            "timestamp": (current_time - timedelta(seconds=90)).strftime('%Y-%m-%d %H:%M:%S IST'),
             "level": "INFO",
             "message": "Service registered with service mesh",
             "component": "service-discovery",
@@ -124,7 +131,7 @@ def generate_fallback_logs(pod_name, namespace):
             "pod": pod_name
         },
         {
-            "timestamp": (current_time - timedelta(seconds=120)).strftime('%Y-%m-%d %H:%M:%S'),
+            "timestamp": (current_time - timedelta(seconds=120)).strftime('%Y-%m-%d %H:%M:%S IST'),
             "level": "INFO",
             "message": "Pod initialization complete - ready for production traffic",
             "component": "pod-lifecycle",
@@ -151,7 +158,7 @@ def generate_fallback_logs(pod_name, namespace):
         log_message = random.choice(log_messages.get(log_component, ["System operation completed"]))
         
         log_entries.append({
-            "timestamp": log_time.strftime('%Y-%m-%d %H:%M:%S'),
+            "timestamp": log_time.strftime('%Y-%m-%d %H:%M:%S IST'),
             "level": log_level,
             "message": log_message,
             "component": log_component,
@@ -540,7 +547,7 @@ def show_page():
         st.markdown("""
         <div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
             <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Pod Explorer</p>
-            <p style="opacity: 0.8; margin: 0;">Last updated: """ + time.strftime('%Y-%m-%d %H:%M:%S') + """</p>
+            <p style="opacity: 0.8; margin: 0;">Last updated: """ + get_ist_time().strftime('%Y-%m-%d %H:%M:%S IST') + """</p>
         </div>
         """, unsafe_allow_html=True)
 

@@ -7,6 +7,14 @@ import subprocess
 import time
 import sqlite3
 import os
+import pytz
+
+# Get IST timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def get_ist_time():
+    """Get current time in IST timezone"""
+    return datetime.now(IST)
 
 def show_page():
     st.title("🔴 Pod Management & Kill Operations")
@@ -71,7 +79,7 @@ def show_page():
             cursor.execute("""
                 INSERT INTO pod_actions (timestamp, action, pod_name, reason, user_action)
                 VALUES (?, ?, ?, ?, ?)
-            """, (datetime.now().isoformat(), action, pod_name, reason, 1 if user_action else 0))
+            """, (get_ist_time().isoformat(), action, pod_name, reason, 1 if user_action else 0))
             
             conn.commit()
             conn.close()
@@ -175,7 +183,7 @@ def show_page():
                                 # Force immediate refresh to update the display
                                 time.sleep(1)  # Brief pause to ensure pod is deleted
                                 st.rerun()
-                            else:
+                else:
                                 st.error(message)
                 with col6:
                     if st.button("🚫 Ignore", key=f"ignore_anomaly_{pod_name}"):
@@ -187,16 +195,16 @@ def show_page():
                                 st.rerun()
                             else:
                                 st.error(message)
-        else:
+            else:
             st.success("✅ No pods with high resource consumption detected")
-    else:
+            else:
         st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
     
     # Only show high resource consuming pods - no need for regular pod listing
     
     # Footer
     st.markdown("---")
-    st.markdown("*Last updated: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "*")
+    st.markdown("*Last updated: " + get_ist_time().strftime("%Y-%m-%d %H:%M:%S IST") + "*")
     st.markdown("**⚠️ Warning: Pod killing operations are irreversible. Use with caution!**")
 
 if __name__ == "__main__":

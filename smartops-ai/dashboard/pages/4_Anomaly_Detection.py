@@ -7,6 +7,13 @@ import requests
 import sys
 import os
 
+# Get IST timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def get_ist_time():
+    """Get current time in IST timezone"""
+    return datetime.now(IST)
+
 # Check if API service is running
 def check_api_health():
     try:
@@ -260,7 +267,7 @@ try:
     if not actions_df.empty:
         # Format the display
         actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'])
-        actions_df['Time'] = actions_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        actions_df['Time'] = actions_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
         actions_df['Action'] = actions_df['action'].apply(lambda x: '🔴 KILLED' if x == 'kill' else '🚫 IGNORED')
         actions_df['Pod'] = actions_df['pod_name']
         actions_df['Reason'] = actions_df['reason']

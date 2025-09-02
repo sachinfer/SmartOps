@@ -6,6 +6,14 @@ A reliable, full-page AI chatbot interface for SmartOps
 import streamlit as st
 import time
 from datetime import datetime
+import pytz
+
+# Get IST timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def get_ist_time():
+    """Get current time in IST timezone"""
+    return datetime.now(IST)
 
 def generate_ai_response(user_input):
     """Generate AI response based on user input"""
@@ -125,7 +133,7 @@ with st.sidebar:
             st.session_state.misi_chat_history.append({
                 "role": "user",
                 "content": suggestion,
-                "timestamp": datetime.now()
+                "timestamp": get_ist_time()
             })
             st.rerun()
 
