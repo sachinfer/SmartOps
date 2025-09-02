@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: stress-pod
+  namespace: smartops
+  labels:
+    app: stress-pod
+    purpose: testing
+spec:
+  containers:
+  - name: stress-container
+    image: busybox
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do echo 'Stressing CPU and Memory...'; dd if=/dev/zero of=/dev/null bs=1M count=100; sleep 1; done"]
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "1000m"
+  restartPolicy: Never

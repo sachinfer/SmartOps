@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
+import json
+import subprocess
+import time
+import sqlite3
+import os
 
 def show_page():
     st.title("🔴 Pod Management & Kill Operations")
@@ -9,6 +14,57 @@ def show_page():
     
     # Configuration
     API_URL = "http://localhost:8000"
+    NAMESPACE = "smartops"
+    
+    # Function to get anomaly data for high resource usage pods
+    def get_anomaly_data():
+        """Get anomaly data from the database to identify high resource usage pods"""
+        try:
+            conn = sqlite3.connect('/app/dashboard/data/data.db')
+            df = pd.read_sql_query("""
+                SELECT pod_name, cpu, memory, prediction, timestamp, labels
+                FROM anomalies 
+                WHERE prediction = 'Anomaly detected'
+                ORDER BY timestamp DESC 
+                LIMIT 50
+            """, conn)
+            conn.close()
+            return df
+        except Exception as e:
+            st.warning(f"Could not load anomaly data: {e}")
+            return pd.DataFrame()
+    
+    # Function to log pod actions to database
+    def log_pod_action(action, pod_name, reason="", user_action=True):
+        """Log pod actions (kill/ignore) to the database"""
+        try:
+            conn = sqlite3.connect('/app/dashboard/data/data.db')
+            cursor = conn.cursor()
+            
+            # Create actions table if it doesn't exist
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS pod_actions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT,
+                    action TEXT,
+                    pod_name TEXT,
+                    reason TEXT,
+                    user_action BOOLEAN
+                )
+            """)
+            
+            # Insert the action
+            cursor.execute("""
+                INSERT INTO pod_actions (timestamp, action, pod_name, reason, user_action)
+                VALUES (?, ?, ?, ?, ?)
+            """, (datetime.now().isoformat(), action, pod_name, reason, user_action))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            st.error(f"Failed to log action: {e}")
+            return False
     
     
     # Function to get individual pod resource usage
@@ -22,6 +78,62 @@ def show_page():
                 return {}
         except Exception:
             st.info("ℹ️ Resource usage not available (kubectl permissions required)")
+            return {}
+    
+    # Enhanced function to get pod metrics from Kubernetes API
+    def get_pod_metrics_k8s():
+        """Get real-time pod metrics using kubectl top command"""
+        try:
+            result = subprocess.run(
+                ["kubectl", "top", "pods", "-n", NAMESPACE, "--no-headers"],
+                capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                metrics = {}
+                for line in result.stdout.strip().split('\n'):
+                    if line.strip():
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            pod_name = parts[0]
+                            cpu = parts[1]
+                            memory = parts[2]
+                            metrics[pod_name] = {"cpu": cpu, "memory": memory}
+                return metrics
+            else:
+                return {}
+        except Exception as e:
+            st.warning(f"Could not fetch pod metrics: {str(e)}")
+            return {}
+    
+    # Function to get pod resource requests and limits
+    def get_pod_resource_limits():
+        """Get pod resource requests and limits"""
+        try:
+            result = subprocess.run(
+                ["kubectl", "get", "pods", "-n", NAMESPACE, "-o", "json"],
+                capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                pods_data = json.loads(result.stdout)
+                resource_info = {}
+                for pod in pods_data.get("items", []):
+                    pod_name = pod["metadata"]["name"]
+                    containers = pod.get("spec", {}).get("containers", [])
+                    for container in containers:
+                        resources = container.get("resources", {})
+                        requests = resources.get("requests", {})
+                        limits = resources.get("limits", {})
+                        resource_info[pod_name] = {
+                            "cpu_request": requests.get("cpu", "N/A"),
+                            "memory_request": requests.get("memory", "N/A"),
+                            "cpu_limit": limits.get("cpu", "N/A"),
+                            "memory_limit": limits.get("memory", "N/A")
+                        }
+                return resource_info
+            else:
+                return {}
+        except Exception as e:
+            st.warning(f"Could not fetch pod resource limits: {str(e)}")
             return {}
     
     # Function to get all pods
@@ -90,10 +202,72 @@ def show_page():
     # Refresh button
     st.markdown("### 📊 Real-Time Pod Monitoring")
     
-    col1, col2 = st.columns([3, 1])
+    col1, col2, col3 = st.columns([2, 1, 1])
     with col2:
         if st.button("🔄 Refresh Data", key="refresh_btn"):
             st.rerun()
+    with col3:
+        if st.button("🚨 Apply Stress Pod", key="apply_stress"):
+            try:
+                # Apply stress pod using kubectl
+                result = subprocess.run(
+                    ["kubectl", "apply", "-f", "/app/dashboard/stress-pod.yaml"],
+                    capture_output=True, text=True, timeout=10
+                )
+                if result.returncode == 0:
+                    st.success("✅ Stress pod applied successfully!")
+                    st.rerun()
+                else:
+                    st.error(f"❌ Failed to apply stress pod: {result.stderr}")
+            except Exception as e:
+                st.error(f"❌ Error applying stress pod: {e}")
+    
+    # Show pods with high resource usage from anomaly detection
+    st.markdown("### 🚨 High Resource Usage Pods (From Anomaly Detection)")
+    anomaly_df = get_anomaly_data()
+    
+    if not anomaly_df.empty:
+        # Group by pod_name and get latest anomaly for each pod
+        latest_anomalies = anomaly_df.groupby('pod_name').first().reset_index()
+        
+        # Convert CPU and memory to numeric for sorting
+        latest_anomalies['cpu_numeric'] = pd.to_numeric(latest_anomalies['cpu'], errors='coerce').fillna(0)
+        latest_anomalies['memory_numeric'] = pd.to_numeric(latest_anomalies['memory'], errors='coerce').fillna(0)
+        
+        # Sort by CPU usage (highest first)
+        latest_anomalies = latest_anomalies.sort_values('cpu_numeric', ascending=False)
+        
+        st.info(f"🔍 Found {len(latest_anomalies)} pods with detected anomalies")
+        
+        # Display high resource usage pods
+        for idx, row in latest_anomalies.iterrows():
+            pod_name = row['pod_name']
+            cpu_usage = row['cpu_numeric'] * 100  # Convert to percentage
+            memory_usage = row['memory_numeric'] / (1024 * 1024)  # Convert to MB
+            timestamp = row['timestamp']
+            
+            col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
+            
+            with col1:
+                st.write(f"**{pod_name}**")
+            with col2:
+                st.write(f"CPU: {cpu_usage:.1f}%")
+            with col3:
+                st.write(f"Memory: {memory_usage:.1f}MB")
+            with col4:
+                st.write(f"Time: {timestamp[:19]}")
+            with col5:
+                if st.button("🔴 Kill", key=f"kill_anomaly_{pod_name}"):
+                    with st.spinner(f"Killing {pod_name}..."):
+                        success, message = kill_pod(pod_name)
+                        if success:
+                            log_pod_action("kill", pod_name, f"High resource usage - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}MB")
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
+    else:
+        st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
     
     # Get current pod data
     pods_data = get_all_pods()
@@ -354,6 +528,7 @@ def show_page():
                         with st.spinner(f"Killing pod {selected_pod}..."):
                             success, message = kill_pod(selected_pod)
                             if success:
+                                log_pod_action("kill", selected_pod, "Manual kill from Pod Management page")
                                 st.success(message)
                                 st.rerun()
                             else:
@@ -365,6 +540,7 @@ def show_page():
                         if 'ignored_pods' not in st.session_state:
                             st.session_state.ignored_pods = set()
                         st.session_state.ignored_pods.add(selected_pod)
+                        log_pod_action("ignore", selected_pod, "Manual ignore from Pod Management page")
                         st.success(f"Pod {selected_pod} added to ignore list")
                         st.rerun()
                 
