@@ -343,7 +343,7 @@ def fetch_pod_containers(pod_name, namespace):
 
 def show_page():
     # Main content with error handling
-                    try:
+                        try:
         st.markdown("""
         <div class="dashboard-header">
         <h1>🛰️ Pod Explorer</h1>
@@ -524,7 +524,7 @@ def show_page():
         st.info(f"**Response**: {test_response.text[:200]}...")
         else:
         st.info("ℹ️ API returned 200 but no logs")
-                                    except Exception:
+                                        except Exception:
                         st.info("ℹ️ Using fallback data")
                     
                     st.info("💡 **Troubleshooting Tips:**")

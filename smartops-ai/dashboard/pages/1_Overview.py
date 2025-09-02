@@ -14,9 +14,9 @@ def check_api_health():
 def fetch_node_data():
     try:
         response = requests.get("http://localhost:8000/nodes", timeout=5)
-                if response.status_code == 200:
+        if response.status_code == 200:
             return response.json().get('nodes', [])
-            return []
+        return []
     except Exception:
         return []
 
