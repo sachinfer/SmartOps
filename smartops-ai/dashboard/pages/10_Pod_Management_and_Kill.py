@@ -192,21 +192,18 @@ def show_page():
     def kill_pod(pod_name):
         """Kill a pod using kubectl command"""
         try:
-            # Use kubectl delete command directly with longer timeout
+            # Use kubectl delete command directly without timeout
             result = subprocess.run(
                 f"kubectl delete pod {pod_name} -n {NAMESPACE}",
                 shell=True,
                 capture_output=True,
-                text=True,
-                timeout=30  # Increased timeout to 30 seconds
+                text=True
             )
             
             if result.returncode == 0:
                 return True, f"✅ Successfully killed pod: {pod_name}"
             else:
                 return False, f"❌ Failed to kill pod: {result.stderr.strip()}"
-        except subprocess.TimeoutExpired:
-            return False, f"❌ Timeout: Pod deletion took too long (>30s)"
         except Exception as e:
             return False, f"❌ Error killing pod: {str(e)}"
     
@@ -249,7 +246,7 @@ def show_page():
             # Sort by CPU usage (highest first)
             high_resource_pods = high_resource_pods.sort_values('cpu_numeric', ascending=False)
             
-            st.info(f"🔍 Found {len(high_resource_pods)} pods with HIGH resource consumption (CPU > 50% or Memory > 500MB)")
+            st.info(f"🔍 Found {len(high_resource_pods)} pods with HIGH resource consumption")
         
             # Display high resource usage pods
             for idx, row in high_resource_pods.iterrows():
