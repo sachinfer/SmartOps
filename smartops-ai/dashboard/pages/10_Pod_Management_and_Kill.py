@@ -286,13 +286,19 @@ def show_page():
         
         # Convert to DataFrame for better display
         # Handle nested structure where pods might be inside a 'pods' key
+        st.write(f"DEBUG: pods_data type: {type(pods_data)}")
+        st.write(f"DEBUG: pods_data content: {pods_data}")
+        
         if isinstance(pods_data, dict) and 'pods' in pods_data:
             actual_pods = pods_data['pods']
+            st.write(f"DEBUG: Found 'pods' key, actual_pods: {actual_pods}")
         else:
             actual_pods = pods_data
+            st.write(f"DEBUG: Using pods_data directly, actual_pods: {actual_pods}")
         
         if not actual_pods:
             st.warning("⚠️ No pod data found in the response")
+            st.write(f"DEBUG: actual_pods is empty: {actual_pods}")
             return
         
         pods_df = pd.DataFrame(actual_pods)
