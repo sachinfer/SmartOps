@@ -1,5 +1,10 @@
 import streamlit as st
 import requests
+import pandas as pd
+import json
+import time
+from datetime import datetime, timedelta
+import pytz
 
 # Check if API service is running
 def check_api_health():
@@ -336,9 +341,10 @@ def fetch_pod_containers(pod_name, namespace):
         # Fallback: return default container names
         return ["main", "sidecar", "init"]
 
-# Main content with error handling
-try:
-    st.markdown("""
+def show_page():
+    # Main content with error handling
+    try:
+        st.markdown("""
     <div class="dashboard-header">
         <h1>🛰️ Pod Explorer</h1>
         <p>Simple and clean pod monitoring dashboard</p>
@@ -557,6 +563,9 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-except Exception:
-    st.info("ℹ️ An unexpected error occurred while loading the page")
-    st.info("🔄 Please refresh the page or contact support if the issue persists") 
+    except Exception:
+        st.info("ℹ️ An unexpected error occurred while loading the page")
+        st.info("🔄 Please refresh the page or contact support if the issue persists")
+
+# Call the function to show the page
+show_page() 
