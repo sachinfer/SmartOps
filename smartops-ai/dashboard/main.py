@@ -11,15 +11,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ULTIMATE CSS FIX - Complete layout overhaul
+# COLLAPSIBLE SIDEBAR CSS - Toggle navigation visibility
 st.markdown("""
 <style>
-/* COMPLETE LAYOUT OVERHAUL */
+/* BASE LAYOUT */
 * {
     box-sizing: border-box !important;
 }
 
-/* FORCE STREAMLIT APP TO USE PROPER LAYOUT */
+/* MAIN APP CONTAINER */
 .stApp {
     display: flex !important;
     width: 100vw !important;
@@ -30,7 +30,7 @@ st.markdown("""
     position: relative !important;
 }
 
-/* SIDEBAR - FIXED POSITION */
+/* SIDEBAR - COLLAPSIBLE */
 .sidebar {
     width: 300px !important;
     min-width: 300px !important;
@@ -44,6 +44,12 @@ st.markdown("""
     height: 100vh !important;
     z-index: 1000 !important;
     padding: 1rem !important;
+    transition: transform 0.3s ease-in-out !important;
+}
+
+/* SIDEBAR HIDDEN STATE */
+.sidebar.hidden {
+    transform: translateX(-100%) !important;
 }
 
 .sidebar .sidebar-content {
@@ -53,7 +59,7 @@ st.markdown("""
     margin: 0 !important;
 }
 
-/* MAIN CONTENT - PROPERLY OFFSET */
+/* MAIN CONTENT - RESPONSIVE TO SIDEBAR STATE */
 .main {
     margin-left: 300px !important;
     width: calc(100vw - 300px) !important;
@@ -65,6 +71,15 @@ st.markdown("""
     position: relative !important;
     background-color: #0e1117 !important;
     left: 0 !important;
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out !important;
+}
+
+/* MAIN CONTENT WHEN SIDEBAR IS HIDDEN */
+.main.sidebar-hidden {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
 }
 
 /* MAIN CONTENT BLOCK CONTAINER */
@@ -79,18 +94,35 @@ st.markdown("""
     transform: none !important;
 }
 
-/* OVERRIDE STREAMLIT'S INTERNAL LAYOUT */
-[data-testid="stAppViewContainer"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    position: relative !important;
-    left: 0 !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
+/* TOGGLE BUTTON */
+.sidebar-toggle {
+    position: fixed !important;
+    top: 20px !important;
+    left: 20px !important;
+    z-index: 1001 !important;
+    background-color: #667eea !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    transition: all 0.3s ease !important;
 }
 
-/* FORCE ALL CONTENT TO STAY IN MAIN AREA */
+.sidebar-toggle:hover {
+    background-color: #5a6fd8 !important;
+    transform: scale(1.1) !important;
+}
+
+/* TOGGLE BUTTON WHEN SIDEBAR IS HIDDEN */
+.sidebar-toggle.sidebar-hidden {
+    left: 20px !important;
+}
+
+/* CONTENT ELEMENTS */
 .main .block-container > div,
 .main .block-container > div > div,
 .main .block-container > div > div > div {
@@ -119,14 +151,6 @@ div[style*="max-width"], div[style*="width"] {
     width: 100% !important;
     position: relative !important;
     left: 0 !important;
-}
-
-/* FORCE ALL ELEMENTS TO START FROM LEFT EDGE OF MAIN AREA */
-.main * {
-    position: relative !important;
-    left: 0 !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
 }
 
 /* CONTENT ELEMENTS WITHIN MAIN AREA */
@@ -297,78 +321,118 @@ div[style*="max-width"], div[style*="width"] {
 }
 </style>
 
-<!-- ULTIMATE LAYOUT FIX JAVASCRIPT -->
+<!-- COLLAPSIBLE SIDEBAR JAVASCRIPT -->
 <script>
-function ultimateLayoutFix() {
-    // Force sidebar positioning
+// Initialize sidebar state
+let sidebarHidden = false;
+
+// Create toggle button
+function createToggleButton() {
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'sidebar-toggle';
+    toggleButton.innerHTML = '☰';
+    toggleButton.title = 'Toggle Sidebar';
+    toggleButton.onclick = toggleSidebar;
+    document.body.appendChild(toggleButton);
+}
+
+// Toggle sidebar function
+function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.style.cssText = 'width: 300px !important; min-width: 300px !important; max-width: 300px !important; position: fixed !important; left: 0 !important; top: 0 !important; height: 100vh !important; z-index: 1000 !important; background-color: #1e1e1e !important; border-right: 1px solid #333 !important; overflow-y: auto !important; padding: 1rem !important;';
-    }
-    
-    // Force main content positioning
     const mainContent = document.querySelector('.main');
-    if (mainContent) {
-        mainContent.style.cssText = 'margin-left: 300px !important; width: calc(100vw - 300px) !important; max-width: calc(100vw - 300px) !important; min-width: calc(100vw - 300px) !important; height: 100vh !important; overflow-y: auto !important; overflow-x: hidden !important; position: relative !important; background-color: #0e1117 !important; left: 0 !important;';
+    const toggleButton = document.querySelector('.sidebar-toggle');
+    
+    if (sidebar && mainContent && toggleButton) {
+        sidebarHidden = !sidebarHidden;
+        
+        if (sidebarHidden) {
+            // Hide sidebar
+            sidebar.classList.add('hidden');
+            mainContent.classList.add('sidebar-hidden');
+            toggleButton.innerHTML = '☰';
+            toggleButton.title = 'Show Sidebar';
+        } else {
+            // Show sidebar
+            sidebar.classList.remove('hidden');
+            mainContent.classList.remove('sidebar-hidden');
+            toggleButton.innerHTML = '✕';
+            toggleButton.title = 'Hide Sidebar';
+        }
+        
+        // Store state in localStorage
+        localStorage.setItem('sidebarHidden', sidebarHidden);
+    }
+}
+
+// Initialize sidebar state from localStorage
+function initializeSidebarState() {
+    const savedState = localStorage.getItem('sidebarHidden');
+    if (savedState === 'true') {
+        sidebarHidden = true;
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main');
+        const toggleButton = document.querySelector('.sidebar-toggle');
+        
+        if (sidebar && mainContent && toggleButton) {
+            sidebar.classList.add('hidden');
+            mainContent.classList.add('sidebar-hidden');
+            toggleButton.innerHTML = '☰';
+            toggleButton.title = 'Show Sidebar';
+        }
+    }
+}
+
+// Layout fix function
+function fixLayout() {
+    // Ensure proper layout
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main');
+    
+    if (sidebar && mainContent) {
+        if (sidebarHidden) {
+            sidebar.classList.add('hidden');
+            mainContent.classList.add('sidebar-hidden');
+        } else {
+            sidebar.classList.remove('hidden');
+            mainContent.classList.remove('sidebar-hidden');
+        }
     }
     
-    // Force block container
-    const blockContainer = document.querySelector('.main .block-container');
-    if (blockContainer) {
-        blockContainer.style.cssText = 'width: 100% !important; max-width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 2rem !important; position: relative !important; left: 0 !important; transform: none !important;';
-    }
-    
-    // Force app view container
-    const appViewContainer = document.querySelector('[data-testid="stAppViewContainer"]');
-    if (appViewContainer) {
-        appViewContainer.style.cssText = 'width: 100% !important; max-width: 100% !important; min-width: 100% !important; position: relative !important; left: 0 !important; margin-left: 0 !important; padding-left: 0 !important;';
-    }
-    
-    // Force all content elements in main area
-    const allMainElements = document.querySelectorAll('.main *');
-    allMainElements.forEach(element => {
+    // Ensure content elements are properly positioned
+    const contentElements = document.querySelectorAll('.main .stMarkdown, .main .stDataFrame, .main .stMetric, .main .stAlert, .main .stButton');
+    contentElements.forEach(element => {
         element.style.position = 'relative !important';
         element.style.left = '0 !important';
         element.style.marginLeft = '0 !important';
         element.style.paddingLeft = '0 !important';
-    });
-    
-    // Force specific Streamlit elements
-    const streamlitElements = document.querySelectorAll('.main .stMarkdown, .main .stDataFrame, .main .stMetric, .main .stAlert, .main .stButton, .main .stColumns');
-    streamlitElements.forEach(element => {
-        element.style.cssText = 'position: relative !important; left: 0 !important; margin-left: 0 !important; padding-left: 0 !important; width: 100% !important; max-width: 100% !important;';
-    });
-    
-    // Override any inline styles that might cause issues
-    const allDivs = document.querySelectorAll('.main div');
-    allDivs.forEach(div => {
-        if (div.style.maxWidth && div.style.maxWidth.includes('vw')) {
-            div.style.maxWidth = '100% !important';
-        }
-        if (div.style.width && div.style.width.includes('vw')) {
-            div.style.width = '100% !important';
-        }
-        div.style.position = 'relative !important';
-        div.style.left = '0 !important';
+        element.style.width = '100% !important';
+        element.style.maxWidth = '100% !important';
     });
 }
 
-// Run immediately and continuously
-ultimateLayoutFix();
-setInterval(ultimateLayoutFix, 50);
+// Initialize everything when DOM is ready
+function initialize() {
+    createToggleButton();
+    initializeSidebarState();
+    fixLayout();
+}
+
+// Run on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+} else {
+    initialize();
+}
+
+// Run on window load
+window.addEventListener('load', initialize);
 
 // Run on DOM changes
-const observer = new MutationObserver(ultimateLayoutFix);
+const observer = new MutationObserver(fixLayout);
 observer.observe(document.body, { childList: true, subtree: true });
 
-// Run on window events
-window.addEventListener('resize', ultimateLayoutFix);
-window.addEventListener('load', ultimateLayoutFix);
-document.addEventListener('DOMContentLoaded', ultimateLayoutFix);
-
-// Force layout on any user interaction
-document.addEventListener('click', ultimateLayoutFix);
-document.addEventListener('keydown', ultimateLayoutFix);
+// Run on window resize
+window.addEventListener('resize', fixLayout);
 </script>
 """, unsafe_allow_html=True)
 
@@ -506,5 +570,5 @@ else:
 st.sidebar.markdown("---")
 st.sidebar.success("🟢 **Status:** Online")
 st.sidebar.info("🌐 **Environment:** Kubernetes")
-st.sidebar.info("✅ **Layout:** Fixed")
-st.sidebar.info("🚀 **CSS:** Optimized")
+st.sidebar.info("🔄 **Sidebar:** Collapsible")
+st.sidebar.info("🚀 **Layout:** Full-width Toggle")
