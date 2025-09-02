@@ -209,18 +209,22 @@ def show_page():
     with col3:
         if st.button("🚨 Apply Stress Pod", key="apply_stress"):
             try:
-                # Apply stress pod using kubectl
-                result = subprocess.run(
-                    ["kubectl", "apply", "-f", "/app/dashboard/stress-pod.yaml"],
-                    capture_output=True, text=True, timeout=10
-                )
+                # Apply stress pod using kubectl run command
+                result = subprocess.run([
+                    "kubectl", "run", "stress-pod", 
+                    "--image=busybox", 
+                    "--namespace=smartops", 
+                    "--command", "--", "sh", "-c", 
+                    "while true; do echo 'stress' > /dev/null; done"
+                ], capture_output=True, text=True, timeout=10)
+                
                 if result.returncode == 0:
-                    st.success("✅ Stress pod applied successfully!")
+                    st.success("✅ Stress pod created successfully!")
                     st.rerun()
                 else:
-                    st.error(f"❌ Failed to apply stress pod: {result.stderr}")
+                    st.error(f"❌ Failed to create stress pod: {result.stderr}")
             except Exception as e:
-                st.error(f"❌ Error applying stress pod: {e}")
+                st.error(f"❌ Error creating stress pod: {e}")
     
     # Show pods with high resource usage from anomaly detection
     st.markdown("### 🚨 High Resource Usage Pods (From Anomaly Detection)")
@@ -234,425 +238,52 @@ def show_page():
         latest_anomalies['cpu_numeric'] = pd.to_numeric(latest_anomalies['cpu'], errors='coerce').fillna(0)
         latest_anomalies['memory_numeric'] = pd.to_numeric(latest_anomalies['memory'], errors='coerce').fillna(0)
         
-        # Sort by CPU usage (highest first)
-        latest_anomalies = latest_anomalies.sort_values('cpu_numeric', ascending=False)
+        # Filter to show only HIGH resource consuming pods (CPU > 0.5% OR Memory > 100MB)
+        high_resource_pods = latest_anomalies[
+            (latest_anomalies['cpu_numeric'] > 0.005) |  # CPU > 0.5%
+            (latest_anomalies['memory_numeric'] > 100 * 1024 * 1024)  # Memory > 100MB
+        ]
         
-        st.info(f"🔍 Found {len(latest_anomalies)} pods with detected anomalies")
-        
-        # Display high resource usage pods
-        for idx, row in latest_anomalies.iterrows():
-            pod_name = row['pod_name']
-            cpu_usage = row['cpu_numeric'] * 100  # Convert to percentage
-            memory_usage = row['memory_numeric'] / (1024 * 1024)  # Convert to MB
-            timestamp = row['timestamp']
+        if not high_resource_pods.empty:
+            # Sort by CPU usage (highest first)
+            high_resource_pods = high_resource_pods.sort_values('cpu_numeric', ascending=False)
             
-            col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
-            
-            with col1:
-                st.write(f"**{pod_name}**")
-            with col2:
-                st.write(f"CPU: {cpu_usage:.1f}%")
-            with col3:
-                st.write(f"Memory: {memory_usage:.1f}MB")
-            with col4:
-                st.write(f"Time: {timestamp[:19]}")
-            with col5:
-                if st.button("🔴 Kill", key=f"kill_anomaly_{pod_name}"):
-                    with st.spinner(f"Killing {pod_name}..."):
-                        success, message = kill_pod(pod_name)
-                        if success:
-                            log_pod_action("kill", pod_name, f"High resource usage - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}MB")
-                            st.success(message)
-                            st.rerun()
-                        else:
-                            st.error(message)
-    else:
-        st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
-    
-    # Get current pod data
-    pods_data = get_all_pods()
-    
-    # Show pod count info
-    if pods_data:
-        st.info(f"📊 Found {len(pods_data)} pods in SmartOps namespace")
-    
-    if not pods_data:
-        st.warning("⚠️ Unable to fetch pod data. Please check if the API service is running.")
-        return
-    
-    # Display pods in a table
-    if pods_data:
-        st.markdown("#### 🚀 Current Pods in SmartOps Namespace")
+            st.info(f"🔍 Found {len(high_resource_pods)} pods with HIGH resource consumption")
         
-        # Convert to DataFrame for better display
-        # Handle nested structure where pods might be inside a 'pods' key
-        st.write(f"DEBUG: pods_data type: {type(pods_data)}")
-        st.write(f"DEBUG: pods_data content: {pods_data}")
-        
-        if isinstance(pods_data, dict) and 'pods' in pods_data:
-            actual_pods = pods_data['pods']
-            st.write(f"DEBUG: Found 'pods' key, actual_pods: {actual_pods}")
-        else:
-            actual_pods = pods_data
-            st.write(f"DEBUG: Using pods_data directly, actual_pods: {actual_pods}")
-        
-        if not actual_pods:
-            st.warning("⚠️ No pod data found in the response")
-            st.write(f"DEBUG: actual_pods is empty: {actual_pods}")
-            return
-        
-        pods_df = pd.DataFrame(actual_pods)
-        
-
-        
-        # Get real-time resource usage for each pod (optional)
-        pod_resources = get_pod_resource_usage()
-        
-        # Add resource usage columns (with fallbacks)
-        def get_pod_cpu(pod_name):
-            if pod_name in pod_resources:
-                return pod_resources[pod_name].get("cpu", "N/A")
-            return "N/A"
-        
-        def get_pod_memory(pod_name):
-            if pod_name in pod_resources:
-                return pod_resources[pod_name].get("memory", "N/A")
-            return "N/A"
-        
-        # Check if 'name' column exists, if not try to find the pod name column
-        pod_name_column = None
-        if "name" in pods_df.columns:
-            pod_name_column = "name"
-        elif "pod_name" in pods_df.columns:
-            pod_name_column = "pod_name"
-        elif "metadata" in pods_df.columns:
-            # Try to extract name from metadata
-            try:
-                pods_df["name"] = pods_df["metadata"].apply(lambda x: x.get("name", "unknown") if isinstance(x, dict) else "unknown")
-                pod_name_column = "name"
-            except:
-                pass
-        
-        if pod_name_column is None:
-            st.error("❌ Could not find pod name column. Available columns: " + str(list(pods_df.columns)))
-            return
-        
-        # Always add these columns, even if empty
-        pods_df["cpu_usage"] = pods_df[pod_name_column].apply(get_pod_cpu)
-        pods_df["memory_usage"] = pods_df[pod_name_column].apply(get_pod_memory)
-        
-        # Add status indicators
-        def get_status_color(status):
-            if status == "Running":
-                return "🟢"
-            elif status == "Pending":
-                return "🟡"
-            elif status == "Failed":
-                return "🔴"
-            elif status == "CrashLoopBackOff":
-                return "🟠"
-            else:
-                return "⚪"
-        
-        # Check if status column exists, if not try to find it
-        status_column = None
-        if "status" in pods_df.columns:
-            status_column = "status"
-        elif "phase" in pods_df.columns:
-            status_column = "phase"
-        
-        if status_column is None:
-            st.error("❌ Could not find status column. Available columns: " + str(list(pods_df.columns)))
-            return
-        
-        pods_df["Status_Icon"] = pods_df[status_column].apply(get_status_color)
-        pods_df["Status_Display"] = pods_df["Status_Icon"] + " " + pods_df[status_column]
-        
-        # Add stress indicators with manual stress detection
-        def get_stress_indicator(row):
-            pod_name = row.get(pod_name_column, "")
-            cpu = row.get("cpu_usage", "N/A")
-            memory = row.get("memory_usage", "N/A")
-            
-            # Manual stress detection for known stressed pods
-            if pod_name == "stress-pod":
-                return "🚨 HIGH"
-            
-            if cpu != "N/A" and memory != "N/A":
-                try:
-                    # Check if CPU is high (e.g., > 100m or > 1 core)
-                    if "m" in cpu:
-                        cpu_val = float(cpu.replace("m", "")) / 1000
-                    else:
-                        cpu_val = float(cpu)
-                    
-                    # Check if memory is high (e.g., > 100Mi)
-                    if "Mi" in memory:
-                        mem_val = float(memory.replace("Mi", ""))
-                    elif "Gi" in memory:
-                        mem_val = float(memory.replace("Gi", "")) * 1024
-                    else:
-                        mem_val = 0
-                    
-                    if cpu_val > 0.5 or mem_val > 200:  # High CPU (>0.5 cores) or high memory (>200Mi)
-                        return "🚨 HIGH"
-                    elif cpu_val > 0.2 or mem_val > 100:  # Moderate usage
-                        return "⚠️ MODERATE"
-                    else:
-                        return "✅ NORMAL"
-                except:
-                    return "❓ UNKNOWN"
-            else:
-                # If no resource data available, show as normal
-                return "✅ NORMAL"
-        
-        # Always add stress level column
-        pods_df["Stress_Level"] = pods_df.apply(get_stress_indicator, axis=1)
-        
-        # Handle missing columns gracefully
-        available_columns = pods_df.columns.tolist()
-        
-        # Define required columns with fallbacks
-        display_columns = [pod_name_column, "Status_Display"]
-        column_names = ["Pod Name", "Status"]
-        
-        # Add ready column if it exists
-        ready_column = None
-        if "ready" in pods_df.columns:
-            ready_column = "ready"
-        elif "readyReplicas" in pods_df.columns:
-            ready_column = "readyReplicas"
-        
-        if ready_column:
-            display_columns.append(ready_column)
-            column_names.append("Ready")
-        
-        # Add age column if it exists
-        age_column = None
-        if "age" in pods_df.columns:
-            age_column = "age"
-        elif "creationTimestamp" in pods_df.columns:
-            age_column = "creationTimestamp"
-        
-        if age_column:
-            display_columns.append(age_column)
-            column_names.append("Age")
-        
-        if "cpu_usage" in available_columns:
-            display_columns.append("cpu_usage")
-            column_names.append("CPU Usage")
-        
-        if "memory_usage" in available_columns:
-            display_columns.append("memory_usage")
-            column_names.append("Memory Usage")
-        
-        if "Stress_Level" in available_columns:
-            display_columns.append("Stress_Level")
-            column_names.append("Stress Level")
-        
-        # Only add containers if it exists
-        if "containers" in available_columns:
-            display_columns.append("containers")
-            column_names.append("Containers")
-        
-        # Create display DataFrame with available columns
-        display_df = pods_df[display_columns].copy()
-        display_df.columns = column_names
-        
-        # Show stress-pod information
-        stress_pod_row = display_df[display_df['Pod Name'] == 'stress-pod']
-        if len(stress_pod_row) > 0:
-            st.warning("🚨 **STRESSED POD DETECTED**: `stress-pod` is currently consuming high CPU and should show as 🚨 HIGH stress level!")
-        
-        # Display pods in clean format
-        st.markdown("**📋 Pod List (All Pods in SmartOps Namespace):**")
-        
-        # Create a nice formatted display
-        for idx, row in display_df.iterrows():
-            pod_name = row['Pod Name']
-            status = row['Status']
-            ready = row['Ready']
-            age = row['Age']
-            stress_level = row['Stress Level']
-            
-            # Highlight stressed pods
-            if stress_level == "🚨 HIGH":
-                st.error(f"🚨 **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
-            elif stress_level == "⚠️ MODERATE":
-                st.warning(f"⚠️ **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
-            else:
-                st.success(f"✅ **{pod_name}** | {status} | {ready} | {age} | **{stress_level}**")
-        
-        # Pod actions section
-        st.markdown("### ⚡ Pod Actions")
-        
-        # Select pod to manage
-        pod_names = [pod.get(pod_name_column, "unknown") for pod in actual_pods]
-        selected_pod = st.selectbox("Select Pod to Manage", pod_names, key="pod_selector")
-        
-        if selected_pod:
-            # Get selected pod details
-            selected_pod_data = next((pod for pod in actual_pods if pod.get(pod_name_column, "") == selected_pod), None)
-            
-            if selected_pod_data:
-                st.markdown(f"#### 📋 Pod Details: **{selected_pod}**")
+            # Display high resource usage pods
+            for idx, row in high_resource_pods.iterrows():
+                pod_name = row['pod_name']
+                cpu_usage = row['cpu_numeric'] * 100  # Convert to percentage
+                memory_usage = row['memory_numeric'] / (1024 * 1024)  # Convert to MB
+                timestamp = row['timestamp']
                 
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
                 
                 with col1:
-                    status_value = selected_pod_data.get(status_column, "Unknown")
-                    st.metric("Status", status_value)
-                
+                    st.write(f"**{pod_name}**")
                 with col2:
-                    ready_value = selected_pod_data.get(ready_column, "Unknown") if ready_column else "N/A"
-                    st.metric("Ready", ready_value)
-                
+                    st.write(f"CPU: {cpu_usage:.1f}%")
                 with col3:
-                    age_value = selected_pod_data.get(age_column, "Unknown") if age_column else "N/A"
-                    st.metric("Age", age_value)
-                
-                # Container information
-                containers = selected_pod_data.get("containers", [])
-                if containers:
-                    st.markdown("**Containers:**")
-                    for container in containers:
-                        st.code(container, language="bash")
-                else:
-                    st.info("ℹ️ Container information not available")
-                
-                # Resource usage display
-                st.markdown("#### 📊 Resource Usage")
-                st.info("ℹ️ Resource usage monitoring requires kubectl permissions")
-                
-                # Action buttons
-                st.markdown("#### 🎯 Available Actions")
-                
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    if st.button("🔴 Kill Pod", key=f"kill_{selected_pod}", type="primary"):
-                        with st.spinner(f"Killing pod {selected_pod}..."):
-                            success, message = kill_pod(selected_pod)
+                    st.write(f"Memory: {memory_usage:.1f}MB")
+                with col4:
+                    st.write(f"Time: {timestamp[:19]}")
+                with col5:
+                    if st.button("🔴 Kill", key=f"kill_anomaly_{pod_name}"):
+                        with st.spinner(f"Killing {pod_name}..."):
+                            success, message = kill_pod(pod_name)
                             if success:
-                                log_pod_action("kill", selected_pod, "Manual kill from Pod Management page")
+                                log_pod_action("kill", pod_name, f"High resource usage - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}MB")
                                 st.success(message)
                                 st.rerun()
                             else:
                                 st.error(message)
-                
-                with col2:
-                    if st.button("🚫 Ignore Pod", key=f"ignore_{selected_pod}", type="secondary"):
-                        # Add to ignored pods list
-                        if 'ignored_pods' not in st.session_state:
-                            st.session_state.ignored_pods = set()
-                        st.session_state.ignored_pods.add(selected_pod)
-                        log_pod_action("ignore", selected_pod, "Manual ignore from Pod Management page")
-                        st.success(f"Pod {selected_pod} added to ignore list")
-                        st.rerun()
-                
-                with col3:
-                    if st.button("📋 View Logs", key=f"logs_{selected_pod}"):
-                        st.info(f"Logs for {selected_pod} would be displayed here")
-                
-                with col4:
-                    if st.button("🔍 Describe Pod", key=f"describe_{selected_pod}"):
-                        st.info(f"Pod description for {selected_pod} would be displayed here")
+        else:
+            st.success("✅ No pods with high resource consumption detected")
+            st.info("💡 Click '🚨 Apply Stress Pod' to create a high-resource pod for testing")
+    else:
+        st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
     
-    # Stressed Pods Summary Section
-    st.markdown("### 🚨 Stressed Pods Summary")
-    
-    if pods_data:
-        # Count stressed pods using the DataFrame stress levels
-        high_stress_count = 0
-        moderate_stress_count = 0
-        normal_count = 0
-        
-        # Count based on the stress levels we calculated
-        for idx, row in pods_df.iterrows():
-            stress_level = row.get("Stress_Level", "✅ NORMAL")
-            if stress_level == "🚨 HIGH":
-                high_stress_count += 1
-            elif stress_level == "⚠️ MODERATE":
-                moderate_stress_count += 1
-            else:
-                normal_count += 1
-        
-        # Display stress summary
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("🚨 High Stress", high_stress_count, delta="Requires attention")
-        
-        with col2:
-            st.metric("⚠️ Moderate Stress", moderate_stress_count, delta="Monitor closely")
-        
-        with col3:
-            st.metric("✅ Normal", normal_count, delta="Healthy")
-        
-        # Show ignored pods
-        if 'ignored_pods' in st.session_state and st.session_state.ignored_pods:
-            st.markdown("#### 🚫 Ignored Pods")
-            ignored_list = list(st.session_state.ignored_pods)
-            st.info(f"Pods marked as ignored: {', '.join(ignored_list)}")
-            
-            if st.button("🔄 Clear Ignore List"):
-                st.session_state.ignored_pods.clear()
-                st.success("Ignore list cleared")
-                st.rerun()
-    
-    # High Resource Usage Alert Section
-    st.markdown("### 🚨 High Resource Usage Alerts")
-    st.info("ℹ️ Cluster resource monitoring requires API access")
-    
-    # Quick Actions Section
-    st.markdown("### ⚡ Quick Actions")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        if st.button("🚨 Kill All Stressed Pods", key="kill_all_stressed"):
-            # Find and kill all high-stress pods using the DataFrame stress levels
-            high_stress_pods = []
-            
-            # Use the stress levels we already calculated in the DataFrame
-            for idx, row in pods_df.iterrows():
-                pod_name = row.get(pod_name_column, "")
-                stress_level = row.get("Stress_Level", "✅ NORMAL")
-                
-                if stress_level == "🚨 HIGH":
-                    high_stress_pods.append(pod_name)
-            
-            if high_stress_pods:
-                st.warning(f"🚨 Found {len(high_stress_pods)} high-stress pods: {', '.join(high_stress_pods)}")
-                if st.button("✅ Confirm Kill All Stressed", key="confirm_kill_all"):
-                    with st.spinner("Killing all stressed pods..."):
-                        killed_count = 0
-                        for pod_name in high_stress_pods:
-                            success, _ = kill_pod(pod_name)
-                            if success:
-                                killed_count += 1
-                        st.success(f"✅ Successfully killed {killed_count}/{len(high_stress_pods)} stressed pods")
-                        st.rerun()
-            else:
-                st.success("✅ No high-stress pods found")
-    
-    with col2:
-        if st.button("🔄 Restart All Pods", key="restart_all"):
-            st.info("This would restart all pods in the namespace")
-    
-    with col3:
-        if st.button("📊 Generate Report", key="generate_report"):
-            st.info("This would generate a pod health report")
-    
-    with col4:
-        if st.button("🧹 Cleanup Ignored", key="cleanup_ignored"):
-            if 'ignored_pods' in st.session_state and st.session_state.ignored_pods:
-                ignored_count = len(st.session_state.ignored_pods)
-                st.session_state.ignored_pods.clear()
-                st.success(f"🧹 Cleaned up {ignored_count} ignored pods")
-                st.rerun()
-            else:
-                st.info("ℹ️ No ignored pods to clean up")
+    # Only show high resource consuming pods - no need for regular pod listing
     
     # Footer
     st.markdown("---")
