@@ -32,20 +32,25 @@ def fetch_namespaces():
         url = "http://smartops-anomaly-service.smartops.svc.cluster.local/namespaces"
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
-            return resp.json().get('namespaces', [])
-    except Exception:
-        pass
+            namespaces = resp.json().get('namespaces', [])
+            if namespaces:  # Only return if we got actual namespaces
+                return namespaces
+    except Exception as e:
+        print(f"Error fetching namespaces from anomaly service: {e}")
     
     try:
         # Fallback to localhost
         url = "http://localhost:8000/namespaces"
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
-            return resp.json().get('namespaces', [])
-    except Exception:
-        pass
+            namespaces = resp.json().get('namespaces', [])
+            if namespaces:  # Only return if we got actual namespaces
+                return namespaces
+    except Exception as e:
+        print(f"Error fetching namespaces from localhost: {e}")
     
-    return []
+    # Final fallback - return common namespaces
+    return ['smartops', 'default', 'kube-system', 'all']
 
 @st.cache_data(ttl=30)
 def load_anomalies_df():
@@ -177,6 +182,23 @@ if real_pods:
 else:
     st.info("No pod data available from anomaly service")
 
+# Namespace selection
+st.markdown('<div class="section-header">📋 Select Namespace</div>', unsafe_allow_html=True)
+namespaces = fetch_namespaces()
+print(f"DEBUG: Available namespaces: {namespaces}")
+
+if namespaces:
+    selected_namespace = st.selectbox(
+        "Choose a namespace to view anomalies:",
+        options=namespaces,
+        index=0 if 'smartops' in namespaces else 0,
+        key="namespace_selector"
+    )
+    print(f"DEBUG: Selected namespace: {selected_namespace}")
+else:
+    st.error("No namespaces available. Please check the anomaly service connection.")
+    selected_namespace = "smartops"
+
 # Check if API service is running and show helpful message
 if not check_api_health():
 
@@ -208,14 +230,10 @@ if not check_api_health():
     
     st.warning("⚠️ **Anomaly Detection**: Real-time anomaly detection requires the backend API service to be running.")
 
-# Namespace selection
-namespace_options = ['all'] + fetch_namespaces()
-selected_ns = st.selectbox('Select Namespace', namespace_options, index=0, key="anomaly_ns")
-
 # Load and filter data
 df = load_anomalies_df()
-if has_namespace_column(df) and selected_ns != 'all':
-    filtered_df = df[df['namespace'] == selected_ns].copy()
+if has_namespace_column(df) and selected_namespace != 'all':
+    filtered_df = df[df['namespace'] == selected_namespace].copy()
 else:
     filtered_df = df.copy()
 
