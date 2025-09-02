@@ -219,10 +219,10 @@ def show_page():
         latest_anomalies['cpu_numeric'] = pd.to_numeric(latest_anomalies['cpu'], errors='coerce').fillna(0)
         latest_anomalies['memory_numeric'] = pd.to_numeric(latest_anomalies['memory'], errors='coerce').fillna(0)
         
-        # Filter to show only HIGH resource consuming pods (CPU > 0.5% OR Memory > 100MB)
+        # Filter to show only HIGH resource consuming pods (CPU > 5% OR Memory > 500MB)
         high_resource_pods = latest_anomalies[
-            (latest_anomalies['cpu_numeric'] > 0.005) |  # CPU > 0.5%
-            (latest_anomalies['memory_numeric'] > 100 * 1024 * 1024)  # Memory > 100MB
+            (latest_anomalies['cpu_numeric'] > 0.05) |  # CPU > 5%
+            (latest_anomalies['memory_numeric'] > 500 * 1024 * 1024)  # Memory > 500MB
         ]
         
         if not high_resource_pods.empty:
