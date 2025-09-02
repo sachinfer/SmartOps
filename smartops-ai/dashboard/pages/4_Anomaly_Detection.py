@@ -175,45 +175,7 @@ print(f"DEBUG: API health check result: {api_health}")
 # Always show anomaly data regardless of API health
 # The API health check is just for real-time metrics, not for historical anomaly data
 
-# Show real-time metrics only if API is healthy
-if api_health:
-    # Real-time Cluster Metrics Section
-    st.markdown('<div class="section-header">📊 Real-time Cluster Metrics</div>', unsafe_allow_html=True)
-    
-    try:
-        cluster_metrics = get_cluster_metrics()
-        if cluster_metrics:
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("CPU Usage", f"{cluster_metrics['cpu_usage']:.2f} cores", 
-                         delta=f"{cluster_metrics.get('cpu_usage_percent', 0):.1f}%")
-            with col2:
-                st.metric("Memory Usage", f"{cluster_metrics['memory_usage']:.2f} GB", 
-                         delta=f"{cluster_metrics.get('memory_usage_percent', 0):.1f}%")
-            with col3:
-                st.metric("CPU Capacity", f"{cluster_metrics['cpu_capacity']:.2f} cores")
-            with col4:
-                st.metric("Memory Capacity", f"{cluster_metrics['memory_capacity']:.2f} GB")
-        else:
-            st.info("Real-time cluster metrics not available")
-    except Exception as e:
-        st.info(f"Real-time cluster metrics not available: {e}")
-    
-    # Live Pod Status Section
-    st.markdown('<div class="section-header">🚀 Live Pod Status</div>', unsafe_allow_html=True)
-    
-    try:
-        pod_metrics = get_real_pod_metrics(selected_namespace)
-        if pod_metrics and not pod_metrics.empty:
-            st.dataframe(pod_metrics, use_container_width=True)
-        else:
-            st.info("No pod data available from anomaly service")
-    except Exception as e:
-        st.info(f"Live pod status not available: {e}")
-else:
-    # Show fallback message when API is not healthy
-    st.warning("⚠️ **Real-time metrics unavailable**: The anomaly service API is not responding. Historical anomaly data is still available below.")
+# Real-time metrics sections removed as requested
 
 # Load and filter data
 print("DEBUG: About to load anomaly data...")
