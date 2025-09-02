@@ -1,0 +1,82 @@
+# 🚀 OPTIMIZED: Exclude unnecessary files from Docker build context
+
+# Git and version control
+.git
+.gitignore
+.github
+
+# Documentation
+README.md
+*.md
+
+# Development files
+.env
+.env.local
+.env.*.local
+*.log
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test files
+tests/
+test_*
+*_test.py
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Kubernetes manifests (not needed in containers)
+k8s/
+*.yaml
+*.yml
+
+# Data files (if large)
+*.csv
+*.db
+*.sqlite
+
+# Model files (not needed in dashboard)
+model/
+*.pkl
+*.h5
+*.onnx
+
+# Training scripts (not needed in production)
+train_*.py
+clean_and_train.py
+copy_monitor_script.py
+fix_database_schema.py
+generate_test_logs.py
+
+# Logs and monitoring
+logs/
+monitoring/
+
+# App files (not needed in dashboard)
+app/

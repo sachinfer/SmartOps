@@ -1,0 +1,248 @@
+SmartOps Application Features
+============================
+
+1. Kubernetes Monitoring Dashboard
+   - Real-time dashboard for monitoring Kubernetes clusters.
+   - Displays pod and service counts, resource usage, and anomaly detection results.
+   - Modern UI with dark theme, gradient cards, and responsive layout.
+
+2. Namespace & Pod Explorer
+   - Select and filter by namespace to view relevant pods and services.
+   - Visual indicator shows the currently selected namespace.
+   - Pod Explorer page lists all pods in the selected namespace with details and status.
+
+3. Live Pod Logs Viewer
+   - View real-time logs for any pod in the cluster.
+   - Search and filter logs by keyword or time range.
+   - Download logs as a .txt file for further analysis.
+
+4. Resource Usage Analytics
+   - Interactive charts for CPU and memory usage over time.
+   - Distribution histograms for resource usage.
+   - Data visualized using Plotly for a modern analytics experience.
+
+5. AI/ML Anomaly Detection
+   - Uses an IsolationForest model to detect anomalies in pod resource usage.
+   - Anomalies are logged to a shared SQLite database.
+   - Human-in-the-loop remediation: AI suggests actions, user can confirm or ignore.
+   - AI Action History section shows pending, completed, and failed actions.
+
+6. Kubernetes Shell Interface
+   - Terminal-like shell for running safe kubectl commands (get, describe, logs).
+   - Command history navigation (previous/next), re-run commands, and output display.
+   - No dependency on kubectl binary; uses Kubernetes Python client for execution.
+
+7. Cluster Explorer
+   - Run kubectl-like queries with autocomplete and output formatting.
+   - Explore resources (pods, services, deployments, nodes) across namespaces.
+
+8. Deployment Event Logging
+   - Logs deployment workflow events (success, failed, started) to a shared database.
+   - Visual summary of deployment events with status badges.
+
+9. Telegram Bot Integration
+   - Sends real-time alerts for anomalies and deployment events to a Telegram channel.
+
+10. Modern UI/UX
+    - Sidebar navigation with icons and branding.
+    - Gradient cards, banners, and section headers for a professional look.
+    - Responsive design for desktop and large screens.
+
+
+Architecture Overview
+---------------------
+- **Frontend:** Streamlit dashboard (Python) with custom CSS for modern UI.
+- **Backend:** FastAPI server providing REST APIs for pod info, logs, AI actions, and kubectl commands.
+- **AI/ML:** IsolationForest model for anomaly detection, retrainable from the dashboard.
+- **Database:** SQLite databases (shared via PVC) for anomalies, AI actions, and deployment events.
+- **Kubernetes:** Deployed as multiple pods with RBAC for secure access.
+- **Alerting:** Telegram Bot API for real-time notifications.
+- **No kubectl binary required:** All cluster operations use the Kubernetes Python client for security and portability. 
+
+
+AI/ML Functionality
+-------------------
+- **ML Functions:**
+  - Anomaly detection in pod resource usage (CPU, memory) using machine learning.
+  - Human-in-the-loop remediation: AI can suggest actions (e.g., pod deletion for stress/anomaly), user can confirm or ignore.
+  - Model retraining: The anomaly detection model can be retrained from the dashboard using new data.
+
+- **Model Implemented:**
+  - **IsolationForest** (from scikit-learn):
+    - An unsupervised anomaly detection algorithm that isolates outliers in multidimensional data.
+    - Trained to detect abnormal patterns in pod CPU and memory usage.
+
+- **Dataset Used:**
+  - The model is trained on historical pod metrics data (CPU, memory, labels, pod name, timestamp).
+  - Data is collected from real Kubernetes pod metrics and stored in a shared SQLite database (`data.db`).
+  - The dataset can be updated and the model retrained from the dashboard UI.
+
+- **How It Works:**
+  1. **Data Collection:**
+     - Pod resource metrics (CPU, memory, etc.) are collected periodically from the Kubernetes cluster.
+     - These metrics are stored in the anomalies table in the SQLite database.
+  2. **Anomaly Detection:**
+     - The IsolationForest model is used to predict whether each new data point is normal or anomalous.
+     - If an anomaly is detected, it is logged in the database and can trigger an AI action (e.g., suggest pod deletion).
+  3. **Human-in-the-Loop:**
+     - Suggested AI actions (like deleting a stressed pod) are shown in the dashboard for user confirmation.
+     - The user can confirm, ignore, or view the history of AI actions.
+  4. **Retraining:**
+     - The dashboard provides a button to retrain the IsolationForest model using the latest data.
+     - Retraining updates the model to adapt to new patterns in resource usage.
+
+- **Benefits:**
+  - Detects abnormal pod behavior in real time.
+  - Reduces false positives by allowing human review of AI actions.
+  - Adaptable: Model can be retrained as the cluster workload changes. 
+
+
+Technical Details & Examples
+---------------------------
+
+- **Feature Engineering:**
+  - The model uses the following features for anomaly detection:
+    - `cpu`: Normalized CPU usage (float, 0-1)
+    - `memory`: Memory usage in bytes (float)
+    - `labels`: Pod labels (encoded as categorical features)
+    - `pod_name`: Pod name (used for grouping, not as a feature)
+    - `timestamp`: Used for time-based analysis, not as a direct feature
+  - Data is cleaned and normalized before training (e.g., missing values filled, outliers capped).
+
+- **Model Training Pipeline:**
+  1. **Data Extraction:**
+     - Pulls recent pod metrics from the SQLite database (`anomalies` table).
+  2. **Preprocessing:**
+     - Converts CPU and memory to numeric values, normalizes CPU to [0,1], memory to MB/GB.
+     - Encodes categorical labels if present.
+  3. **Model Fitting:**
+     - Trains an IsolationForest model on the cleaned data.
+     - Hyperparameters (e.g., number of estimators, contamination) can be tuned in code.
+  4. **Model Saving:**
+     - The trained model is saved as `isolation_forest.pkl` and loaded by the anomaly detection loop.
+
+- **Example: Anomaly Detection in Action**
+  - Suppose a pod `myapp-1234` suddenly spikes to 95% CPU and 900Mi memory (much higher than its usual 10% CPU, 100Mi memory).
+  - The anomaly loop collects this data point and passes it to the IsolationForest model.
+  - The model predicts this as an anomaly (outlier) and logs it in the database.
+  - An AI action is created: "Suggest delete pod `myapp-1234` in namespace `default` due to resource stress."
+
+- **Human-in-the-Loop Example:**
+  - The dashboard shows a pending AI action: "Delete pod `myapp-1234`?"
+  - The user reviews the pod's logs and resource usage.
+  - If the user clicks "Confirm Delete", the backend deletes the pod and marks the action as completed.
+  - If the user clicks "Ignore", the action is marked as ignored and no remediation is taken.
+
+- **Retraining Example:**
+  - After a week, the cluster workload changes (e.g., new apps, different usage patterns).
+  - The user clicks "Retrain Model" in the dashboard.
+  - The backend retrains the IsolationForest model on the latest data, improving anomaly detection accuracy.
+
+- **Model Evaluation:**
+  - The model's performance can be evaluated by comparing detected anomalies to known incidents (if labeled data is available).
+  - False positives can be reduced by tuning the contamination parameter or by adding more features (e.g., network, disk usage).
+
+- **Security & Safety:**
+  - Only safe, read-only kubectl commands are allowed in the shell (get, describe, logs).
+  - Pod deletion via AI action always requires human confirmation.
+  - All actions and anomalies are logged for auditability. 
+
+
+Code Snippets & API Endpoints
+-----------------------------
+
+- **Anomaly Detection (Python, IsolationForest):**
+```python
+from sklearn.ensemble import IsolationForest
+import pandas as pd
+
+# Load data from SQLite
+df = pd.read_sql_query('SELECT cpu, memory FROM anomalies', conn)
+# Preprocess
+X = df[['cpu', 'memory']].fillna(0)
+# Train model
+model = IsolationForest(n_estimators=100, contamination=0.05)
+model.fit(X)
+# Predict anomaly
+pred = model.predict([[0.95, 900*1024*1024]])  # Example: 95% CPU, 900Mi memory
+```
+
+- **FastAPI Endpoint: Get Pod Logs**
+```python
+@app.get("/logs")
+def get_pod_logs(namespace: str, pod: str, container: Optional[str] = None):
+    v1 = client.CoreV1Api()
+    logs = v1.read_namespaced_pod_log(name=pod, namespace=namespace, container=container)
+    return {"logs": logs}
+```
+
+- **FastAPI Endpoint: Run Safe Kubectl Command**
+```python
+@app.post("/kubectl_raw")
+def kubectl_raw(command: str = Query(...)):
+    # Only allow get, describe, logs
+    if not command.startswith(("get", "describe", "logs")):
+        return {"error": "Not allowed"}
+    # Use Kubernetes Python client to fetch data
+    # ...
+```
+
+- **Streamlit: Human-in-the-Loop AI Action**
+```python
+if st.button("Confirm Delete"):
+    requests.post("http://localhost:8000/confirm_ai_action", params={"action_id": action_id})
+    st.success("Pod deleted and action marked as completed.")
+```
+
+
+API Endpoints (Summary)
+-----------------------
+- `GET /pods` — List pods (optionally by namespace)
+- `GET /namespaces` — List all namespaces
+- `GET /logs` — Get logs for a pod
+- `POST /kubectl_raw` — Run safe kubectl commands (get, describe, logs)
+- `GET /ai_actions` — List AI actions (pending, completed, etc.)
+- `POST /confirm_ai_action` — Confirm and execute an AI action
+- `POST /retrain_model` — Retrain the anomaly detection model
+
+
+Architecture Diagram
+--------------------
+```mermaid
+graph TD
+    subgraph User
+        U1[Web Browser]
+    end
+    subgraph Frontend
+        S1[Streamlit Dashboard]
+    end
+    subgraph Backend
+        F1[FastAPI Server]
+        M1[Anomaly Detection Loop]
+    end
+    subgraph Data
+        D1[SQLite DB (PVC)]
+        D2[IsolationForest Model]
+    end
+    subgraph Cluster
+        K1[Kubernetes API]
+        P1[Pods/Nodes]
+    end
+    subgraph Alerting
+        T1[Telegram Bot]
+    end
+
+    U1-- HTTP/WS -->S1
+    S1-- REST API -->F1
+    F1-- DB/API -->D1
+    F1-- Model -->D2
+    F1-- K8s Client -->K1
+    F1-- Telegram -->T1
+    M1-- DB -->D1
+    M1-- Model -->D2
+    M1-- K8s Client -->K1
+    K1-- Controls -->P1
+```
+
+---
+If you need even more detail (e.g., full code, deployment YAMLs, or a deep-dive on any component), just ask! 

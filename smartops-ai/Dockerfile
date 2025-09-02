@@ -1,5 +1,5 @@
 # 🚀 OPTIMIZED: Multi-stage build with better caching
-FROM python:3.9-slim as base
+FROM python:3.10-slim as base
 
 # Install system dependencies in a single layer
 RUN apt-get update && \
@@ -18,11 +18,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app.py .
-
-# Expose port
-EXPOSE 80
+# Copy application code and model in optimized order
+COPY app /app/app
+COPY model /app/app/model
 
 # Use uvicorn with optimized settings
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "80", "--workers", "1"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

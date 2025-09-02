@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+requests
+kubernetes
+streamlit
+pandas
+matplotlib
+seaborn
+pymongo
+scikit-learn
+joblib
+numpy
+pytest

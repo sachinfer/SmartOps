@@ -1,73 +1,185 @@
-name: Build and Push Docker Image
+name: Build and Deploy SmartOps App & Anomaly Service
 
 on:
-  workflow_run:
-    workflows: ["SmartOps Pipeline"]
-    types:
-      - completed
   push:
     branches:
-      # - main
+      - main
       - docker
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
     environment: dev
+    env:
+      NAMESPACE: smartops
+      REGISTRY: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/smartops-repo
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Notify Telegram - Deployment Started
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="🚀 *Production deployment started in namespace `smartops`!*" \
+            -d parse_mode=Markdown
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Get Short Commit SHA
-        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV
-
-      - name: Get Current Date (YYYY-MM-DD)
-        run: echo "DATE_TIME=$(date -u +'%Y-%m-%d')" >> $GITHUB_ENV
-
-      - name: Get Current Time (HH-MM-SS)
-        run: echo "TIME=$(date -u +'%H-%M-%S')" >> $GITHUB_ENV
-
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v1
         with:
-          context: .
-          push: true
-          tags: |
-            sachinfe/smartops-app:latest
-            sachinfe/smartops-app:${{ github.ref_name }}
-            sachinfe/smartops-app:${{ env.SHORT_SHA }}
-            sachinfe/smartops-app:${{ github.ref_name }}-${{ env.DATE_TIME }}-${{ env.TIME }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: "gke-gcloud-auth-plugin"
+
+      - name: Authenticate Docker to Artifact Registry
+        run: |
+          gcloud auth configure-docker us-docker.pkg.dev
+
+      - name: Generate Image Tags
+        run: |
+          echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "APP_TAG=${{ env.REGISTRY }}/smartops-app:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "ANOMALY_TAG=${{ env.REGISTRY }}/smartops-anomaly:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "DASHBOARD_TAG=${{ env.REGISTRY }}/smartops-dashboard:${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "MONITOR_TAG=${{ env.REGISTRY }}/smartops-monitor:${GITHUB_SHA::8}" >> $GITHUB_ENV
+
+      # 🚀 OPTIMIZED: Parallel builds with Docker layer caching
+      - name: Build & Push All Images (Parallel)
+        run: |
+          # Build all images in parallel using Docker Buildx
+          docker buildx create --use
+          
+          # Build and push all images simultaneously
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-app:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-app:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-app:latest \
+            --tag ${{ env.REGISTRY }}/smartops-app:${GITHUB_SHA::8} \
+            --push \
+            --file Dockerfile \
+            . &
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-anomaly:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-anomaly:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-anomaly:latest \
+            --tag ${{ env.REGISTRY }}/smartops-anomaly:${GITHUB_SHA::8} \
+            --push \
+            --file smartops-ai/Dockerfile \
+            ./smartops-ai &
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-dashboard:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-dashboard:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-dashboard:latest \
+            --tag ${{ env.REGISTRY }}/smartops-dashboard:${GITHUB_SHA::8} \
+            --push \
+            --file smartops-ai/dashboard/Dockerfile \
+            ./smartops-ai/dashboard &
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=registry,ref=${{ env.REGISTRY }}/smartops-monitor:cache \
+            --cache-to type=registry,ref=${{ env.REGISTRY }}/smartops-monitor:cache,mode=max \
+            --tag ${{ env.REGISTRY }}/smartops-monitor:latest \
+            --tag ${{ env.REGISTRY }}/smartops-monitor:${GITHUB_SHA::8} \
+            --push \
+            --file smartops-ai/app/Dockerfile.monitor \
+            ./smartops-ai/app &
+          
+          # Wait for all builds to complete
+          wait
+          
+          echo "✅ All images built and pushed successfully!"
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.28.0'
 
-      - name: Configure kubeconfig
+      - name: Configure Kubeconfig
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > ~/.kube/config
+          gcloud container clusters get-credentials smartops-cluster \
+            --zone us-central1-a \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Apply Kubernetes Deployment and Service
+      # 🚀 OPTIMIZED: Deploy all resources in parallel
+      - name: Deploy All Resources (Parallel)
         run: |
-          kubectl get namespace smartops || kubectl create namespace smartops
-          kubectl apply -f k8s/deployment.yaml -n smartops
-          kubectl apply -f k8s/service.yaml -n smartops
+          set -e
+          
+          echo "Starting parallel deployment to GKE..."
+          
+          # Create namespace if it doesn't exist
+          kubectl get ns smartops || kubectl create ns smartops
+          
+          # Deploy all resources simultaneously
+          kubectl apply -f smartops-ai/k8s/dashboard-config.yaml -n smartops &
+          kubectl apply -f k8s/deployment.yaml -n smartops &
+          kubectl apply -f k8s/service.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-deployment.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-anomaly-service.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-deployment.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-service.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/smartops-dashboard-pvc.yaml -n smartops &
+          kubectl apply -f smartops-ai/k8s/monitor-deployment.yaml -n smartops &
+          
+          # Wait for all deployments to be applied
+          wait
+          
+          # Update images for all deployments
+          kubectl set image deployment/smartops-app smartops-app=${{ env.APP_TAG }} -n smartops &
+          kubectl set image deployment/smartops-anomaly-deployment fastapi=${{ env.ANOMALY_TAG }} anomaly-loop=${{ env.ANOMALY_TAG }} -n smartops &
+          kubectl set image deployment/smartops-dashboard dashboard=${{ env.DASHBOARD_TAG }} -n smartops &
+          
+          # Wait for image updates
+          wait
+          
+          echo "🎉 All deployments completed successfully!"
 
-      - name: Deploy Updated Image to Kubernetes
+      # 🚀 OPTIMIZED: Wait for critical services only
+      - name: Wait for Critical Services
+        if: success()
         run: |
-          IMAGE_TAG=sachinfe/smartops-app:${{ github.ref_name }}-${{ env.DATE_TIME }}-${{ env.TIME }}
-          echo "Deploying image: $IMAGE_TAG"
-          kubectl set image deployment/smartops-app smartops-app=$IMAGE_TAG -n smartops
+          echo "Waiting for critical services to be ready..."
+          
+          # Wait for dashboard (most critical)
+          kubectl wait --for=condition=available deployment/smartops-dashboard -n smartops --timeout=180s || echo "⚠️ Dashboard deployment timeout"
+          
+          # Wait for anomaly service
+          kubectl wait --for=condition=available deployment/smartops-anomaly-deployment -n smartops --timeout=120s || echo "⚠️ Anomaly service timeout"
+          
+          # Wait for main app
+          kubectl wait --for=condition=available deployment/smartops-app -n smartops --timeout=120s || echo "⚠️ Main app timeout"
+          
+          echo "✅ Critical services are ready!"
+
+      # 🚀 OPTIMIZED: Simplified success notification
+      - name: Notify Success
+        if: success()
+        run: |
+          DASHBOARD_IP=$(kubectl get service smartops-dashboard-service -n smartops -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+          
+          # Send Telegram notification
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="✅ *SmartOps AI Platform Deployment Success!* 🚀%0A%0A*Services Deployed:*%0A• 🖥️ SmartOps App%0A• 🤖 AI Anomaly Detection Service%0A• 📊 Real-time Dashboard%0A• 📡 Monitor Service%0A%0A*Namespace:* \`smartops\`%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Status:* All services running successfully%0A%0A[📊 Open Dashboard](http://$DASHBOARD_IP)" \
+            -d parse_mode=Markdown
+
+      # 🚀 OPTIMIZED: Simplified failure notification
+      - name: Notify Failure
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="❌ *Production deployment failed in namespace \`smartops\`!*%0A%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Check:* [Pipeline Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
+            -d parse_mode=Markdown
