@@ -9,6 +9,7 @@ on:
       - dash
       - misi
       - kill
+      - update
   workflow_dispatch:
 
 jobs:
