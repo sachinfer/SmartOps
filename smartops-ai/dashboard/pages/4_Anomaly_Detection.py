@@ -200,7 +200,10 @@ else:
     selected_namespace = "smartops"
 
 # Check if API service is running and show helpful message
-if not check_api_health():
+api_health = check_api_health()
+print(f"DEBUG: API health check result: {api_health}")
+
+if not api_health:
 
     
     # Show current cluster status based on what we know
@@ -231,11 +234,18 @@ if not check_api_health():
     st.warning("⚠️ **Anomaly Detection**: Real-time anomaly detection requires the backend API service to be running.")
 
 # Load and filter data
+print("DEBUG: About to load anomaly data...")
 df = load_anomalies_df()
+print(f"DEBUG: Loaded DataFrame with shape: {df.shape}")
+print(f"DEBUG: DataFrame columns: {df.columns.tolist()}")
+print(f"DEBUG: DataFrame empty: {df.empty}")
+
 if has_namespace_column(df) and selected_namespace != 'all':
     filtered_df = df[df['namespace'] == selected_namespace].copy()
+    print(f"DEBUG: Filtered DataFrame shape: {filtered_df.shape}")
 else:
     filtered_df = df.copy()
+    print(f"DEBUG: Using full DataFrame, shape: {filtered_df.shape}")
 
 # Top Anomalies Section
 st.markdown('<div class="section-header">🔥 Top Anomalies</div>', unsafe_allow_html=True)
