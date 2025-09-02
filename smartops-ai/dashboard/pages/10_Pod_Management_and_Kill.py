@@ -34,6 +34,20 @@ def show_page():
             st.warning(f"Could not load anomaly data: {e}")
             return pd.DataFrame()
     
+    # Function to check if pod still exists
+    def pod_exists(pod_name):
+        """Check if a pod still exists in the cluster"""
+        try:
+            result = subprocess.run(
+                f"kubectl get pod {pod_name} -n {NAMESPACE}",
+                shell=True,
+                capture_output=True,
+                text=True
+            )
+            return result.returncode == 0
+        except:
+            return False
+    
     # Function to log pod actions to database
     def log_pod_action(action, pod_name, reason="", user_action=True):
         """Log pod actions (kill/ignore) to the database"""
@@ -242,6 +256,14 @@ def show_page():
             (latest_anomalies['memory_numeric'] > 500 * 1024 * 1024)  # Memory > 500MB
         ]
         
+        # Filter out pods that no longer exist in the cluster
+        existing_pods = []
+        for idx, row in high_resource_pods.iterrows():
+            if pod_exists(row['pod_name']):
+                existing_pods.append(idx)
+        
+        high_resource_pods = high_resource_pods.loc[existing_pods]
+        
         if not high_resource_pods.empty:
             # Sort by CPU usage (highest first)
             high_resource_pods = high_resource_pods.sort_values('cpu_numeric', ascending=False)
@@ -272,8 +294,10 @@ def show_page():
                             if success:
                                 log_pod_action("kill", pod_name, f"High resource usage - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}MB")
                                 st.success(message)
+                                # Force immediate refresh to update the display
+                                time.sleep(1)  # Brief pause to ensure pod is deleted
                                 st.rerun()
-                            else:
+                else:
                                 st.error(message)
                 with col6:
                     if st.button("🚫 Ignore", key=f"ignore_anomaly_{pod_name}"):
@@ -285,10 +309,10 @@ def show_page():
                                 st.rerun()
                             else:
                                 st.error(message)
-        else:
+            else:
             st.success("✅ No pods with high resource consumption detected")
             st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
-    else:
+            else:
         st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
         st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
     
