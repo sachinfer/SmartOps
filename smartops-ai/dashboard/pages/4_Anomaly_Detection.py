@@ -256,29 +256,39 @@ else:
 st.markdown('<div class="section-header">🎯 Recent Pod Actions</div>', unsafe_allow_html=True)
 try:
     conn = sqlite3.connect('/app/dashboard/data/data.db')
-    actions_df = pd.read_sql_query("""
-        SELECT timestamp, action, pod_name, reason, user_action
-        FROM pod_actions 
-        ORDER BY timestamp DESC 
-        LIMIT 10
-    """, conn)
-    conn.close()
     
-    if not actions_df.empty:
-        # Format the display
-        actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'])
-        actions_df['Time'] = actions_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
-        actions_df['Action'] = actions_df['action'].apply(lambda x: '🔴 KILLED' if x == 'kill' else '🚫 IGNORED')
-        actions_df['Pod'] = actions_df['pod_name']
-        actions_df['Reason'] = actions_df['reason']
-        actions_df['User Action'] = actions_df['user_action'].apply(lambda x: '👤 Manual' if x else '🤖 Auto')
+    # First check if the table exists
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='pod_actions'")
+    table_exists = cursor.fetchone() is not None
+    
+    if table_exists:
+        actions_df = pd.read_sql_query("""
+            SELECT timestamp, action, pod_name, reason, user_action
+            FROM pod_actions 
+            ORDER BY timestamp DESC 
+            LIMIT 10
+        """, conn)
         
-        display_actions = actions_df[['Time', 'Action', 'Pod', 'Reason', 'User Action']]
-        st.dataframe(display_actions, use_container_width=True)
+        if not actions_df.empty:
+            # Format the display
+            actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'])
+            actions_df['Time'] = actions_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
+            actions_df['Action'] = actions_df['action'].apply(lambda x: '🔴 KILLED' if x == 'kill' else '🚫 IGNORED')
+            actions_df['Pod'] = actions_df['pod_name']
+            actions_df['Reason'] = actions_df['reason']
+            actions_df['User Action'] = actions_df['user_action'].apply(lambda x: '👤 Manual' if x else '🤖 Auto')
+            
+            display_actions = actions_df[['Time', 'Action', 'Pod', 'Reason', 'User Action']]
+            st.dataframe(display_actions, use_container_width=True)
+        else:
+            st.info("No pod actions recorded yet. Try killing or ignoring a pod from the Pod Management page.")
     else:
-        st.info("No pod actions recorded yet")
+        st.info("Pod actions table not created yet. Try killing or ignoring a pod from the Pod Management page to create the table.")
+    
+    conn.close()
 except Exception as e:
-    st.info("Pod actions not available")
+    st.info(f"Pod actions not available: {str(e)}")
 
 # Recent Anomalies Section
 st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
