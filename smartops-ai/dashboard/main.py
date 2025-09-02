@@ -11,78 +11,73 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# NUCLEAR CSS FIX - This will definitely fix the horizontal overlap
+# FIXED CSS LAYOUT - Proper sidebar and main content separation
 st.markdown("""
 <style>
-/* NUCLEAR CSS RESET - Override everything */
+/* PROPER LAYOUT RESET */
 * {
     box-sizing: border-box !important;
+}
+
+/* MAIN APP CONTAINER */
+.stApp {
+    display: flex !important;
+    width: 100vw !important;
+    height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    position: relative !important;
-    left: 0 !important;
+    overflow: hidden !important;
 }
 
-/* FORCE FULL VIEWPORT */
-html, body {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
-    overflow-x: hidden !important;
-    position: relative !important;
-    left: 0 !important;
-}
-
-/* NUCLEAR STREAMLIT OVERRIDES */
-.stApp, .stApp > div, .stApp > div > div {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
-    position: relative !important;
-    left: 0 !important;
-}
-
-/* FORCE SIDEBAR TO BE FIXED AND NOT INTERFERE */
-.sidebar .sidebar-content {
+/* SIDEBAR STYLING */
+.sidebar {
+    width: 300px !important;
+    min-width: 300px !important;
+    max-width: 300px !important;
     background-color: #1e1e1e !important;
     border-right: 1px solid #333 !important;
-    width: 300px !important;
-    max-width: 300px !important;
-    min-width: 300px !important;
+    overflow-y: auto !important;
     position: fixed !important;
     left: 0 !important;
     top: 0 !important;
     height: 100vh !important;
     z-index: 1000 !important;
     padding: 1rem !important;
-    overflow-y: auto !important;
 }
 
-/* FORCE MAIN CONTENT TO START AFTER SIDEBAR */
+.sidebar .sidebar-content {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* MAIN CONTENT AREA - PROPERLY OFFSET FROM SIDEBAR */
 .main {
     margin-left: 300px !important;
     width: calc(100vw - 300px) !important;
     max-width: calc(100vw - 300px) !important;
     min-width: calc(100vw - 300px) !important;
-    position: relative !important;
-    left: 0 !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
+    position: relative !important;
+    background-color: #0e1117 !important;
 }
 
-/* FORCE MAIN CONTENT BLOCK-CONTAINER TO USE FULL AVAILABLE WIDTH */
+/* MAIN CONTENT BLOCK CONTAINER */
 .main .block-container {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin: 0 !important;
     padding: 2rem !important;
     position: relative !important;
     left: 0 !important;
     transform: none !important;
 }
 
-/* FORCE ALL CONTENT WITHIN BLOCK-CONTAINER TO EXPAND */
+/* CONTENT ELEMENTS WITHIN MAIN AREA */
 .main .block-container > div,
 .main .block-container > div > div,
 .main .block-container > div > div > div {
@@ -95,29 +90,24 @@ html, body {
     padding-left: 0 !important;
 }
 
-/* FORCE ALL STREAMLIT ELEMENTS */
+/* STREAMLIT APP VIEW CONTAINER */
 [data-testid="stAppViewContainer"] {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 100vw !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
     position: relative !important;
     left: 0 !important;
+    margin-left: 0 !important;
 }
 
-/* OVERRIDE ANY REMAINING WIDTH CONSTRAINTS */
-div[style*="max-width"], div[style*="width"] {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    position: relative !important;
-    left: 0 !important;
-}
-
-/* FORCE ALL ELEMENTS TO START FROM LEFT EDGE */
+/* STREAMLIT ELEMENTS PROPER POSITIONING */
 .stMarkdown, .stDataFrame, .stMetric, .stColumns, .stAlert, .stButton {
     position: relative !important;
     left: 0 !important;
     margin-left: 0 !important;
     padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 /* FORCE PROPER SPACING */
@@ -255,73 +245,69 @@ div[style*="max-width"], div[style*="width"] {
 }
 </style>
 
-<!-- NUCLEAR JAVASCRIPT TO FORCE FULL WIDTH -->
+<!-- FIXED LAYOUT JAVASCRIPT -->
 <script>
-function nuclearForceFullWidth() {
-    // Force all containers to full width
-    const containers = document.querySelectorAll('.main .block-container, .stApp > div, [data-testid="stAppViewContainer"]');
-    containers.forEach(container => {
-        container.style.maxWidth = '100vw !important';
-        container.style.width = '100vw !important';
-        container.style.paddingLeft = '1rem !important';
-        container.style.paddingRight = '1rem !important';
-        container.style.marginLeft = '0 !important';
-        container.style.marginRight = '0 !important';
-        container.style.position = 'relative !important';
-        container.style.left = '0 !important';
-    });
-    
-    // Force main content area
-    const mainContainer = document.querySelector('.main .block-container');
-    if (mainContainer) {
-        mainContainer.style.marginLeft = '0px !important';
-        mainContainer.style.width = '100% !important';
-        mainContainer.style.maxWidth = '100% !important';
-        mainContainer.style.padding = '1rem !important';
-        mainContainer.style.position = 'relative !important';
-        mainContainer.style.left = '0px !important';
-        mainContainer.style.transform = 'none !important';
+function fixLayout() {
+    // Ensure sidebar is properly positioned
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.style.width = '300px !important';
+        sidebar.style.minWidth = '300px !important';
+        sidebar.style.maxWidth = '300px !important';
+        sidebar.style.position = 'fixed !important';
+        sidebar.style.left = '0 !important';
+        sidebar.style.top = '0 !important';
+        sidebar.style.height = '100vh !important';
+        sidebar.style.zIndex = '1000 !important';
     }
     
-    // Force all divs to expand
-    const allDivs = document.querySelectorAll('div');
-    allDivs.forEach(div => {
-        if (div.style.maxWidth && div.style.maxWidth !== '100vw') {
-            div.style.maxWidth = '100vw !important';
-        }
-        if (div.style.width && div.style.width !== '100vw') {
-            div.style.width = '100vw !important';
-        }
-        div.style.position = 'relative !important';
-        div.style.left = '0px !important';
-    });
-
-    // Ensure proper page separation
-    const pageElements = document.querySelectorAll('.stMarkdown, .stDataFrame, .stMetric');
-    pageElements.forEach(element => {
-        element.style.marginBottom = '1rem !important';
+    // Ensure main content area is properly offset
+    const mainContent = document.querySelector('.main');
+    if (mainContent) {
+        mainContent.style.marginLeft = '300px !important';
+        mainContent.style.width = 'calc(100vw - 300px) !important';
+        mainContent.style.maxWidth = 'calc(100vw - 300px) !important';
+        mainContent.style.minWidth = 'calc(100vw - 300px) !important';
+        mainContent.style.position = 'relative !important';
+        mainContent.style.left = '0 !important';
+    }
+    
+    // Ensure block container uses full available width
+    const blockContainer = document.querySelector('.main .block-container');
+    if (blockContainer) {
+        blockContainer.style.width = '100% !important';
+        blockContainer.style.maxWidth = '100% !important';
+        blockContainer.style.minWidth = '100% !important';
+        blockContainer.style.marginLeft = '0 !important';
+        blockContainer.style.marginRight = '0 !important';
+        blockContainer.style.position = 'relative !important';
+        blockContainer.style.left = '0 !important';
+    }
+    
+    // Fix any content elements that might overlap
+    const contentElements = document.querySelectorAll('.main .stMarkdown, .main .stDataFrame, .main .stMetric, .main .stAlert');
+    contentElements.forEach(element => {
+        element.style.position = 'relative !important';
+        element.style.left = '0 !important';
+        element.style.marginLeft = '0 !important';
+        element.style.paddingLeft = '0 !important';
         element.style.width = '100% !important';
         element.style.maxWidth = '100% !important';
-        element.style.position = 'relative !important';
-        element.style.left = '0px !important';
-        element.style.marginLeft = '0px !important';
     });
 }
 
-// Run immediately and continuously
-nuclearForceFullWidth();
-setInterval(nuclearForceFullWidth, 25);
+// Run on page load and when content changes
+fixLayout();
+setInterval(fixLayout, 100);
 
-// Also run on DOM changes
-const observer = new MutationObserver(nuclearForceFullWidth);
+// Run on DOM changes
+const observer = new MutationObserver(fixLayout);
 observer.observe(document.body, { childList: true, subtree: true });
 
-// Force on window resize
-window.addEventListener('resize', nuclearForceFullWidth);
-
-// Force on page load
-window.addEventListener('load', nuclearForceFullWidth);
-document.addEventListener('DOMContentLoaded', nuclearForceFullWidth);
+// Run on window resize
+window.addEventListener('resize', fixLayout);
+window.addEventListener('load', fixLayout);
+document.addEventListener('DOMContentLoaded', fixLayout);
 </script>
 """, unsafe_allow_html=True)
 
@@ -459,5 +445,5 @@ else:
 st.sidebar.markdown("---")
 st.sidebar.success("🟢 **Status:** Online")
 st.sidebar.info("🌐 **Environment:** Kubernetes")
-st.sidebar.info("✅ **Full-width:** Enabled")
-st.sidebar.info("🚀 **Nuclear CSS:** Active")
+st.sidebar.info("✅ **Layout:** Fixed")
+st.sidebar.info("🚀 **CSS:** Optimized")
