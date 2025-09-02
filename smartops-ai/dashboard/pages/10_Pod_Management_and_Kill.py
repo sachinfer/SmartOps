@@ -161,7 +161,16 @@ def show_page():
                 pod_name = row['pod_name']
                 cpu_usage = row['cpu_numeric'] * 100  # Convert to percentage
                 memory_usage = row['memory_numeric'] / (1024 * 1024)  # Convert to MB
-                timestamp = row['timestamp']
+                # Convert timestamp to IST
+                try:
+                    if isinstance(row['timestamp'], str):
+                        timestamp_dt = pd.to_datetime(row['timestamp'])
+                    else:
+                        timestamp_dt = row['timestamp']
+                    # Convert to IST timezone
+                    timestamp_ist = timestamp_dt.tz_localize('UTC').tz_convert(IST).strftime('%Y-%m-%d %H:%M:%S IST')
+                except:
+                    timestamp_ist = str(row['timestamp'])[:19] + " IST"
                 
                 col1, col2, col3, col4, col5, col6 = st.columns([2, 1, 1, 1, 1, 1])
                 
@@ -172,7 +181,7 @@ def show_page():
                 with col3:
                     st.write(f"Memory: {memory_usage:.1f}MB")
                 with col4:
-                    st.write(f"Time: {timestamp[:19]}")
+                    st.write(f"Time: {timestamp_ist}")
                 with col5:
                     if st.button("🔴 Kill", key=f"kill_anomaly_{pod_name}"):
                         with st.spinner(f"Killing {pod_name}..."):
