@@ -183,7 +183,7 @@ def show_page():
                                 # Force immediate refresh to update the display
                                 time.sleep(1)  # Brief pause to ensure pod is deleted
                                 st.rerun()
-                else:
+                            else:
                                 st.error(message)
                 with col6:
                     if st.button("🚫 Ignore", key=f"ignore_anomaly_{pod_name}"):
@@ -195,9 +195,9 @@ def show_page():
                                 st.rerun()
                             else:
                                 st.error(message)
-            else:
+        else:
             st.success("✅ No pods with high resource consumption detected")
-            else:
+    else:
         st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
     
     # Only show high resource consuming pods - no need for regular pod listing
