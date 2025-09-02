@@ -282,8 +282,8 @@ def show_page():
                             if success:
                                 log_pod_action("ignore", pod_name, f"High resource usage - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}MB")
                                 st.success(message)
-                        st.rerun()
-            else:
+                                st.rerun()
+                            else:
                                 st.error(message)
         else:
             st.success("✅ No pods with high resource consumption detected")
