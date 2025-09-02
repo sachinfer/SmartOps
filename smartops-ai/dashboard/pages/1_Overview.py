@@ -1,3 +1,13 @@
+import requests
+
+# Check if API service is running
+def check_api_health():
+    try:
+        response = requests.get("http://localhost:8000/", timeout=5)
+        return response.status_code == 200
+    except Exception:
+        return False
+
 # Main content
 st.markdown("""
 <div class="dashboard-header">
