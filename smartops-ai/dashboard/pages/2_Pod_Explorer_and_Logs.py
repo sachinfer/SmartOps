@@ -341,28 +341,27 @@ def fetch_pod_containers(pod_name, namespace):
         # Fallback: return default container names
         return ["main", "sidecar", "init"]
 
+
 def show_page():
     # Main content with error handling
-                        try:
+    try:
         st.markdown("""
         <div class="dashboard-header">
-        <h1>🛰️ Pod Explorer</h1>
-        <p>Simple and clean pod monitoring dashboard</p>
+            <h1>🛰️ Pod Explorer</h1>
+            <p>Simple and clean pod monitoring dashboard</p>
         </div>
         """, unsafe_allow_html=True)
 
         # Check if API service is running but don't block functionality
         api_available = check_api_health()
         
-
-
         # Namespace selector
         st.markdown('<div class="section-header">📁 Select Namespace</div>', unsafe_allow_html=True)
 
         namespaces = fetch_namespaces()
         if not namespaces:
-        st.info("ℹ️ No namespaces available - using demo mode")
-        namespaces = ["default", "kube-system", "smartops"]
+            st.info("ℹ️ No namespaces available - using demo mode")
+            namespaces = ["default", "kube-system", "smartops"]
 
         namespace = st.selectbox("Choose namespace", namespaces, key="namespace_selector")
 
@@ -371,201 +370,183 @@ def show_page():
 
         # Try to fetch real pods first
         real_pods = fetch_pods(namespace)
-    
+        
         # Check if API is available
         api_available = check_api_health()
-    
+        
         # If no real pods found, show demo pods
         if not real_pods:
-        pods = [
-        {"name": f"app-{namespace}-1", "status": "Running", "age": "2d", "ready": "1/1"},
-        {"name": f"app-{namespace}-2", "status": "Running", "age": "1d", "ready": "1/1"},
-        {"name": f"worker-{namespace}-1", "status": "Running", "age": "3h", "ready": "1/1"},
-        {"name": f"redis-{namespace}", "status": "Running", "age": "5d", "ready": "1/1"},
-        {"name": f"db-{namespace}", "status": "Pending", "age": "2m", "ready": "0/1"},
-        ]
-        if not api_available:
-        st.info(f"ℹ️ Showing demo pods for namespace '{namespace}' - start the API service for real-time data")
+            pods = [
+                {"name": f"app-{namespace}-1", "status": "Running", "age": "2d", "ready": "1/1"},
+                {"name": f"app-{namespace}-2", "status": "Running", "age": "1d", "ready": "1/1"},
+                {"name": f"worker-{namespace}-1", "status": "Running", "age": "3h", "ready": "1/1"},
+                {"name": f"redis-{namespace}", "status": "Running", "age": "5d", "ready": "1/1"},
+                {"name": f"db-{namespace}", "status": "Pending", "age": "2m", "ready": "0/1"},
+            ]
+            if not api_available:
+                st.info(f"ℹ️ Showing demo pods for namespace '{namespace}' - start the API service for real-time data")
+            else:
+                st.info(f"ℹ️ No pods found in namespace '{namespace}' - showing demo data")
         else:
-        st.info(f"ℹ️ No pods found in namespace '{namespace}' - showing demo data")
-        else:
-        pods = real_pods
-    
+            pods = real_pods
+        
         if pods:
-        # Calculate metrics
-        total_pods = len(pods)
-        running_pods = len([p for p in pods if p.get('status') == 'Running'])
-        pending_pods = len([p for p in pods if p.get('status') == 'Pending'])
-        failed_pods = len([p for p in pods if p.get('status') == 'Failed'])
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-        st.metric("Total Pods", total_pods)
-        
-        with col2:
-        st.metric("Running", running_pods)
-        
-        with col3:
-        st.metric("Pending", pending_pods)
-        
-        with col4:
-        st.metric("Failed", failed_pods)
+            # Calculate metrics
+            total_pods = len(pods)
+            running_pods = len([p for p in pods if p.get('status') == 'Running'])
+            pending_pods = len([p for p in pods if p.get('status') == 'Pending'])
+            failed_pods = len([p for p in pods if p.get('status') == 'Failed'])
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Total Pods", total_pods)
+            
+            with col2:
+                st.metric("Running", running_pods)
+            
+            with col3:
+                st.metric("Pending", pending_pods)
+            
+            with col4:
+                st.metric("Failed", failed_pods)
         else:
-        st.info("No pods found in this namespace.")
+            st.info("No pods found in this namespace.")
 
         # Pod list
         st.markdown('<div class="section-header">🔍 Pod List</div>', unsafe_allow_html=True)
 
         if pods:
-        # Create a compact table display
-        pod_data = []
-        for pod in pods:
-        pod_name = pod.get('name', 'Unknown')
-        pod_status = pod.get('status', 'Unknown')
-        pod_age = pod.get('age', 'Unknown')
-        pod_ready = pod.get('ready', 'Unknown')
+            # Create a compact table display
+            pod_data = []
+            for pod in pods:
+                pod_name = pod.get('name', 'Unknown')
+                pod_status = pod.get('status', 'Unknown')
+                pod_age = pod.get('age', 'Unknown')
+                pod_ready = pod.get('ready', 'Unknown')
+                
+                # Status icon
+                if pod_status == 'Running':
+                    status_icon = '🟢'
+                elif pod_status == 'Pending':
+                    status_icon = '🟡'
+                elif pod_status == 'Failed':
+                    status_icon = '🔴'
+                else:
+                    status_icon = '⚪'
+                
+                pod_data.append({
+                    'Status': status_icon,
+                    'Name': pod_name,
+                    'Status': pod_status,
+                    'Age': pod_age,
+                    'Ready': pod_ready
+                })
             
-        # Status icon
-        if pod_status == 'Running':
-        status_icon = '🟢'
-        elif pod_status == 'Pending':
-        status_icon = '🟡'
-        elif pod_status == 'Failed':
-        status_icon = '🔴'
+            # Convert to DataFrame and display as compact table
+            df = pd.DataFrame(pod_data)
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True,
+                height=200  # Compact height
+            )
         else:
-        status_icon = '⚪'
-            
-        pod_data.append({
-        'Status': status_icon,
-        'Name': pod_name,
-        'Status': pod_status,
-        'Age': pod_age,
-        'Ready': pod_ready
-        })
-        
-        # Convert to DataFrame and display as compact table
-        df = pd.DataFrame(pod_data)
-        st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True,
-        height=200  # Compact height
-        )
-        else:
-        st.info("No pods available to display.")
+            st.info("No pods available to display.")
 
         # Simple log viewer
         st.markdown('<div class="section-header">📋 Log Viewer</div>', unsafe_allow_html=True)
 
         if pods:
-        pod_names = [pod.get('name', 'Unknown') for pod in pods]
-        selected_pod = st.selectbox("Select a pod to view logs", pod_names, key="pod_selector")
+            pod_names = [pod.get('name', 'Unknown') for pod in pods]
+            selected_pod = st.selectbox("Select a pod to view logs", pod_names, key="pod_selector")
         
-        # Get containers for the selected pod
-        containers = fetch_pod_containers(selected_pod, namespace)
+            # Get containers for the selected pod
+            containers = fetch_pod_containers(selected_pod, namespace)
         
-        # Log viewing options
-        col1, col2 = st.columns(2)
-        with col1:
-        tail_lines = st.selectbox("Number of lines", [50, 100, 200, 500, 1000], index=1, key="tail_lines")
+            # Log viewing options
+            col1, col2 = st.columns(2)
+            with col1:
+                tail_lines = st.selectbox("Number of lines", [50, 100, 200, 500, 1000], index=1, key="tail_lines")
         
-        with col2:
-        container_name = None
-        if containers:
-        container_name = st.selectbox("Container", ["All"] + containers, key="container_selector")
-        if container_name == "All":
-        container_name = None
+            with col2:
+                container_name = None
+                if containers:
+                    container_name = st.selectbox("Container", ["All"] + containers, key="container_selector")
+                    if container_name == "All":
+                        container_name = None
         
-        if st.button("📥 Load Logs", key="load_logs"):
-        with st.spinner(f"Loading logs for {selected_pod}..."):
-        # Fetch actual logs
-        logs = fetch_pod_logs(selected_pod, namespace, container_name, tail_lines)
+            if st.button("📥 Load Logs", key="load_logs"):
+                with st.spinner(f"Loading logs for {selected_pod}..."):
+                    # Fetch actual logs
+                    logs = fetch_pod_logs(selected_pod, namespace, container_name, tail_lines)
                 
-        if logs:
-        if logs == generate_fallback_logs(selected_pod, namespace):
-        # Show fallback logs with warning
-        st.warning("⚠️ API endpoint not available. Showing sample logs for demonstration.")
-        st.success(f"✅ Sample logs generated for {selected_pod}")
-        else:
-        st.success(f"✅ Logs loaded successfully from API!")
-                    
-        # Log display options
-        col1, col2 = st.columns([3, 1])
-        with col1:
-        st.markdown("**Log Content:**")
-        with col2:
-        if st.button("🔄 Refresh", key="refresh_logs"):
-        st.rerun()
-                    
-        # Display logs in Kibana-like format
-        display_logs_kibana_style(logs, selected_pod, namespace)
-                    
-        # Show API status
-        if logs == generate_fallback_logs(selected_pod, namespace):
-        st.info("💡 **API Status**: The Kubernetes API endpoint is not accessible. This is normal if the backend service is not running.")
-        st.info("🔧 **To enable real logs**: Start the backend service or ensure the API endpoints are properly configured.")
-                    
-        else:
-        st.info("ℹ️ No logs available - using demo mode")
-                    
-        # Try to get more detailed error information
-        try:
-        test_response = requests.get("http://localhost:8000/logs", 
-        params={"namespace": namespace, "pod": selected_pod}, 
-        timeout=5)
-        if test_response.status_code != 200:
-        st.info(f"ℹ️ API Status: {test_response.status_code}")
-        try:
-        error_data = test_response.json()
-        if "error" in error_data:
-        st.info(f"**Info**: {error_data['error']}")
-        except:
-        st.info(f"**Response**: {test_response.text[:200]}...")
-        else:
-        st.info("ℹ️ API returned 200 but no logs")
-                                        except Exception:
-                        st.info("ℹ️ Using fallback data")
-                    
-                    st.info("💡 **Troubleshooting Tips:**")
-                    st.info("1. Check if the backend service is running on port 8000")
-                    st.info("2. Verify the API endpoints are properly configured")
-                    st.info("3. Ensure network connectivity to the backend service")
-                    st.info("4. Check if the pod is actually running in the cluster")
-                    
-                    # Show connection test
-                    if st.button("🔍 Test API Connection", key="test_api"):
-                        test_result = test_api_connection()
-                        if test_result:
-                            st.success("✅ API connection successful!")
+                    if logs:
+                        if logs == generate_fallback_logs(selected_pod, namespace):
+                            # Show fallback logs with warning
+                            st.warning("⚠️ API endpoint not available. Showing sample logs for demonstration.")
+                            st.success(f"✅ Sample logs generated for {selected_pod}")
                         else:
-                            st.info("ℹ️ API connection not available - using demo mode")
-                            st.info("🚀 **Quick Start**: Run `python event_api.py` in the dashboard directory to start the backend service.")
+                            st.success(f"✅ Logs loaded successfully from API!")
+                    
+                        # Log display options
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.markdown("**Log Content:**")
+                        with col2:
+                            if st.button("🔄 Refresh", key="refresh_logs"):
+                                st.rerun()
+                    
+                        # Display logs in Kibana-like format
+                        display_logs_kibana_style(logs, selected_pod, namespace)
+                    
+                        # Show API status
+                        if logs == generate_fallback_logs(selected_pod, namespace):
+                            st.info("💡 **API Status**: The Kubernetes API endpoint is not accessible. This is normal if the backend service is not running.")
+                            st.info("🔧 **To enable real logs**: Start the backend service or ensure the API endpoints are properly configured.")
+                    
+                    else:
+                        st.info("ℹ️ No logs available - using demo mode")
+                    
+                        # Try to get more detailed error information
+                        try:
+                            test_response = requests.get("http://localhost:8000/logs", 
+                                                      params={"namespace": namespace, "pod": selected_pod}, 
+                                                      timeout=5)
+                            if test_response.status_code != 200:
+                                st.info(f"ℹ️ API Status: {test_response.status_code}")
+                                try:
+                                    error_data = test_response.json()
+                                    if "error" in error_data:
+                                        st.info(f"**Info**: {error_data['error']}")
+                                except:
+                                    st.info(f"**Response**: {test_response.text[:200]}...")
+                            else:
+                                st.info("ℹ️ API returned 200 but no logs")
+                        except Exception:
+                            st.info("ℹ️ Using fallback data")
+        
+        # API Status Section
+        st.markdown('<div class="section-header">🔌 API Status</div>', unsafe_allow_html=True)
+        
+        if api_available:
+            st.success("✅ **API Status**: Backend service is running and accessible!")
+            st.info("🔍 **API Status**: The Log Viewer will attempt to connect to the backend service when you click 'Load Logs'.")
         else:
-            st.info("Select a pod and click 'Load Logs' to view its logs.")
-            if containers:
-                st.info(f"📦 Available containers: {', '.join(containers)}")
-            
-            # Show API status info
-            if check_api_health():
-                st.info("🔍 **API Status**: The Log Viewer will attempt to connect to the backend service when you click 'Load Logs'.")
-            else:
-                st.warning("⚠️ **API Status**: Backend service is not running. Start it with `python event_api.py` to enable real-time logs.")
+            st.warning("⚠️ **API Status**: Backend service is not running. Start it with `python event_api.py` to enable real-time logs.")
 
-    # Misi AI Chatbot Widget removed - not using MISI AI page-wise
-
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
-        <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Pod Explorer</p>
-        <p style="opacity: 0.8; margin: 0;">Last updated: """ + time.strftime('%Y-%m-%d %H:%M:%S') + """</p>
-    </div>
-    """, unsafe_allow_html=True)
+        # Footer
+        st.markdown("---")
+        st.markdown("""
+        <div style="text-align: center; color: #6c757d; padding: 2rem; font-size: 0.9rem;">
+            <p style="font-weight: 600; margin-bottom: 0.5rem;">🚀 SmartOps AI - Pod Explorer</p>
+            <p style="opacity: 0.8; margin: 0;">Last updated: """ + time.strftime('%Y-%m-%d %H:%M:%S') + """</p>
+        </div>
+        """, unsafe_allow_html=True)
 
     except Exception:
         st.info("ℹ️ An unexpected error occurred while loading the page")
         st.info("🔄 Please refresh the page or contact support if the issue persists")
 
 # Call the function to show the page
-show_page() 
+show_page()
