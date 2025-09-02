@@ -15,6 +15,19 @@ def check_api_health():
     except Exception:
         return False
 
+# Simple functions with better error handling
+@st.cache_data(ttl=30)
+def fetch_namespaces():
+    try:
+        url = "http://localhost:8000/namespaces"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('namespaces', [])
+        else:
+            return []
+    except Exception:
+        return []
+
 # Main content
 st.markdown("""
 <div class="dashboard-header">

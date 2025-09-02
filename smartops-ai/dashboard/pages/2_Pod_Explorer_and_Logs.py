@@ -1,3 +1,6 @@
+import streamlit as st
+import requests
+
 # Check if API service is running
 def check_api_health():
     try:
