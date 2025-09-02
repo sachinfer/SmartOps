@@ -28,6 +28,28 @@ def fetch_namespaces():
     except Exception:
         return []
 
+@st.cache_data(ttl=30)
+def load_anomalies_df():
+    try:
+        # Try to load from database first
+        conn = sqlite3.connect('/app/dashboard/data/anomalies.db')
+        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+        conn.close()
+        return df
+    except Exception:
+        # Fallback to sample data
+        return pd.DataFrame({
+            'timestamp': [datetime.now() - timedelta(hours=i) for i in range(10)],
+            'namespace': ['default', 'kube-system', 'smartops'] * 3 + ['default'],
+            'pod_name': [f'pod-{i}' for i in range(10)],
+            'anomaly_type': ['cpu_spike', 'memory_leak', 'network_anomaly'] * 3 + ['cpu_spike'],
+            'severity': ['high', 'medium', 'low'] * 3 + ['high'],
+            'description': [f'Anomaly detected in pod-{i}' for i in range(10)]
+        })
+
+def has_namespace_column(df):
+    return 'namespace' in df.columns
+
 # Main content
 st.markdown("""
 <div class="dashboard-header">
