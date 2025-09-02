@@ -192,19 +192,21 @@ def show_page():
     def kill_pod(pod_name):
         """Kill a pod using kubectl command"""
         try:
-            # Use kubectl delete command directly
+            # Use kubectl delete command directly with longer timeout
             result = subprocess.run(
                 f"kubectl delete pod {pod_name} -n {NAMESPACE}",
                 shell=True,
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=30  # Increased timeout to 30 seconds
             )
             
             if result.returncode == 0:
                 return True, f"✅ Successfully killed pod: {pod_name}"
             else:
                 return False, f"❌ Failed to kill pod: {result.stderr.strip()}"
+        except subprocess.TimeoutExpired:
+            return False, f"❌ Timeout: Pod deletion took too long (>30s)"
         except Exception as e:
             return False, f"❌ Error killing pod: {str(e)}"
     
@@ -237,9 +239,9 @@ def show_page():
         latest_anomalies['cpu_numeric'] = pd.to_numeric(latest_anomalies['cpu'], errors='coerce').fillna(0)
         latest_anomalies['memory_numeric'] = pd.to_numeric(latest_anomalies['memory'], errors='coerce').fillna(0)
         
-        # Filter to show only HIGH resource consuming pods (CPU > 5% OR Memory > 500MB)
+        # Filter to show only HIGH resource consuming pods (CPU > 50% OR Memory > 500MB)
         high_resource_pods = latest_anomalies[
-            (latest_anomalies['cpu_numeric'] > 0.05) |  # CPU > 5%
+            (latest_anomalies['cpu_numeric'] > 0.50) |  # CPU > 50%
             (latest_anomalies['memory_numeric'] > 500 * 1024 * 1024)  # Memory > 500MB
         ]
         
@@ -247,7 +249,7 @@ def show_page():
             # Sort by CPU usage (highest first)
             high_resource_pods = high_resource_pods.sort_values('cpu_numeric', ascending=False)
             
-            st.info(f"🔍 Found {len(high_resource_pods)} pods with HIGH resource consumption")
+            st.info(f"🔍 Found {len(high_resource_pods)} pods with HIGH resource consumption (CPU > 50% or Memory > 500MB)")
         
             # Display high resource usage pods
             for idx, row in high_resource_pods.iterrows():
