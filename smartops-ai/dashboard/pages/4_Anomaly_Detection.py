@@ -10,6 +10,15 @@ import os
 # Check if API service is running
 def check_api_health():
     try:
+        # Try the anomaly service first
+        response = requests.get("http://smartops-anomaly-service.smartops.svc.cluster.local/", timeout=5)
+        if response.status_code == 200:
+            return True
+    except Exception:
+        pass
+    
+    try:
+        # Fallback to localhost
         response = requests.get("http://localhost:8000/", timeout=5)
         return response.status_code == 200
     except Exception:
@@ -19,36 +28,113 @@ def check_api_health():
 @st.cache_data(ttl=30)
 def fetch_namespaces():
     try:
+        # Try the anomaly service first
+        url = "http://smartops-anomaly-service.smartops.svc.cluster.local/namespaces"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('namespaces', [])
+    except Exception:
+        pass
+    
+    try:
+        # Fallback to localhost
         url = "http://localhost:8000/namespaces"
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
             return resp.json().get('namespaces', [])
-        else:
-            return []
     except Exception:
-        return []
+        pass
+    
+    return []
 
 @st.cache_data(ttl=30)
 def load_anomalies_df():
     try:
-        # Try to load from database first
-        conn = sqlite3.connect('/app/dashboard/data/anomalies.db')
-        df = pd.read_sql_query("SELECT * FROM anomalies", conn)
+        # Try to load from the real anomaly database first
+        conn = sqlite3.connect('/app/dashboard/data/data.db')
+        df = pd.read_sql_query("SELECT * FROM anomalies ORDER BY timestamp DESC LIMIT 100", conn)
         conn.close()
-        return df
-    except Exception:
-        # Fallback to sample data
-        return pd.DataFrame({
-            'timestamp': [datetime.now() - timedelta(hours=i) for i in range(10)],
-            'namespace': ['default', 'kube-system', 'smartops'] * 3 + ['default'],
-            'pod_name': [f'pod-{i}' for i in range(10)],
-            'anomaly_type': ['cpu_spike', 'memory_leak', 'network_anomaly'] * 3 + ['cpu_spike'],
-            'severity': ['high', 'medium', 'low'] * 3 + ['high'],
-            'description': [f'Anomaly detected in pod-{i}' for i in range(10)]
-        })
+        
+        if not df.empty:
+            # Convert timestamp to datetime if it's a string
+            if 'timestamp' in df.columns:
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+            return df
+    except Exception as e:
+        print(f"Error loading from database: {e}")
+    
+    try:
+        # Try to load from the old anomalies database
+        conn = sqlite3.connect('/app/dashboard/data/anomalies.db')
+        df = pd.read_sql_query("SELECT * FROM anomalies ORDER BY timestamp DESC LIMIT 100", conn)
+        conn.close()
+        
+        if not df.empty:
+            if 'timestamp' in df.columns:
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+            return df
+    except Exception as e:
+        print(f"Error loading from old database: {e}")
+    
+    # Fallback to sample data with more realistic values
+    return pd.DataFrame({
+        'timestamp': [datetime.now() - timedelta(hours=i) for i in range(10)],
+        'namespace': ['smartops', 'smartops', 'smartops'] * 3 + ['smartops'],
+        'pod_name': [f'stress-pod-{i}' for i in range(10)],
+        'cpu': [0.8, 0.9, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05],
+        'memory': [800000000, 900000000, 700000000, 600000000, 500000000, 400000000, 300000000, 200000000, 100000000, 50000000],
+        'prediction': ['Anomaly detected', 'Anomaly detected', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal', 'Normal'],
+        'labels': ['{"app": "stress-test"}'] * 10
+    })
 
 def has_namespace_column(df):
     return 'namespace' in df.columns
+
+@st.cache_data(ttl=10)
+def get_real_pod_metrics():
+    """Get real-time pod metrics from the anomaly service"""
+    try:
+        # Try the anomaly service first
+        url = "http://smartops-anomaly-service.smartops.svc.cluster.local/pods"
+        resp = requests.get(url, params={"namespace": "smartops"}, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('pods', [])
+    except Exception:
+        pass
+    
+    try:
+        # Fallback to localhost
+        url = "http://localhost:8000/pods"
+        resp = requests.get(url, params={"namespace": "smartops"}, timeout=5)
+        if resp.status_code == 200:
+            return resp.json().get('pods', [])
+    except Exception:
+        pass
+    
+    return []
+
+@st.cache_data(ttl=10)
+def get_cluster_metrics():
+    """Get real-time cluster metrics"""
+    try:
+        # Try the anomaly service first
+        url = "http://smartops-anomaly-service.smartops.svc.cluster.local/cluster_metrics"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        pass
+    
+    try:
+        # Fallback to localhost
+        url = "http://localhost:8000/cluster_metrics"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        pass
+    
+    return {"cpu_usage": 0, "cpu_capacity": 1, "memory_usage": 0, "memory_capacity": 1}
 
 # Main content
 st.markdown("""
@@ -57,6 +143,39 @@ st.markdown("""
     <p>AI-powered anomaly detection and analysis</p>
 </div>
 """, unsafe_allow_html=True)
+
+# Real-time cluster metrics
+st.markdown('<div class="section-header">📊 Real-time Cluster Metrics</div>', unsafe_allow_html=True)
+cluster_metrics = get_cluster_metrics()
+if cluster_metrics:
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        cpu_usage = cluster_metrics.get('cpu_usage', 0)
+        cpu_capacity = cluster_metrics.get('cpu_capacity', 1)
+        cpu_percent = (cpu_usage / cpu_capacity * 100) if cpu_capacity > 0 else 0
+        st.metric("CPU Usage", f"{cpu_usage:.2f} cores", f"{cpu_percent:.1f}%")
+    
+    with col2:
+        memory_usage = cluster_metrics.get('memory_usage', 0)
+        memory_capacity = cluster_metrics.get('memory_capacity', 1)
+        memory_percent = (memory_usage / memory_capacity * 100) if memory_capacity > 0 else 0
+        st.metric("Memory Usage", f"{memory_usage / (1024**3):.2f} GB", f"{memory_percent:.1f}%")
+    
+    with col3:
+        st.metric("CPU Capacity", f"{cpu_capacity:.2f} cores")
+    
+    with col4:
+        st.metric("Memory Capacity", f"{memory_capacity / (1024**3):.2f} GB")
+
+# Real-time pod status
+st.markdown('<div class="section-header">🚀 Live Pod Status</div>', unsafe_allow_html=True)
+real_pods = get_real_pod_metrics()
+if real_pods:
+    pod_df = pd.DataFrame(real_pods)
+    st.dataframe(pod_df, use_container_width=True)
+else:
+    st.info("No pod data available from anomaly service")
 
 # Check if API service is running and show helpful message
 if not check_api_health():
