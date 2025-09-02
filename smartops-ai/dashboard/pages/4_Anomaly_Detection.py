@@ -149,38 +149,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Real-time cluster metrics
-st.markdown('<div class="section-header">📊 Real-time Cluster Metrics</div>', unsafe_allow_html=True)
-cluster_metrics = get_cluster_metrics()
-if cluster_metrics:
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        cpu_usage = cluster_metrics.get('cpu_usage', 0)
-        cpu_capacity = cluster_metrics.get('cpu_capacity', 1)
-        cpu_percent = (cpu_usage / cpu_capacity * 100) if cpu_capacity > 0 else 0
-        st.metric("CPU Usage", f"{cpu_usage:.2f} cores", f"{cpu_percent:.1f}%")
-    
-    with col2:
-        memory_usage = cluster_metrics.get('memory_usage', 0)
-        memory_capacity = cluster_metrics.get('memory_capacity', 1)
-        memory_percent = (memory_usage / memory_capacity * 100) if memory_capacity > 0 else 0
-        st.metric("Memory Usage", f"{memory_usage / (1024**3):.2f} GB", f"{memory_percent:.1f}%")
-    
-    with col3:
-        st.metric("CPU Capacity", f"{cpu_capacity:.2f} cores")
-    
-    with col4:
-        st.metric("Memory Capacity", f"{memory_capacity / (1024**3):.2f} GB")
 
-# Real-time pod status
-st.markdown('<div class="section-header">🚀 Live Pod Status</div>', unsafe_allow_html=True)
-real_pods = get_real_pod_metrics()
-if real_pods:
-    pod_df = pd.DataFrame(real_pods)
-    st.dataframe(pod_df, use_container_width=True)
-else:
-    st.info("No pod data available from anomaly service")
 
 # Namespace selection
 st.markdown('<div class="section-header">📋 Select Namespace</div>', unsafe_allow_html=True)
@@ -203,35 +172,48 @@ else:
 api_health = check_api_health()
 print(f"DEBUG: API health check result: {api_health}")
 
-if not api_health:
+# Always show anomaly data regardless of API health
+# The API health check is just for real-time metrics, not for historical anomaly data
 
+# Show real-time metrics only if API is healthy
+if api_health:
+    # Real-time Cluster Metrics Section
+    st.markdown('<div class="section-header">📊 Real-time Cluster Metrics</div>', unsafe_allow_html=True)
     
-    # Show current cluster status based on what we know
-    # Get real cluster status
     try:
-        node_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "nodes", "all_namespaces": "true"}, timeout=5)
-        pod_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "pods", "all_namespaces": "true"}, timeout=5)
-        namespace_response = requests.get("http://localhost:8000/namespaces", timeout=5)
-        service_response = requests.get("http://localhost:8000/kubectl_get", params={"resource_type": "services", "all_namespaces": "true"}, timeout=5)
-        
-        node_count = len(node_response.json().get("items", [])) if node_response.status_code == 200 else 0
-        pod_count = len(pod_response.json().get("items", [])) if pod_response.status_code == 200 else 0
-        namespace_count = len(namespace_response.json().get("namespaces", [])) if namespace_response.status_code == 200 else 0
-        service_count = len(service_response.json().get("items", [])) if service_response.status_code == 200 else 0
-        
-        # Get actual node names
-        node_names = []
-        if node_response.status_code == 200:
-            nodes = node_response.json().get("items", [])
-            node_names = [node.get("name", "") for node in nodes if node.get("name")]
-        
-        node_info = f"{node_count} ({', '.join(node_names)})" if node_names else f"{node_count}"
-        
-        st.success(f"✅ **Current Cluster Status**:\n- **Nodes**: {node_info}\n- **Pods**: {pod_count}\n- **Namespaces**: {namespace_count}\n- **Services**: {service_count}")
-    except Exception:
-        st.info("ℹ️ Using fallback cluster data")
+        cluster_metrics = get_cluster_metrics()
+        if cluster_metrics:
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("CPU Usage", f"{cluster_metrics['cpu_usage']:.2f} cores", 
+                         delta=f"{cluster_metrics.get('cpu_usage_percent', 0):.1f}%")
+            with col2:
+                st.metric("Memory Usage", f"{cluster_metrics['memory_usage']:.2f} GB", 
+                         delta=f"{cluster_metrics.get('memory_usage_percent', 0):.1f}%")
+            with col3:
+                st.metric("CPU Capacity", f"{cluster_metrics['cpu_capacity']:.2f} cores")
+            with col4:
+                st.metric("Memory Capacity", f"{cluster_metrics['memory_capacity']:.2f} GB")
+        else:
+            st.info("Real-time cluster metrics not available")
+    except Exception as e:
+        st.info(f"Real-time cluster metrics not available: {e}")
     
-    st.warning("⚠️ **Anomaly Detection**: Real-time anomaly detection requires the backend API service to be running.")
+    # Live Pod Status Section
+    st.markdown('<div class="section-header">🚀 Live Pod Status</div>', unsafe_allow_html=True)
+    
+    try:
+        pod_metrics = get_real_pod_metrics(selected_namespace)
+        if pod_metrics and not pod_metrics.empty:
+            st.dataframe(pod_metrics, use_container_width=True)
+        else:
+            st.info("No pod data available from anomaly service")
+    except Exception as e:
+        st.info(f"Live pod status not available: {e}")
+else:
+    # Show fallback message when API is not healthy
+    st.warning("⚠️ **Real-time metrics unavailable**: The anomaly service API is not responding. Historical anomaly data is still available below.")
 
 # Load and filter data
 print("DEBUG: About to load anomaly data...")
