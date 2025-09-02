@@ -63,7 +63,7 @@ def show_page():
                     action TEXT,
                     pod_name TEXT,
                     reason TEXT,
-                    user_action BOOLEAN
+                    user_action INTEGER
                 )
             """)
             
@@ -71,136 +71,14 @@ def show_page():
             cursor.execute("""
                 INSERT INTO pod_actions (timestamp, action, pod_name, reason, user_action)
                 VALUES (?, ?, ?, ?, ?)
-            """, (datetime.now().isoformat(), action, pod_name, reason, user_action))
+            """, (datetime.now().isoformat(), action, pod_name, reason, 1 if user_action else 0))
             
             conn.commit()
             conn.close()
             return True
         except Exception as e:
-            st.error(f"Failed to log action: {e}")
+            st.warning(f"Could not log action: {e}")
             return False
-    
-    
-    # Function to get individual pod resource usage
-    def get_pod_resource_usage():
-        try:
-            response = requests.get(f"{API_URL}/pod_resources", timeout=10)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                st.info("ℹ️ Resource usage not available (kubectl permissions required)")
-                return {}
-        except Exception:
-            st.info("ℹ️ Resource usage not available (kubectl permissions required)")
-            return {}
-    
-    # Enhanced function to get pod metrics from Kubernetes API
-    def get_pod_metrics_k8s():
-        """Get real-time pod metrics using kubectl top command"""
-        try:
-            result = subprocess.run(
-                ["kubectl", "top", "pods", "-n", NAMESPACE, "--no-headers"],
-                capture_output=True, text=True, timeout=10
-            )
-            if result.returncode == 0:
-                metrics = {}
-                for line in result.stdout.strip().split('\n'):
-                    if line.strip():
-                        parts = line.split()
-                        if len(parts) >= 3:
-                            pod_name = parts[0]
-                            cpu = parts[1]
-                            memory = parts[2]
-                            metrics[pod_name] = {"cpu": cpu, "memory": memory}
-                return metrics
-            else:
-                return {}
-        except Exception as e:
-            st.warning(f"Could not fetch pod metrics: {str(e)}")
-            return {}
-    
-    # Function to get pod resource requests and limits
-    def get_pod_resource_limits():
-        """Get pod resource requests and limits"""
-        try:
-            result = subprocess.run(
-                ["kubectl", "get", "pods", "-n", NAMESPACE, "-o", "json"],
-                capture_output=True, text=True, timeout=10
-            )
-            if result.returncode == 0:
-                pods_data = json.loads(result.stdout)
-                resource_info = {}
-                for pod in pods_data.get("items", []):
-                    pod_name = pod["metadata"]["name"]
-                    containers = pod.get("spec", {}).get("containers", [])
-                    for container in containers:
-                        resources = container.get("resources", {})
-                        requests = resources.get("requests", {})
-                        limits = resources.get("limits", {})
-                        resource_info[pod_name] = {
-                            "cpu_request": requests.get("cpu", "N/A"),
-                            "memory_request": requests.get("memory", "N/A"),
-                            "cpu_limit": limits.get("cpu", "N/A"),
-                            "memory_limit": limits.get("memory", "N/A")
-                        }
-                return resource_info
-            else:
-                return {}
-        except Exception as e:
-            st.warning(f"Could not fetch pod resource limits: {str(e)}")
-            return {}
-    
-    # Function to get all pods
-    def get_all_pods():
-        try:
-            response = requests.get(f"{API_URL}/pods", timeout=10)
-            if response.status_code == 200:
-                pods = response.json()
-                return pods
-            else:
-                st.error(f"API Error: {response.status_code}")
-                return []
-        except Exception as e:
-            st.error(f"Connection Error: {str(e)}")
-            # Fallback to kubectl command if API is not available
-            return get_pods_kubectl_fallback()
-    
-    # Fallback function using kubectl command
-    def get_pods_kubectl_fallback():
-        try:
-            # This would be a fallback if the API is not working
-            st.info("Trying kubectl fallback...")
-            
-            # Try to get pods using kubectl if available
-            import subprocess
-            result = subprocess.run(
-                ["kubectl", "get", "pods", "-n", "smartops", "-o", "json"],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            
-            if result.returncode == 0:
-                import json
-                pods_json = json.loads(result.stdout)
-                pods = []
-                for pod in pods_json.get("items", []):
-                    pod_data = {
-                        "name": pod["metadata"]["name"],
-                        "status": pod["status"]["phase"],
-                        "ready": f"{pod['status']['readyReplicas']}/{pod['spec']['replicas']}" if 'readyReplicas' in pod['status'] else "1/1",
-                        "age": "unknown",
-                        "namespace": pod["metadata"]["namespace"]
-                    }
-                    pods.append(pod_data)
-                return {"pods": pods}
-            else:
-                st.warning(f"kubectl fallback failed: {result.stderr}")
-                return {"pods": []}
-                
-        except Exception as e:
-            st.warning(f"kubectl fallback error: {str(e)}")
-            return {"pods": []}
     
     # Function to kill a pod
     def kill_pod(pod_name):
@@ -297,7 +175,7 @@ def show_page():
                                 # Force immediate refresh to update the display
                                 time.sleep(1)  # Brief pause to ensure pod is deleted
                                 st.rerun()
-                else:
+                            else:
                                 st.error(message)
                 with col6:
                     if st.button("🚫 Ignore", key=f"ignore_anomaly_{pod_name}"):
@@ -309,10 +187,10 @@ def show_page():
                                 st.rerun()
                             else:
                                 st.error(message)
-            else:
+        else:
             st.success("✅ No pods with high resource consumption detected")
             st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
-            else:
+    else:
         st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
         st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
     
