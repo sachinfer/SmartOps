@@ -202,29 +202,10 @@ def show_page():
     # Refresh button
     st.markdown("### 📊 Real-Time Pod Monitoring")
     
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2 = st.columns([3, 1])
     with col2:
         if st.button("🔄 Refresh Data", key="refresh_btn"):
             st.rerun()
-    with col3:
-        if st.button("🚨 Apply Stress Pod", key="apply_stress"):
-            try:
-                # Apply stress pod using kubectl run command
-                result = subprocess.run([
-                    "kubectl", "run", "stress-pod", 
-                    "--image=busybox", 
-                    "--namespace=smartops", 
-                    "--command", "--", "sh", "-c", 
-                    "while true; do echo 'stress' > /dev/null; done"
-                ], capture_output=True, text=True, timeout=10)
-                
-                if result.returncode == 0:
-                    st.success("✅ Stress pod created successfully!")
-                    st.rerun()
-                else:
-                    st.error(f"❌ Failed to create stress pod: {result.stderr}")
-            except Exception as e:
-                st.error(f"❌ Error creating stress pod: {e}")
     
     # Show pods with high resource usage from anomaly detection
     st.markdown("### 🚨 High Resource Usage Pods (From Anomaly Detection)")
@@ -279,9 +260,10 @@ def show_page():
                                 st.error(message)
         else:
             st.success("✅ No pods with high resource consumption detected")
-            st.info("💡 Click '🚨 Apply Stress Pod' to create a high-resource pod for testing")
+            st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
     else:
         st.info("ℹ️ No anomaly data available or no pods with high resource usage detected")
+        st.info("💡 Create stress pods manually via terminal: `kubectl run stress-pod --image=busybox --namespace=smartops --command -- sh -c \"while true; do echo 'stress' > /dev/null; done\"`")
     
     # Only show high resource consuming pods - no need for regular pod listing
     
