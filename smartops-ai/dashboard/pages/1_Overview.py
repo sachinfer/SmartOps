@@ -14,9 +14,9 @@ def check_api_health():
 def fetch_node_data():
     try:
         response = requests.get("http://localhost:8000/nodes", timeout=5)
-        if response.status_code == 200:
+                if response.status_code == 200:
             return response.json().get('nodes', [])
-        return []
+            return []
     except Exception:
         return []
 
@@ -26,7 +26,7 @@ def fetch_pod_data():
         response = requests.get("http://localhost:8000/pods", timeout=5)
         if response.status_code == 200:
             return response.json().get('pods', [])
-        return []
+            return []
     except Exception:
         return []
 
@@ -49,6 +49,31 @@ def get_namespace_count():
         return 0
     except Exception:
         return 0
+
+# Get enhanced pod data
+def get_enhanced_pod_data():
+    try:
+        response = requests.get("http://localhost:8000/pods", timeout=5)
+        if response.status_code == 200:
+            return response.json().get('pods', [])
+            return []
+    except Exception:
+        return []
+
+# Get pod status counts
+def get_pod_status_counts(pods):
+    if not pods:
+        return {'Running': 0, 'Pending': 0, 'Failed': 0, 'Succeeded': 0}
+    
+    status_counts = {'Running': 0, 'Pending': 0, 'Failed': 0, 'Succeeded': 0}
+    for pod in pods:
+        status = pod.get('status', 'Unknown')
+        if status in status_counts:
+            status_counts[status] += 1
+        else:
+            status_counts['Running'] += 1  # Default to Running for unknown statuses
+    
+    return status_counts
 
 # Main content
 st.markdown("""
