@@ -19,7 +19,7 @@ st.markdown("""
     box-sizing: border-box !important;
 }
 
-/* MAIN APP CONTAINER */
+/* MAIN APP CONTAINER - FULL WIDTH */
 .stApp {
     display: flex !important;
     width: 100vw !important;
@@ -28,6 +28,8 @@ st.markdown("""
     padding: 0 !important;
     overflow: hidden !important;
     position: relative !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
 }
 
 /* SIDEBAR - COLLAPSIBLE */
@@ -59,7 +61,7 @@ st.markdown("""
     margin: 0 !important;
 }
 
-/* MAIN CONTENT - RESPONSIVE TO SIDEBAR STATE */
+/* MAIN CONTENT - RESPONSIVE TO SIDEBAR STATE - FULL WIDTH */
 .main {
     margin-left: 300px !important;
     width: calc(100vw - 300px) !important;
@@ -72,14 +74,16 @@ st.markdown("""
     background-color: #0e1117 !important;
     left: 0 !important;
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out !important;
+    flex: 1 !important;
 }
 
-/* MAIN CONTENT WHEN SIDEBAR IS HIDDEN */
+/* MAIN CONTENT WHEN SIDEBAR IS HIDDEN - FULL WIDTH */
 .main.sidebar-hidden {
     margin-left: 0 !important;
     width: 100vw !important;
     max-width: 100vw !important;
     min-width: 100vw !important;
+    flex: 1 !important;
 }
 
 /* MAIN CONTENT BLOCK CONTAINER */
@@ -312,12 +316,88 @@ p, h1, h2, h3, h4, h5, h6 {
     left: 0 !important;
 }
 
-/* OVERRIDE ANY REMAINING WIDTH CONSTRAINTS */
+/* OVERRIDE ANY REMAINING WIDTH CONSTRAINTS - FORCE FULL WIDTH */
 div[style*="max-width"], div[style*="width"] {
-    max-width: 100vw !important;
-    width: 100vw !important;
+    max-width: 100% !important;
+    width: 100% !important;
     position: relative !important;
     left: 0 !important;
+}
+
+/* FORCE ALL STREAMLIT CONTAINERS TO USE FULL WIDTH */
+.stApp > div,
+.stApp > div > div,
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > div,
+[data-testid="stAppViewContainer"] > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* FORCE ALL CONTENT ELEMENTS TO EXPAND */
+.stMarkdown,
+.stDataFrame,
+.stMetric,
+.stColumns,
+.stAlert,
+.stButton,
+.stSelectbox,
+.stTextInput,
+.stTextArea,
+.stSlider,
+.stCheckbox,
+.stRadio,
+.stExpander,
+.stTabs,
+.stContainer,
+.element-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* FORCE PLOTLY CHARTS TO USE FULL WIDTH */
+.stPlotlyChart,
+.stAltairChart,
+.stVegaLiteChart,
+.stPydeckChart {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+/* FORCE TABLES TO USE FULL WIDTH */
+.stDataFrame,
+.stTable,
+.stDataEditor {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+/* FORCE COLUMNS TO USE FULL WIDTH */
+[data-testid="column"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    flex: 1 !important;
+}
+
+/* FORCE METRICS TO USE FULL WIDTH */
+[data-testid="metric-container"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    flex: 1 !important;
 }
 </style>
 
@@ -382,7 +462,7 @@ function initializeSidebarState() {
     }
 }
 
-// Layout fix function
+// Layout fix function - Enhanced for full width
 function fixLayout() {
     // Ensure proper layout
     const sidebar = document.querySelector('.sidebar');
@@ -398,15 +478,46 @@ function fixLayout() {
         }
     }
     
-    // Ensure content elements are properly positioned
-    const contentElements = document.querySelectorAll('.main .stMarkdown, .main .stDataFrame, .main .stMetric, .main .stAlert, .main .stButton');
-    contentElements.forEach(element => {
+    // Force all content elements to use full width
+    const allContentElements = document.querySelectorAll('.main .stMarkdown, .main .stDataFrame, .main .stMetric, .main .stAlert, .main .stButton, .main .stSelectbox, .main .stTextInput, .main .stTextArea, .main .stSlider, .main .stCheckbox, .main .stRadio, .main .stExpander, .main .stTabs, .main .stContainer, .main .element-container, .main [data-testid="column"], .main [data-testid="metric-container"]');
+    
+    allContentElements.forEach(element => {
         element.style.position = 'relative !important';
         element.style.left = '0 !important';
         element.style.marginLeft = '0 !important';
         element.style.paddingLeft = '0 !important';
         element.style.width = '100% !important';
         element.style.maxWidth = '100% !important';
+        element.style.minWidth = '100% !important';
+        element.style.flex = '1 !important';
+    });
+    
+    // Force all containers to use full width
+    const containers = document.querySelectorAll('.main .block-container, .main [data-testid="stAppViewContainer"], .main [data-testid="stAppViewContainer"] > div, .main [data-testid="stAppViewContainer"] > div > div');
+    containers.forEach(container => {
+        container.style.width = '100% !important';
+        container.style.maxWidth = '100% !important';
+        container.style.minWidth = '100% !important';
+        container.style.position = 'relative !important';
+        container.style.left = '0 !important';
+        container.style.marginLeft = '0 !important';
+        container.style.paddingLeft = '0 !important';
+    });
+    
+    // Force charts to use full width
+    const charts = document.querySelectorAll('.main .stPlotlyChart, .main .stAltairChart, .main .stVegaLiteChart, .main .stPydeckChart');
+    charts.forEach(chart => {
+        chart.style.width = '100% !important';
+        chart.style.maxWidth = '100% !important';
+        chart.style.minWidth = '100% !important';
+    });
+    
+    // Force tables to use full width
+    const tables = document.querySelectorAll('.main .stDataFrame, .main .stTable, .main .stDataEditor');
+    tables.forEach(table => {
+        table.style.width = '100% !important';
+        table.style.maxWidth = '100% !important';
+        table.style.minWidth = '100% !important';
     });
 }
 
