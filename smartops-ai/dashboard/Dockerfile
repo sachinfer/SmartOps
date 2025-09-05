@@ -38,7 +38,10 @@ RUN ls -la /app/dashboard/ && \
     echo "✅ Checking for full-width files:" && \
     ls -la /app/dashboard/main.py && \
     ls -la /app/dashboard/custom.css && \
-    ls -la /app/dashboard/.streamlit/config.toml
+    ls -la /app/dashboard/.streamlit/config.toml && \
+    ls -la /app/dashboard/test_fullwidth_fix.py && \
+    ls -la /app/dashboard/FULLWIDTH_FIX_README.md && \
+    echo "✅ All full-width files present for deployment"
 
 # Expose ports
 EXPOSE 8501

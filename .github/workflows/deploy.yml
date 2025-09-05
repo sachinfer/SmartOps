@@ -11,7 +11,8 @@ on:
       - kill
       - update
       - anomaly
-      - time
+      - time2
+      - fullwidth
   workflow_dispatch:
 
 jobs:
@@ -107,6 +108,10 @@ jobs:
           wait
           
           echo "✅ All images built and pushed successfully!"
+          
+          # Verify full-width files are included in dashboard image
+          echo "🔍 Verifying full-width files in dashboard image..."
+          docker run --rm ${{ env.DASHBOARD_TAG }} ls -la /app/dashboard/ | grep -E "(main.py|custom.css|test_fullwidth_fix.py|FULLWIDTH_FIX_README.md)" || echo "⚠️ Some full-width files may be missing"
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
