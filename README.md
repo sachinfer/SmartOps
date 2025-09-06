@@ -1,4 +1,4 @@
-# 🚀 SmartOps - Intelligent Kubernetes Operations Dashboard
+# 🚀 SmartOps by Misi 24x7 - Intelligent Kubernetes Operations Dashboard
 
 A comprehensive, AI-powered Kubernetes operations dashboard that provides real-time monitoring, anomaly detection, auto-scaling recommendations, incident management, and an intelligent AI chatbot assistant for your Kubernetes clusters.
 
@@ -17,7 +17,7 @@ A comprehensive, AI-powered Kubernetes operations dashboard that provides real-t
 
 ### 🤖 **Misi AI Chatbot Assistant**
 - **Intelligent Navigation** - Ask Misi to guide you through dashboard features
-- **Smart Q&A** - Get instant answers about SmartOps functionality
+- **Smart Q&A** - Get instant answers about SmartOps by Misi 24x7 functionality
 - **Page Navigation** - Quick access to all dashboard pages
 - **Contextual Help** - AI-powered assistance for Kubernetes operations
 - **Beautiful Full-Screen Interface** - Immersive chat experience with glassmorphism design
@@ -37,7 +37,7 @@ A comprehensive, AI-powered Kubernetes operations dashboard that provides real-t
 ## 🏗️ Architecture
 
 ```
-SmartOps/
+SmartOps by Misi 24x7/
 ├── 📁 dashboard/                 # Streamlit frontend
 │   ├── 📄 streamlit_app.py      # Main dashboard application
 │   ├── 📄 misi_chatbot_widget.py # AI chatbot widget
@@ -72,7 +72,7 @@ SmartOps/
 ### 1. Clone and Setup
 ```bash
 git clone <repository-url>
-cd SmartOps/smartops-ai/dashboard
+cd SmartOps by Misi 24x7/smartops-ai/dashboard
 pip install -r requirements.txt
 ```
 
@@ -252,7 +252,7 @@ start_dashboard.ps1
 
 ### **Core Capabilities**
 - **Smart Navigation** - Ask Misi to show specific pages or features
-- **Contextual Help** - Get help with any SmartOps functionality
+- **Contextual Help** - Get help with any SmartOps by Misi 24x7 functionality
 - **Quick Actions** - Execute common tasks through conversation
 - **Feature Discovery** - Learn about available dashboard capabilities
 
@@ -494,7 +494,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for the Kubernetes community**
+**Made with ❤️ by Misi 24x7 for the Kubernetes community**
 
 **Powered by AI 🤖 and modern web technologies**
 

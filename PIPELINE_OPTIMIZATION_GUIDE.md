@@ -1,4 +1,4 @@
-# 🚀 SmartOps CI/CD Pipeline Optimization Guide
+# 🚀 SmartOps by Misi 24x7 CI/CD Pipeline Optimization Guide
 
 ## 📊 Performance Improvements Summary
 

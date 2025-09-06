@@ -1,12 +1,12 @@
-# 🤖 Misi AI Chatbot for SmartOps
+# 🤖 Misi AI Chatbot for SmartOps by Misi 24x7
 
 **Your Intelligent Kubernetes Operations Assistant**
 
-A custom AI-powered chatbot specifically designed for SmartOps Kubernetes operations platform. Misi provides intelligent responses to user queries and guides users to relevant SmartOps pages and features.
+A custom AI-powered chatbot specifically designed for SmartOps by Misi 24x7 Kubernetes operations platform. Misi provides intelligent responses to user queries and guides users to relevant SmartOps pages and features.
 
 ## ✨ **Features**
 
-- **🤖 Intelligent Q&A**: Answers questions about SmartOps features and functionality
+- **🤖 Intelligent Q&A**: Answers questions about SmartOps by Misi 24x7 features and functionality
 - **🧭 Navigation Guidance**: Automatically suggests which pages to visit for specific tasks
 - **💬 Context Awareness**: Maintains conversation context and provides relevant suggestions
 - **💡 Smart Suggestions**: Offers follow-up questions based on user queries
@@ -61,7 +61,7 @@ git push origin main
 ### **Core Components**
 
 1. **Knowledge Base** (`smartops_knowledge_base.py`)
-   - Comprehensive information about SmartOps features
+   - Comprehensive information about SmartOps by Misi 24x7 features
    - Page mappings and navigation instructions
    - Feature descriptions and capabilities
 
@@ -171,8 +171,8 @@ import streamlit as st
 from smartops_ai_chatbot.misi_chatbot_widget import add_misi_to_page
 
 # Your page content
-st.title("My SmartOps Page")
-st.write("Welcome to SmartOps!")
+st.title("My SmartOps by Misi 24x7 Page")
+st.write("Welcome to SmartOps by Misi 24x7!")
 
 # Add Misi (floating icon)
 add_misi_to_page()
@@ -354,6 +354,6 @@ For issues and questions:
 
 ---
 
-**Made with ❤️ for SmartOps Kubernetes Operations**
+**Made with ❤️ by Misi 24x7 for SmartOps Kubernetes Operations**
 
 **🚀 Misi AI Chatbot: Your Intelligent Kubernetes Assistant!**

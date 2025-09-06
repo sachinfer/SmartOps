@@ -1,12 +1,12 @@
 """
-SmartOps Knowledge Base for AI Chatbot
-Contains comprehensive information about SmartOps features, pages, and navigation
+SmartOps by Misi 24x7 Knowledge Base for AI Chatbot
+Contains comprehensive information about SmartOps by Misi 24x7 features, pages, and navigation
 """
 
 import re
 from typing import Dict, List, Optional
 
-# Comprehensive SmartOps Knowledge Base
+# Comprehensive SmartOps by Misi 24x7 Knowledge Base
 SMARTOPS_KNOWLEDGE_BASE = {
     "overview": {
         "questions": [
@@ -18,7 +18,7 @@ SMARTOPS_KNOWLEDGE_BASE = {
             "cluster health",
             "system status"
         ],
-        "answer": "SmartOps provides a comprehensive overview of your Kubernetes cluster. The main dashboard shows cluster health, resource usage, and system status at a glance.",
+        "answer": "SmartOps by Misi 24x7 provides a comprehensive overview of your Kubernetes cluster. The main dashboard shows cluster health, resource usage, and system status at a glance.",
         "page": "Overview",
         "page_number": 1,
         "features": [

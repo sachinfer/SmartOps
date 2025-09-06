@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 @app.get("/")
 def read_root():
     logging.info("Root endpoint accessed")
-    return {"message": "Hello SmartOps!!!"}
+    return {"message": "Hello SmartOps by Misi 24x7!!!"}
 
 @app.get("/health")
 def health():

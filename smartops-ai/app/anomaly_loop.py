@@ -160,7 +160,7 @@ def send_telegram_alert(message, cpu=None, memory=None, details=None, namespace=
     if raw:
         alert = message
     else:
-        alert = "🚨 *SmartOps Anomaly Detected!*\n"
+        alert = "🚨 *SmartOps by Misi 24x7 Anomaly Detected!*\n"
         if namespace:
             alert += f"• *Namespace*: `{namespace}`\n"
         if cpu is not None and memory is not None:
@@ -433,7 +433,7 @@ if __name__ == "__main__":
     assert detect_anomaly(model, test_vector) in [True, False]
 
 if __name__ == "__main__":
-    send_telegram_alert("🚨 Test alert from SmartOps! If you see this, your bot is working.")
+    send_telegram_alert("🚨 Test alert from SmartOps by Misi 24x7! If you see this, your bot is working.")
     threading.Thread(target=poll_telegram, daemon=True).start()
     threading.Thread(target=monitor_pods_status, daemon=True).start()
     # Start K8s log monitoring in a background thread

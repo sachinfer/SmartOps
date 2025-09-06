@@ -248,7 +248,7 @@ def get_logs(namespace: str, pod: str, container: str = None):
 @app.get("/")
 def root():
     """Root endpoint"""
-    return {"message": "SmartOps API is running"}
+    return {"message": "SmartOps by Misi 24x7 API is running"}
 
 # Unit test for FastAPI endpoint
 if __name__ == "__main__":

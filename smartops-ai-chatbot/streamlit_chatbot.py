@@ -1,5 +1,5 @@
 """
-SmartOps AI Chatbot - Main Application
+SmartOps by Misi 24x7 AI Chatbot - Main Application
 Complete chatbot interface with Misi integration
 """
 
@@ -12,8 +12,8 @@ from misi_chatbot_widget import add_misi_to_page
 
 # Page configuration
 st.set_page_config(
-    page_title="SmartOps AI Chatbot",
-    page_icon="🤖",
+    page_title="SmartOps by Misi 24x7 AI Chatbot",
+    page_icon="misi_24x7_logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -114,12 +114,19 @@ def main():
         st.session_state.messages = []
     
     # Header
-    st.markdown("""
-    <div class="main-header">
-        <h1>🤖 SmartOps AI Chatbot</h1>
-        <p>Your intelligent Kubernetes operations assistant</p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Logo and header section
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        st.image("misi_24x7_logo.png", width=100)
+    with col2:
+        st.markdown("""
+        <div class="main-header">
+            <h1>🤖 SmartOps by Misi 24x7 AI Chatbot</h1>
+            <p>Your intelligent Kubernetes operations assistant</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.write("")  # Empty column for spacing
     
     # Sidebar
     with st.sidebar:

@@ -5,8 +5,8 @@ import importlib.util
 
 # Page configuration
 st.set_page_config(
-    page_title="SmartOps Dashboard",
-    page_icon="📊",
+    page_title="SmartOps by Misi 24x7 Dashboard",
+    page_icon="misi_24x7_logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -548,7 +548,8 @@ window.addEventListener('resize', fixLayout);
 """, unsafe_allow_html=True)
 
 # Sidebar
-st.sidebar.title("🚀 SmartOps Dashboard")
+st.sidebar.image("misi_24x7_logo.png", width=150)
+st.sidebar.title("🚀 SmartOps by Misi 24x7 Dashboard")
 st.sidebar.markdown("**by Misi 24x7**")
 st.sidebar.markdown("---")
 
@@ -609,8 +610,16 @@ if page == "Main Dashboard":
     # Clear any previous content
     st.empty()
     
-    st.title("🚀 SmartOps Dashboard")
-    st.write("Welcome to SmartOps - Intelligent Kubernetes Operations Platform")
+    # Logo and title section
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        st.image("misi_24x7_logo.png", width=100)
+    with col2:
+        st.title("🚀 SmartOps by Misi 24x7 Dashboard")
+    with col3:
+        st.write("")  # Empty column for spacing
+    
+    st.write("Welcome to SmartOps by Misi 24x7 - Intelligent Kubernetes Operations Platform")
     
     # Key metrics
     col1, col2, col3, col4 = st.columns(4)

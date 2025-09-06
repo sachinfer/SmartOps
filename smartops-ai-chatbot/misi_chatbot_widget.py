@@ -16,6 +16,15 @@ class MisiChatbotWidget:
     def render_misi_icon(self, position="bottom-right"):
         """Render the floating Misi icon with popup chat interface"""
         
+        # Convert logo to base64
+        import base64
+        try:
+            with open("misi_24x7_logo.png", "rb") as img_file:
+                logo_base64 = base64.b64encode(img_file.read()).decode()
+        except FileNotFoundError:
+            # Fallback to emoji if logo not found
+            logo_base64 = ""
+        
         # CSS for styling
         css = f"""
         <style>
@@ -49,6 +58,12 @@ class MisiChatbotWidget:
             color: white;
             font-size: 24px;
             font-weight: bold;
+        }}
+        
+        .misi-logo {{
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
         }}
         
         .misi-chat-popup {{
@@ -307,13 +322,15 @@ class MisiChatbotWidget:
         
         <div class="misi-icon-container">
             <div class="misi-icon" id="misi-icon" onclick="toggleMisiPopup()">
-                <div class="misi-icon-text">🤖</div>
+                {"<img src='data:image/png;base64," + logo_base64 + "' class='misi-logo' alt='Misi 24x7'>" if logo_base64 else "<div class='misi-icon-text'>🤖</div>"}
             </div>
         </div>
         
         <div class="misi-chat-popup" id="misi-chat-popup">
             <div class="misi-chat-header">
-                <div class="misi-chat-title">🤖 Ask Misi</div>
+                <div class="misi-chat-title">
+                    {"<img src='data:image/png;base64," + logo_base64 + "' style='width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;' alt='Misi 24x7'>" if logo_base64 else "🤖"} Ask Misi
+                </div>
                 <button class="misi-close-btn" onclick="closeMisiPopup()">×</button>
             </div>
             <div class="misi-chat-body" id="misi-chat-body">
