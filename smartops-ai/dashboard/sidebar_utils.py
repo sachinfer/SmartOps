@@ -226,6 +226,7 @@ def show_sidebar():
     st.sidebar.markdown("• Auto Scaling")
     st.sidebar.markdown("• Incident Timeline")
     st.sidebar.markdown("• AI Assistant")
+    # st.sidebar.markdown("• AI Actions")  # Commented out - page exists but hidden from navigation
     st.sidebar.markdown("• Pod Management & Kill")
     st.sidebar.markdown("• Deployments")
     

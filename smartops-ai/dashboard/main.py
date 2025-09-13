@@ -568,6 +568,7 @@ page = st.sidebar.selectbox(
         "Auto Scaling",
         "Incident Timeline",
         "Misi AI Assistant",
+        # "AI Actions",  # Commented out - page exists but hidden from navigation
         "Deployments"
     ],
     key="page_selector"
