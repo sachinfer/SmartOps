@@ -246,6 +246,13 @@ if not filtered_df.empty:
             print(f"DEBUG: Top Anomalies CPU percent values before filtering: {chart_df['cpu_percent'].tolist()}")
             chart_df = chart_df[chart_df['cpu_percent'] >= 50.0]
             print(f"DEBUG: Top Anomalies CPU percent values after filtering: {chart_df['cpu_percent'].tolist()}")
+        elif 'cpu' in chart_df.columns:
+            # Handle raw CPU values (decimals) - convert to percentage and filter
+            chart_df['cpu_numeric'] = pd.to_numeric(chart_df['cpu'], errors='coerce').fillna(0)
+            chart_df['cpu_percent'] = chart_df['cpu_numeric'] * 100
+            print(f"DEBUG: Top Anomalies CPU values before filtering: {chart_df['cpu_numeric'].tolist()}")
+            chart_df = chart_df[chart_df['cpu_numeric'] >= 0.5]  # 0.5 = 50% in decimal
+            print(f"DEBUG: Top Anomalies CPU values after filtering: {chart_df['cpu_numeric'].tolist()}")
             if chart_df.empty:
                 st.info("No anomalies found with CPU usage above 50%.")
                 top_anomalies_df = pd.DataFrame()
