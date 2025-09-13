@@ -284,8 +284,25 @@ try:
         """, conn)
         
         if not actions_df.empty:
-            # Format the display with proper timestamp parsing
-            actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'], format='ISO8601', errors='coerce')
+            # Format the display with robust timestamp parsing
+            print(f"DEBUG: Sample timestamp values: {actions_df['timestamp'].head(3).tolist()}")
+            try:
+                # Try multiple timestamp formats
+                actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'], format='mixed', errors='coerce')
+                print(f"DEBUG: After mixed format parsing: {actions_df['timestamp'].head(3).tolist()}")
+                # If that fails, try ISO8601
+                if actions_df['timestamp'].isna().any():
+                    actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'], format='ISO8601', errors='coerce')
+                    print(f"DEBUG: After ISO8601 format parsing: {actions_df['timestamp'].head(3).tolist()}")
+                # If still failing, try infer_datetime_format
+                if actions_df['timestamp'].isna().any():
+                    actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'], infer_datetime_format=True, errors='coerce')
+                    print(f"DEBUG: After infer_datetime_format parsing: {actions_df['timestamp'].head(3).tolist()}")
+            except Exception as e:
+                print(f"DEBUG: Timestamp parsing error: {e}")
+                # Fallback: create a dummy timestamp
+                actions_df['timestamp'] = pd.to_datetime('2025-01-01 00:00:00')
+            
             actions_df['Time'] = actions_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
             actions_df['Action'] = actions_df['action'].apply(lambda x: '🔴 KILLED' if x == 'kill' else '🚫 IGNORED')
             actions_df['Pod'] = actions_df['pod_name']
