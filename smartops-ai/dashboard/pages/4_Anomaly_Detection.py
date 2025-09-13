@@ -199,7 +199,7 @@ else:
     print(f"DEBUG: Using full DataFrame, shape: {filtered_df.shape}")
 
 # Top Anomalies Section
-st.markdown('<div class="section-header">🔥 Top Anomalies (CPU ≥ 50%)</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">🔥 Top Anomalies</div>', unsafe_allow_html=True)
 if not filtered_df.empty:
     chart_df = filtered_df.copy()
     
@@ -333,7 +333,7 @@ except Exception as e:
     st.info(f"Pod actions not available: {str(e)}")
 
 # Recent Anomalies Section
-st.markdown('<div class="section-header">🕒 Recent Anomalies (CPU ≥ 50%)</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">🕒 Recent Anomalies</div>', unsafe_allow_html=True)
 if not filtered_df.empty:
     # Build display columns dynamically based on what's available
     display_cols = ['timestamp']

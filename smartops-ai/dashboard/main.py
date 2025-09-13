@@ -568,7 +568,6 @@ page = st.sidebar.selectbox(
         "Auto Scaling",
         "Incident Timeline",
         "Misi AI Assistant",
-        "AI Actions",
         "Deployments"
     ],
     key="page_selector"
@@ -665,9 +664,6 @@ elif page == "Incident Timeline":
     
 elif page == "Misi AI Assistant":
     load_page_safely("ai_assistant", "pages/7_Misi_AI_Assistant.py")
-    
-elif page == "AI Actions":
-    load_page_safely("ai_actions", "pages/8_AI_Actions.py")
     
 elif page == "Deployments":
     load_page_safely("deployments", "pages/9_Deployments.py")
