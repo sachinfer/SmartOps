@@ -195,5 +195,3 @@ jobs:
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="❌ *Production deployment failed in namespace \`smartops\`!*%0A%0A*Commit:* \`${GITHUB_SHA::8}\`%0A*Check:* [Pipeline Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
             -d parse_mode=Markdown
-#   T r i g g e r   w o r k f l o w  
- 
