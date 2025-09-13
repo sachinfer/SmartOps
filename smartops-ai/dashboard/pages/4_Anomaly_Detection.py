@@ -241,7 +241,11 @@ if not filtered_df.empty:
     if sort_column:
         # Filter out entries with CPU usage under 50%
         if 'cpu_percent' in chart_df.columns:
+            # Ensure cpu_percent is numeric and filter
+            chart_df['cpu_percent'] = pd.to_numeric(chart_df['cpu_percent'], errors='coerce').fillna(0)
+            print(f"DEBUG: Top Anomalies CPU percent values before filtering: {chart_df['cpu_percent'].tolist()}")
             chart_df = chart_df[chart_df['cpu_percent'] >= 50.0]
+            print(f"DEBUG: Top Anomalies CPU percent values after filtering: {chart_df['cpu_percent'].tolist()}")
             if chart_df.empty:
                 st.info("No anomalies found with CPU usage above 50%.")
                 top_anomalies_df = pd.DataFrame()
@@ -280,8 +284,8 @@ try:
         """, conn)
         
         if not actions_df.empty:
-            # Format the display
-            actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'])
+            # Format the display with proper timestamp parsing
+            actions_df['timestamp'] = pd.to_datetime(actions_df['timestamp'], format='ISO8601', errors='coerce')
             actions_df['Time'] = actions_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S IST')
             actions_df['Action'] = actions_df['action'].apply(lambda x: '🔴 KILLED' if x == 'kill' else '🚫 IGNORED')
             actions_df['Pod'] = actions_df['pod_name']
@@ -330,10 +334,16 @@ if not filtered_df.empty:
     # Filter out entries with CPU usage under 50%
     if 'cpu' in show_df.columns:
         show_df['cpu_numeric'] = pd.to_numeric(show_df['cpu'], errors='coerce').fillna(0)
+        print(f"DEBUG: CPU values before filtering: {show_df['cpu_numeric'].tolist()}")
         show_df = show_df[show_df['cpu_numeric'] >= 0.5]  # 0.5 = 50% in decimal
+        print(f"DEBUG: CPU values after filtering: {show_df['cpu_numeric'].tolist()}")
         show_df['cpu_display'] = (show_df['cpu_numeric'] * 100).round(1).astype(str) + '%'
     elif 'cpu_percent' in show_df.columns:
+        # Ensure cpu_percent is numeric and filter
+        show_df['cpu_percent'] = pd.to_numeric(show_df['cpu_percent'], errors='coerce').fillna(0)
+        print(f"DEBUG: CPU percent values before filtering: {show_df['cpu_percent'].tolist()}")
         show_df = show_df[show_df['cpu_percent'] >= 50.0]
+        print(f"DEBUG: CPU percent values after filtering: {show_df['cpu_percent'].tolist()}")
         show_df['cpu_display'] = show_df['cpu_percent'].astype(str) + '%'
     
     show_df = show_df.sort_values('timestamp', ascending=False).head(20)
